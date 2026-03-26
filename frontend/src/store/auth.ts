@@ -35,6 +35,9 @@ export const useAuthStore = create<AuthStore>()(
 
       isAuthenticated: () => !!get().accessToken,
     }),
-    { name: 'auth-storage' }
+    {
+      name: 'auth-storage',
+      skipHydration: true,
+    }
   )
 )

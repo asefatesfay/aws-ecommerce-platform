@@ -1,0 +1,235 @@
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,sqs,sns,dynamodb,secretsmanager,cognito-idp
+      DEFAULT_REGION: us-east-1
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── Microservices ───────────────────────────────────────────────────────────
+  auth:
+    build:
+      context: services/auth
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      SERVICE_NAME: auth-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/auth/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  catalog:
+    build:
+      context: services/catalog
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+      SERVICE_NAME: catalog-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/catalog/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  cart:
+    build:
+      context: services/cart
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"
+    environment:
+      SERVICE_NAME: cart-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/cart/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  order:
+    build:
+      context: services/order
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8000"
+    environment:
+      SERVICE_NAME: order-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/order/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  payment:
+    build:
+      context: services/payment
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8000"
+    environment:
+      SERVICE_NAME: payment-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+    volumes:
+      - ./services/payment/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  search:
+    build:
+      context: services/search
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8000"
+    environment:
+      SERVICE_NAME: search-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/search/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  recommendation:
+    build:
+      context: services/recommendation
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8000"
+    environment:
+      SERVICE_NAME: recommendation-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/recommendation/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  inventory:
+    build:
+      context: services/inventory
+      dockerfile: Dockerfile
+    ports:
+      - "8008:8000"
+    environment:
+      SERVICE_NAME: inventory-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/inventory/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  admin:
+    build:
+      context: services/admin
+      dockerfile: Dockerfile
+    ports:
+      - "8009:8000"
+    environment:
+      SERVICE_NAME: admin-service
+      DATABASE_URL: sqlite+aiosqlite:///./dev.db
+    volumes:
+      - ./services/admin/app:/app/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - catalog
+      - auth
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_data:
+  opensearch_data:
