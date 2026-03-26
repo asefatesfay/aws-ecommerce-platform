@@ -1,0 +1,2853 @@
+openapi: 3.1.0
+info:
+  title: Ecommerce AWS Platform API
+  version: 1.0.0
+  description: |
+    Full-featured cloud-native ecommerce platform built on AWS.
+    Comprises 9 FastAPI microservices behind AWS API Gateway with Cognito JWT authorization.
+
+    **Authentication**: All protected endpoints require a Bearer JWT issued by Amazon Cognito.
+    Public endpoints (no auth required): POST /auth/register, POST /auth/login,
+    GET /catalog/products, GET /catalog/products/{productId}, GET /catalog/categories,
+    GET /search, GET /search/autocomplete, POST /payments/webhook, GET /health.
+
+    **Admin endpoints** are restricted to users whose Cognito JWT contains the `"admins"` group claim.
+  contact:
+    name: Platform Engineering
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: https://api.staging.example.com
+    description: Staging
+
+tags:
+  - name: Auth
+    description: User registration, login, token refresh, and profile management
+  - name: Catalog
+    description: Product and category management
+  - name: Cart
+    description: Per-user shopping cart management
+  - name: Orders
+    description: Order lifecycle management
+  - name: Payments
+    description: Stripe payment processing and webhooks
+  - name: Search
+    description: Full-text and faceted product search
+  - name: Recommendations
+    description: Personalized product recommendations
+  - name: Inventory
+    description: Real-time stock tracking and reservation
+  - name: Admin
+    description: Admin dashboard, reporting, and platform management (admin only)
+  - name: Health
+    description: Service readiness probes
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ---------------------------------------------------------------------------
+  # Health (all services)
+  # ---------------------------------------------------------------------------
+  /health:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      description: Returns service readiness status. Checks connectivity to Aurora, Redis, DynamoDB, and OpenSearch.
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  service:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                example:
+                  status: ok
+                  service: catalog-service
+                  timestamp: "2024-01-15T10:30:00Z"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ---------------------------------------------------------------------------
+  # Auth Service
+  # ---------------------------------------------------------------------------
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Creates a new user account in Cognito and stores extended profile data in Aurora. Assigns the `customer` role by default.
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Email address is already registered."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and obtain JWT tokens
+      description: Authenticates user credentials against Cognito and returns JWT access and refresh tokens.
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      description: Exchanges a valid Cognito refresh token for a new JWT access token without requiring re-authentication.
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  description: Cognito refresh token
+                  example: "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ..."
+      responses:
+        "200":
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /auth/profile:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      description: Returns the authenticated user's profile data stored in Aurora.
+      operationId: getProfile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Auth]
+      summary: Update user profile
+      description: Persists updated profile fields in Aurora and returns the updated profile.
+      operationId: updateProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  # ---------------------------------------------------------------------------
+  # Catalog Service
+  # ---------------------------------------------------------------------------
+  /catalog/products:
+    get:
+      tags: [Catalog]
+      summary: List products (paginated)
+      description: Returns a paginated list of active products. Optionally filter by category. Results are cached in Redis (TTL 10 min).
+      operationId: listProducts
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: categoryId
+          in: query
+          description: Filter products by category UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        "200":
+          description: Paginated product list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedProducts"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      tags: [Catalog]
+      summary: Create product (admin only)
+      description: "**Admin only.** Creates a new product in Aurora and publishes a `product.updated` event to SNS for OpenSearch indexing."
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: SKU already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "A product with this SKU already exists."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /catalog/products/{productId}:
+    parameters:
+      - $ref: "#/components/parameters/ProductIdParam"
+    get:
+      tags: [Catalog]
+      summary: Get product detail
+      description: Returns full product detail. Checks Redis cache before querying Aurora (TTL 10 min).
+      operationId: getProduct
+      security: []
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    put:
+      tags: [Catalog]
+      summary: Update product (admin only)
+      description: "**Admin only.** Updates product fields in Aurora and publishes a `product.updated` event to SNS."
+      operationId: updateProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+      responses:
+        "200":
+          description: Updated product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: SKU conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      tags: [Catalog]
+      summary: Delete product (admin only)
+      description: "**Admin only.** Removes the product from Aurora and publishes a `product.updated` event to SNS to trigger OpenSearch de-indexing."
+      operationId: deleteProduct
+      responses:
+        "204":
+          description: Product deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /catalog/products/{productId}/images:
+    parameters:
+      - $ref: "#/components/parameters/ProductIdParam"
+    post:
+      tags: [Catalog]
+      summary: Upload product image (admin only)
+      description: "**Admin only.** Uploads an image to S3 and returns a CloudFront-served URL. Active products must have at least one image."
+      operationId: uploadProductImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP; max 10 MB)
+      responses:
+        "201":
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /catalog/categories:
+    get:
+      tags: [Catalog]
+      summary: List all categories
+      description: Returns all available product categories from Aurora.
+      operationId: listCategories
+      security: []
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ---------------------------------------------------------------------------
+  # Cart Service
+  # ---------------------------------------------------------------------------
+  /cart/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/UserIdParam"
+    get:
+      tags: [Cart]
+      summary: Get user cart
+      description: Returns the current cart state from DynamoDB (Redis read-through cache for sub-ms reads).
+      operationId: getCart
+      responses:
+        "200":
+          description: User cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Cart not found (empty cart)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Cart]
+      summary: Clear cart
+      description: Deletes all items from the user's DynamoDB cart record.
+      operationId: clearCart
+      responses:
+        "204":
+          description: Cart cleared
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /cart/{userId}/items:
+    parameters:
+      - $ref: "#/components/parameters/UserIdParam"
+    post:
+      tags: [Cart]
+      summary: Add item to cart
+      description: Validates product availability against the Inventory Service before persisting the updated cart to DynamoDB.
+      operationId: addCartItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddItemRequest"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Product unavailable or insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Insufficient stock. Only 3 units available."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /cart/{userId}/items/{itemId}:
+    parameters:
+      - $ref: "#/components/parameters/UserIdParam"
+      - name: itemId
+        in: path
+        required: true
+        description: Cart item UUID
+        schema:
+          type: string
+          format: uuid
+          example: "c3d4e5f6-a7b8-9012-cdef-345678901234"
+    put:
+      tags: [Cart]
+      summary: Update item quantity
+      description: Updates the quantity of an existing cart item and persists to DynamoDB.
+      operationId: updateCartItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemRequest"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      tags: [Cart]
+      summary: Remove item from cart
+      description: Removes the specified item from the cart and persists to DynamoDB.
+      operationId: removeCartItem
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------------------
+  # Order Service
+  # ---------------------------------------------------------------------------
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create order
+      description: |
+        Creates a pending order in Aurora with price snapshots for all items.
+        Publishes an `order.created` event to SNS. Stock is reserved (not yet deducted).
+        Returns HTTP 409 if any item has insufficient stock.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Insufficient stock for one or more items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Insufficient stock for product 'Running Shoes XL'. Available: 2, requested: 5."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      tags: [Orders]
+      summary: List user orders (paginated)
+      description: Returns a paginated list of orders for the authenticated user.
+      operationId: listOrders
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated order list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedOrders"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /orders/{orderId}:
+    parameters:
+      - $ref: "#/components/parameters/OrderIdParam"
+    get:
+      tags: [Orders]
+      summary: Get order detail
+      description: Returns full order detail including items, totals, shipping address, and current status.
+      operationId: getOrder
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders/{orderId}/status:
+    parameters:
+      - $ref: "#/components/parameters/OrderIdParam"
+    patch:
+      tags: [Orders]
+      summary: Update order status (admin only)
+      description: |
+        **Admin only.** Transitions the order to a new status following the state machine.
+        Valid transitions: `pending` → `[confirmed, cancelled]`, `confirmed` → `[processing, cancelled]`,
+        `processing` → `[shipped, cancelled]`, `shipped` → `[delivered]`, `delivered` → `[refunded]`.
+        Returns HTTP 422 for invalid transitions.
+      operationId: updateOrderStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Cannot transition from 'shipped' to 'pending'."
+
+  /orders/{orderId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrderIdParam"
+    post:
+      tags: [Orders]
+      summary: Cancel order
+      description: Cancels the order if the current status allows it. Publishes an `order.cancelled` event to SNS, which triggers stock reservation release.
+      operationId: cancelOrder
+      responses:
+        "200":
+          description: Cancelled order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Order cannot be cancelled in its current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Cannot cancel an order with status 'delivered'."
+
+  # ---------------------------------------------------------------------------
+  # Payment Service
+  # ---------------------------------------------------------------------------
+  /payments/intent:
+    post:
+      tags: [Payments]
+      summary: Create Stripe PaymentIntent
+      description: |
+        Creates a Stripe PaymentIntent server-side and returns the `client_secret` for the frontend
+        to confirm payment using Stripe Elements. Raw card data is never sent to this API.
+      operationId: createPaymentIntent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentIntentRequest"
+      responses:
+        "201":
+          description: PaymentIntent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentIntentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Stripe webhook
+      description: |
+        Receives Stripe webhook events. **No authentication required** — Stripe signature is verified
+        using `STRIPE_WEBHOOK_SECRET` via `stripe.Webhook.construct_event()`.
+        Returns HTTP 400 if signature verification fails. Operation is idempotent.
+      operationId: stripeWebhook
+      security: []
+      parameters:
+        - name: Stripe-Signature
+          in: header
+          required: true
+          description: Stripe webhook signature for HMAC verification
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Raw Stripe event payload
+              additionalProperties: true
+              example:
+                id: "evt_1OqXYZABC123"
+                type: "payment_intent.succeeded"
+                data:
+                  object:
+                    id: "pi_1OqXYZABC123"
+                    amount: 9999
+                    currency: "usd"
+                    status: "succeeded"
+                    metadata:
+                      order_id: "d4e5f6a7-b8c9-0123-def0-456789012345"
+      responses:
+        "200":
+          description: Webhook processed (or duplicate detected and ignored)
+        "400":
+          description: Invalid Stripe signature or malformed payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Stripe webhook signature verification failed."
+
+  /payments/{paymentId}:
+    parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Payment UUID
+        schema:
+          type: string
+          format: uuid
+          example: "e5f6a7b8-c9d0-1234-ef01-567890123456"
+    get:
+      tags: [Payments]
+      summary: Get payment detail
+      description: Returns the payment record including Stripe PaymentIntent ID, status, and refund information.
+      operationId: getPayment
+      responses:
+        "200":
+          description: Payment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /payments/{paymentId}/refund:
+    parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Payment UUID
+        schema:
+          type: string
+          format: uuid
+          example: "e5f6a7b8-c9d0-1234-ef01-567890123456"
+    post:
+      tags: [Payments]
+      summary: Issue refund (admin only)
+      description: "**Admin only.** Issues a full or partial refund via Stripe and updates the payment record status to `refunded` or `partially_refunded`."
+      operationId: refundPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundRequest"
+      responses:
+        "200":
+          description: Refund issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refund"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Refund amount exceeds original payment or payment not refundable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ---------------------------------------------------------------------------
+  # Search Service
+  # ---------------------------------------------------------------------------
+  /search:
+    get:
+      tags: [Search]
+      summary: Search products
+      description: |
+        Full-text and faceted product search via OpenSearch. Results are cached in Redis
+        using a deterministic hash of `(q, filters, page, limit)` with a TTL of 5 minutes.
+        Returns HTTP 503 with `Retry-After` header if OpenSearch is unavailable.
+      operationId: searchProducts
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query string (max 500 characters)
+          schema:
+            type: string
+            maxLength: 500
+            example: "running shoes"
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: brand
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "Nike"
+        - name: priceMin
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            example: 20.00
+        - name: priceMax
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            example: 200.00
+        - name: inStock
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [relevance, price_asc, price_desc, newest]
+            default: relevance
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Search results with facets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /search/autocomplete:
+    get:
+      tags: [Search]
+      summary: Autocomplete suggestions
+      description: Returns autocomplete suggestions using the OpenSearch completion suggester.
+      operationId: autocomplete
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Partial search query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            example: "runn"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+      responses:
+        "200":
+          description: Autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutocompleteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ---------------------------------------------------------------------------
+  # Recommendation Service
+  # ---------------------------------------------------------------------------
+  /recommendations/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/UserIdParam"
+    get:
+      tags: [Recommendations]
+      summary: Get personalized recommendations
+      description: |
+        Returns personalized product recommendations via Amazon Personalize.
+        Falls back to top-selling products from OpenSearch if Personalize is unavailable
+        or the user has no interaction history. Results cached in Redis per user (TTL 15 min).
+      operationId: getRecommendations
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: Personalized product recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                    format: uuid
+                  products:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+                  source:
+                    type: string
+                    enum: [personalize, fallback]
+                    description: Whether results came from Personalize or the fallback ranking
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /recommendations/similar/{productId}:
+    parameters:
+      - $ref: "#/components/parameters/ProductIdParam"
+    get:
+      tags: [Recommendations]
+      summary: Get similar items
+      description: Returns products similar to the given product using Amazon Personalize or OpenSearch similarity.
+      operationId: getSimilarItems
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: Similar products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product_id:
+                    type: string
+                    format: uuid
+                  products:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /recommendations/events:
+    post:
+      tags: [Recommendations]
+      summary: Record user interaction event
+      description: Records a user interaction event (view, add-to-cart, purchase) to the Amazon Personalize event tracker.
+      operationId: recordEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserEventRequest"
+      responses:
+        "204":
+          description: Event recorded
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  # ---------------------------------------------------------------------------
+  # Inventory Service
+  # ---------------------------------------------------------------------------
+  /inventory/{productId}:
+    parameters:
+      - $ref: "#/components/parameters/ProductIdParam"
+    get:
+      tags: [Inventory]
+      summary: Get stock level
+      description: Returns current stock levels for the specified product.
+      operationId: getStockLevel
+      responses:
+        "200":
+          description: Stock level
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockLevel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /inventory/{productId}/adjust:
+    parameters:
+      - $ref: "#/components/parameters/ProductIdParam"
+    patch:
+      tags: [Inventory]
+      summary: Adjust stock (admin only)
+      description: "**Admin only.** Updates `quantity_on_hand` in Aurora and recalculates `quantity_available`. Increments the version field for optimistic concurrency control."
+      operationId: adjustStock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustStockRequest"
+      responses:
+        "200":
+          description: Updated stock level
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockLevel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Concurrent update conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Concurrent update detected. Please retry."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /inventory/reserve:
+    post:
+      tags: [Inventory]
+      summary: Reserve stock
+      description: |
+        Atomically decreases `quantity_available` and increases `quantity_reserved` using
+        optimistic locking. Retries up to 3 times on concurrent update conflicts.
+        Returns HTTP 409 if stock is insufficient or all retries are exhausted.
+      operationId: reserveStock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReserveStockRequest"
+      responses:
+        "201":
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Insufficient stock or concurrent conflict after retries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Insufficient stock. Available: 1, requested: 5."
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /inventory/reservations/{reservationId}:
+    parameters:
+      - name: reservationId
+        in: path
+        required: true
+        description: Reservation UUID
+        schema:
+          type: string
+          format: uuid
+          example: "f6a7b8c9-d0e1-2345-f012-678901234567"
+    delete:
+      tags: [Inventory]
+      summary: Release reservation
+      description: Releases a stock reservation, restoring `quantity_available`. Called when an order is cancelled.
+      operationId: releaseReservation
+      responses:
+        "204":
+          description: Reservation released
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /inventory/low-stock:
+    get:
+      tags: [Inventory]
+      summary: List low stock items (admin only)
+      description: "**Admin only.** Returns all products where `quantity_available` is below the specified threshold."
+      operationId: listLowStock
+      parameters:
+        - name: threshold
+          in: query
+          required: false
+          description: Stock threshold (defaults to each product's `reorder_threshold`)
+          schema:
+            type: integer
+            minimum: 0
+            default: 10
+            example: 10
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Low stock items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StockLevel"
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ---------------------------------------------------------------------------
+  # Admin Service
+  # ---------------------------------------------------------------------------
+  /admin/metrics:
+    get:
+      tags: [Admin]
+      summary: Dashboard metrics (admin only)
+      description: "**Admin only.** Returns aggregated order counts, revenue totals, and user counts from Aurora."
+      operationId: getDashboardMetrics
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardMetrics"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/orders:
+    get:
+      tags: [Admin]
+      summary: List all orders with filters (admin only)
+      description: "**Admin only.** Returns a paginated list of all orders across all users, with optional filters."
+      operationId: adminListOrders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OrderStatus"
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-01T00:00:00Z"
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-31T23:59:59Z"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated order list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedOrders"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/orders/export:
+    post:
+      tags: [Admin]
+      summary: Export orders to CSV (admin only)
+      description: "**Admin only.** Generates a CSV export of orders matching the filter criteria, uploads to S3, and returns a presigned download URL."
+      operationId: exportOrders
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: "#/components/schemas/OrderStatus"
+                date_from:
+                  type: string
+                  format: date-time
+                  example: "2024-01-01T00:00:00Z"
+                date_to:
+                  type: string
+                  format: date-time
+                  example: "2024-01-31T23:59:59Z"
+                format:
+                  type: string
+                  enum: [csv, xlsx]
+                  default: csv
+      responses:
+        "200":
+          description: Export file ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List users (admin only)
+      description: "**Admin only.** Returns a paginated list of all registered users from Aurora."
+      operationId: adminListUsers
+      parameters:
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [customer, admin]
+        - name: search
+          in: query
+          required: false
+          description: Search by email or name
+          schema:
+            type: string
+            example: "john"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  total:
+                    type: integer
+                    example: 1250
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 20
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/revenue:
+    get:
+      tags: [Admin]
+      summary: Revenue report (admin only)
+      description: "**Admin only.** Returns revenue data aggregated by the specified date range."
+      operationId: getRevenueReport
+      parameters:
+        - name: dateFrom
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-01T00:00:00Z"
+        - name: dateTo
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-31T23:59:59Z"
+        - name: granularity
+          in: query
+          required: false
+          description: Aggregation granularity
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+      responses:
+        "200":
+          description: Revenue report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueReport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+# =============================================================================
+# Components
+# =============================================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Amazon Cognito JWT access token. Obtain via POST /auth/login.
+        Include as `Authorization: Bearer <token>` header.
+
+  # ---------------------------------------------------------------------------
+  # Reusable Parameters
+  # ---------------------------------------------------------------------------
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number (1-indexed)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        example: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        example: 20
+
+    ProductIdParam:
+      name: productId
+      in: path
+      required: true
+      description: Product UUID
+      schema:
+        type: string
+        format: uuid
+        example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      description: User UUID (matches Cognito sub)
+      schema:
+        type: string
+        format: uuid
+        example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    OrderIdParam:
+      name: orderId
+      in: path
+      required: true
+      description: Order UUID
+      schema:
+        type: string
+        format: uuid
+        example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+
+  # ---------------------------------------------------------------------------
+  # Reusable Responses
+  # ---------------------------------------------------------------------------
+  responses:
+    BadRequest:
+      description: Bad request — invalid input parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "Invalid request parameters."
+
+    Unauthorized:
+      description: Unauthorized — missing or invalid JWT
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "Authentication credentials were not provided or are invalid."
+
+    Forbidden:
+      description: Forbidden — insufficient permissions (admin role required)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "You do not have permission to perform this action."
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "The requested resource was not found."
+
+    UnprocessableEntity:
+      description: Unprocessable entity — validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "price must be greater than 0."
+
+    ServiceUnavailable:
+      description: Service unavailable — upstream dependency (OpenSearch, Aurora, etc.) is unreachable
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying
+          schema:
+            type: integer
+            example: 30
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "Service temporarily unavailable. Please retry after 30 seconds."
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+  schemas:
+    # -------------------------------------------------------------------------
+    # Shared / Primitives
+    # -------------------------------------------------------------------------
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: Human-readable error description
+          example: "The requested resource was not found."
+      example:
+        detail: "The requested resource was not found."
+
+    OrderStatus:
+      type: string
+      enum:
+        - pending
+        - confirmed
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+        - refunded
+      description: |
+        Order lifecycle status. Valid transitions:
+        `pending` → `[confirmed, cancelled]`,
+        `confirmed` → `[processing, cancelled]`,
+        `processing` → `[shipped, cancelled]`,
+        `shipped` → `[delivered]`,
+        `delivered` → `[refunded]`.
+      example: confirmed
+
+    PaymentStatus:
+      type: string
+      enum:
+        - pending
+        - succeeded
+        - failed
+        - refunded
+        - partially_refunded
+      example: succeeded
+
+    ShippingAddress:
+      type: object
+      required: [full_name, street, city, state, country, postal_code]
+      properties:
+        full_name:
+          type: string
+          example: "Jane Doe"
+        street:
+          type: string
+          example: "123 Main Street, Apt 4B"
+        city:
+          type: string
+          example: "Seattle"
+        state:
+          type: string
+          example: "WA"
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code
+          example: "US"
+        postal_code:
+          type: string
+          example: "98101"
+        phone:
+          type: string
+          example: "+12065550100"
+
+    # -------------------------------------------------------------------------
+    # Auth Schemas
+    # -------------------------------------------------------------------------
+    RegisterRequest:
+      type: object
+      required: [email, password, full_name]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Minimum 8 characters; Cognito password policy applies
+          example: "S3cur3P@ssw0rd"
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Jane Doe"
+        phone:
+          type: string
+          example: "+12065550100"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        password:
+          type: string
+          format: password
+          example: "S3cur3P@ssw0rd"
+
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          description: Cognito JWT access token
+          example: "eyJraWQiOiJhYmMxMjMiLCJhbGciOiJSUzI1NiJ9..."
+        refresh_token:
+          type: string
+          description: Cognito refresh token (long-lived)
+          example: "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ..."
+        id_token:
+          type: string
+          description: Cognito ID token
+          example: "eyJraWQiOiJ4eXoxMjMiLCJhbGciOiJSUzI1NiJ9..."
+        token_type:
+          type: string
+          enum: [Bearer]
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Access token lifetime in seconds
+          example: 3600
+
+    User:
+      type: object
+      required: [id, email, full_name, role, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        full_name:
+          type: string
+          example: "Jane Doe"
+        phone:
+          type: string
+          nullable: true
+          example: "+12065550100"
+        role:
+          type: string
+          enum: [customer, admin]
+          example: "customer"
+        cognito_sub:
+          type: string
+          description: Cognito User Pool subject identifier
+          example: "us-east-1_abc123|jane.doe@example.com"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-10T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T12:30:00Z"
+
+    UserProfile:
+      type: object
+      required: [id, email, full_name, role, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        full_name:
+          type: string
+          example: "Jane Doe"
+        phone:
+          type: string
+          nullable: true
+          example: "+12065550100"
+        role:
+          type: string
+          enum: [customer, admin]
+          example: "customer"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShippingAddress"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-10T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T12:30:00Z"
+
+    UpdateProfileRequest:
+      type: object
+      minProperties: 1
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Jane M. Doe"
+        phone:
+          type: string
+          nullable: true
+          example: "+12065550199"
+
+    # -------------------------------------------------------------------------
+    # Catalog Schemas
+    # -------------------------------------------------------------------------
+    Category:
+      type: object
+      required: [id, name, slug, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          example: "Running Shoes"
+        slug:
+          type: string
+          example: "running-shoes"
+        description:
+          type: string
+          nullable: true
+          example: "High-performance footwear for runners."
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent category UUID for nested categories
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+
+    Product:
+      type: object
+      required: [id, sku, name, price, category_id, is_active, images, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        sku:
+          type: string
+          example: "SHOE-RUN-XL-BLK-001"
+        name:
+          type: string
+          example: "AeroStride Pro Running Shoe"
+        description:
+          type: string
+          example: "Lightweight carbon-plate running shoe for marathon performance."
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 149.99
+        compare_at_price:
+          type: number
+          format: double
+          nullable: true
+          description: Original price before discount
+          example: 179.99
+        category_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        brand:
+          type: string
+          nullable: true
+          example: "AeroStride"
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          minItems: 1
+          description: CloudFront-served image URLs. Active products must have at least one.
+          example:
+            - "https://cdn.example.com/products/shoe-run-xl-blk-001-front.jpg"
+            - "https://cdn.example.com/products/shoe-run-xl-blk-001-side.jpg"
+        attributes:
+          type: object
+          description: Flexible product attributes (size, color, material, etc.)
+          additionalProperties: true
+          example:
+            size: "XL"
+            color: "Black"
+            material: "Carbon Fiber Composite"
+            weight_grams: 220
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-05T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-12T14:00:00Z"
+
+    ProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          properties:
+            category:
+              $ref: "#/components/schemas/Category"
+            stock_available:
+              type: integer
+              description: Current available stock quantity
+              example: 42
+            in_stock:
+              type: boolean
+              example: true
+
+    CreateProductRequest:
+      type: object
+      required: [sku, name, price, category_id]
+      properties:
+        sku:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "SHOE-RUN-XL-BLK-001"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "AeroStride Pro Running Shoe"
+        description:
+          type: string
+          example: "Lightweight carbon-plate running shoe for marathon performance."
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 149.99
+        compare_at_price:
+          type: number
+          format: double
+          nullable: true
+          example: 179.99
+        category_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        brand:
+          type: string
+          nullable: true
+          example: "AeroStride"
+        attributes:
+          type: object
+          additionalProperties: true
+          example:
+            size: "XL"
+            color: "Black"
+        is_active:
+          type: boolean
+          default: true
+
+    UpdateProductRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "AeroStride Pro Running Shoe v2"
+        description:
+          type: string
+          example: "Updated description."
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 139.99
+        compare_at_price:
+          type: number
+          format: double
+          nullable: true
+          example: 149.99
+        category_id:
+          type: string
+          format: uuid
+        brand:
+          type: string
+          nullable: true
+        attributes:
+          type: object
+          additionalProperties: true
+        is_active:
+          type: boolean
+
+    PaginatedProducts:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        total:
+          type: integer
+          description: Total number of matching products
+          example: 248
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        pages:
+          type: integer
+          description: Total number of pages
+          example: 13
+
+    ImageUploadResponse:
+      type: object
+      required: [url, product_id]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: CloudFront-served URL of the uploaded image
+          example: "https://cdn.example.com/products/b2c3d4e5-f6a7-8901-bcde-f01234567890/image-001.jpg"
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        s3_key:
+          type: string
+          description: S3 object key
+          example: "products/b2c3d4e5-f6a7-8901-bcde-f01234567890/image-001.jpg"
+
+    # -------------------------------------------------------------------------
+    # Cart Schemas
+    # -------------------------------------------------------------------------
+    CartItem:
+      type: object
+      required: [id, product_id, sku, name, unit_price, quantity, subtotal]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "c3d4e5f6-a7b8-9012-cdef-345678901234"
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        sku:
+          type: string
+          example: "SHOE-RUN-XL-BLK-001"
+        name:
+          type: string
+          example: "AeroStride Pro Running Shoe"
+        unit_price:
+          type: number
+          format: double
+          example: 149.99
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        subtotal:
+          type: number
+          format: double
+          description: unit_price * quantity
+          example: 299.98
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://cdn.example.com/products/shoe-run-xl-blk-001-front.jpg"
+
+    Cart:
+      type: object
+      required: [user_id, items, subtotal, updated_at]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        subtotal:
+          type: number
+          format: double
+          description: Sum of all item subtotals
+          example: 299.98
+        item_count:
+          type: integer
+          example: 2
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00Z"
+
+    AddItemRequest:
+      type: object
+      required: [product_id, quantity]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    UpdateItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          example: 3
+
+    # -------------------------------------------------------------------------
+    # Order Schemas
+    # -------------------------------------------------------------------------
+    OrderItem:
+      type: object
+      required: [id, product_id, sku, name, unit_price, quantity, subtotal]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        sku:
+          type: string
+          description: SKU snapshot at time of order
+          example: "SHOE-RUN-XL-BLK-001"
+        name:
+          type: string
+          description: Product name snapshot at time of order
+          example: "AeroStride Pro Running Shoe"
+        unit_price:
+          type: number
+          format: double
+          description: Price snapshot at time of order
+          example: 149.99
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        subtotal:
+          type: number
+          format: double
+          description: unit_price * quantity
+          example: 299.98
+
+    Order:
+      type: object
+      required: [id, user_id, status, items, subtotal, tax, shipping_cost, total, shipping_address, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+        user_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        subtotal:
+          type: number
+          format: double
+          example: 299.98
+        tax:
+          type: number
+          format: double
+          example: 27.00
+        shipping_cost:
+          type: number
+          format: double
+          example: 9.99
+        total:
+          type: number
+          format: double
+          description: subtotal + tax + shipping_cost
+          example: 336.97
+        shipping_address:
+          $ref: "#/components/schemas/ShippingAddress"
+        payment_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "e5f6a7b8-c9d0-1234-ef01-567890123456"
+        stripe_payment_intent_id:
+          type: string
+          nullable: true
+          example: "pi_1OqXYZABC123"
+        notes:
+          type: string
+          nullable: true
+          example: "Please leave at the door."
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:05:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:10:00Z"
+
+    CreateOrderRequest:
+      type: object
+      required: [shipping_address]
+      properties:
+        shipping_address:
+          $ref: "#/components/schemas/ShippingAddress"
+        notes:
+          type: string
+          nullable: true
+          example: "Please leave at the door."
+
+    UpdateStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        notes:
+          type: string
+          nullable: true
+          description: Optional admin note for the status change
+          example: "Shipped via FedEx, tracking #123456789."
+
+    PaginatedOrders:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        total:
+          type: integer
+          example: 87
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        pages:
+          type: integer
+          example: 5
+
+    # -------------------------------------------------------------------------
+    # Payment Schemas
+    # -------------------------------------------------------------------------
+    PaymentIntentRequest:
+      type: object
+      required: [order_id]
+      properties:
+        order_id:
+          type: string
+          format: uuid
+          description: The order UUID to create a PaymentIntent for
+          example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          default: "usd"
+          example: "usd"
+
+    PaymentIntentResponse:
+      type: object
+      required: [payment_id, client_secret, amount, currency]
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+          description: Internal payment record UUID
+          example: "e5f6a7b8-c9d0-1234-ef01-567890123456"
+        stripe_payment_intent_id:
+          type: string
+          example: "pi_1OqXYZABC123"
+        client_secret:
+          type: string
+          description: Stripe client_secret for frontend Stripe.js confirmation
+          example: "pi_1OqXYZABC123_secret_xyz789"
+        amount:
+          type: number
+          format: double
+          description: Payment amount in the specified currency
+          example: 336.97
+        currency:
+          type: string
+          example: "usd"
+
+    Payment:
+      type: object
+      required: [id, order_id, stripe_payment_intent_id, amount, currency, status, refunded_amount, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "e5f6a7b8-c9d0-1234-ef01-567890123456"
+        order_id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+        stripe_payment_intent_id:
+          type: string
+          example: "pi_1OqXYZABC123"
+        stripe_charge_id:
+          type: string
+          nullable: true
+          example: "ch_1OqXYZABC456"
+        amount:
+          type: number
+          format: double
+          example: 336.97
+        currency:
+          type: string
+          example: "usd"
+        status:
+          $ref: "#/components/schemas/PaymentStatus"
+        refunded_amount:
+          type: number
+          format: double
+          example: 0.00
+        metadata:
+          type: object
+          additionalProperties: true
+          example:
+            order_id: "d4e5f6a7-b8c9-0123-def0-456789012345"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:05:30Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:06:00Z"
+
+    RefundRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Refund amount. Omit for full refund.
+          nullable: true
+          example: 149.99
+        reason:
+          type: string
+          enum: [duplicate, fraudulent, requested_by_customer]
+          example: "requested_by_customer"
+
+    Refund:
+      type: object
+      required: [id, payment_id, amount, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f6a7b8c9-d0e1-2345-f012-678901234567"
+        payment_id:
+          type: string
+          format: uuid
+          example: "e5f6a7b8-c9d0-1234-ef01-567890123456"
+        stripe_refund_id:
+          type: string
+          example: "re_1OqXYZABC789"
+        amount:
+          type: number
+          format: double
+          example: 149.99
+        reason:
+          type: string
+          nullable: true
+          example: "requested_by_customer"
+        status:
+          type: string
+          enum: [pending, succeeded, failed]
+          example: "succeeded"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-16T09:00:00Z"
+
+    # -------------------------------------------------------------------------
+    # Search Schemas
+    # -------------------------------------------------------------------------
+    SearchFilters:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+        brand:
+          type: string
+          nullable: true
+          example: "AeroStride"
+        price_min:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          example: 20.00
+        price_max:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          example: 200.00
+        in_stock:
+          type: boolean
+          nullable: true
+          example: true
+        attributes:
+          type: object
+          additionalProperties: true
+          description: Arbitrary attribute filters (e.g., color, size)
+          example:
+            color: "Black"
+            size: "XL"
+
+    SearchResponse:
+      type: object
+      required: [products, total_count, page, limit, facets]
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        total_count:
+          type: integer
+          description: Total number of matching products across all pages
+          example: 34
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        pages:
+          type: integer
+          example: 2
+        facets:
+          type: object
+          description: Aggregated facet counts for filtering UI
+          properties:
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  count:
+                    type: integer
+            brands:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  count:
+                    type: integer
+            price_range:
+              type: object
+              properties:
+                min:
+                  type: number
+                  format: double
+                max:
+                  type: number
+                  format: double
+          example:
+            categories:
+              - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                name: "Running Shoes"
+                count: 34
+            brands:
+              - name: "AeroStride"
+                count: 12
+              - name: "SwiftRun"
+                count: 8
+            price_range:
+              min: 49.99
+              max: 299.99
+        query:
+          type: string
+          description: The original search query
+          example: "running shoes"
+
+    AutocompleteResponse:
+      type: object
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+          example:
+            - "running shoes"
+            - "running shorts"
+            - "running socks"
+            - "running jacket"
+        query:
+          type: string
+          example: "runn"
+
+    # -------------------------------------------------------------------------
+    # Inventory Schemas
+    # -------------------------------------------------------------------------
+    StockLevel:
+      type: object
+      required: [id, product_id, quantity_on_hand, quantity_reserved, quantity_available, reorder_threshold, reorder_quantity, version, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f6a7b8c9-d0e1-2345-f012-678901234567"
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        product_name:
+          type: string
+          description: Denormalized product name for convenience
+          example: "AeroStride Pro Running Shoe"
+        quantity_on_hand:
+          type: integer
+          minimum: 0
+          example: 100
+        quantity_reserved:
+          type: integer
+          minimum: 0
+          example: 8
+        quantity_available:
+          type: integer
+          minimum: 0
+          description: quantity_on_hand - quantity_reserved. Never goes below 0.
+          example: 92
+        reorder_threshold:
+          type: integer
+          minimum: 0
+          description: Triggers `inventory.low_stock` SNS event when quantity_available falls below this
+          example: 10
+        reorder_quantity:
+          type: integer
+          minimum: 1
+          description: Suggested reorder quantity
+          example: 50
+        version:
+          type: integer
+          description: Optimistic concurrency control version counter
+          example: 14
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T11:00:00Z"
+
+    ReserveStockRequest:
+      type: object
+      required: [product_id, quantity, order_id]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        order_id:
+          type: string
+          format: uuid
+          description: Associated order UUID for idempotency
+          example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+
+    Reservation:
+      type: object
+      required: [id, product_id, order_id, quantity, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a7b8c9d0-e1f2-3456-0123-789012345678"
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        order_id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-def0-456789012345"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        status:
+          type: string
+          enum: [active, released, fulfilled]
+          example: "active"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:05:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Reservation expiry time (auto-released if order not confirmed)
+          example: "2024-01-15T10:35:00Z"
+
+    AdjustStockRequest:
+      type: object
+      required: [adjustment, reason]
+      properties:
+        adjustment:
+          type: integer
+          description: Positive to add stock, negative to remove stock
+          example: 50
+        reason:
+          type: string
+          enum: [restock, damage, theft, correction, return]
+          example: "restock"
+        notes:
+          type: string
+          nullable: true
+          example: "Received PO-2024-001 from supplier."
+
+    # -------------------------------------------------------------------------
+    # Recommendation Schemas
+    # -------------------------------------------------------------------------
+    UserEventRequest:
+      type: object
+      required: [user_id, event_type, product_id]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        event_type:
+          type: string
+          enum: [view, add_to_cart, purchase, remove_from_cart, wishlist]
+          example: "view"
+        product_id:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+        session_id:
+          type: string
+          nullable: true
+          description: Optional session identifier for anonymous tracking
+          example: "sess_abc123xyz"
+        timestamp:
+          type: string
+          format: date-time
+          description: Event timestamp (defaults to server time if omitted)
+          example: "2024-01-15T10:02:00Z"
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional event context (e.g., referrer, search query)
+          example:
+            referrer: "search"
+            search_query: "running shoes"
+
+    # -------------------------------------------------------------------------
+    # Admin Schemas
+    # -------------------------------------------------------------------------
+    DashboardMetrics:
+      type: object
+      required: [orders, revenue, users, generated_at]
+      properties:
+        orders:
+          type: object
+          required: [total, today, pending, processing, shipped]
+          properties:
+            total:
+              type: integer
+              example: 15420
+            today:
+              type: integer
+              example: 87
+            pending:
+              type: integer
+              example: 23
+            confirmed:
+              type: integer
+              example: 45
+            processing:
+              type: integer
+              example: 31
+            shipped:
+              type: integer
+              example: 112
+            delivered:
+              type: integer
+              example: 14980
+            cancelled:
+              type: integer
+              example: 198
+            refunded:
+              type: integer
+              example: 31
+        revenue:
+          type: object
+          required: [total, today, this_month]
+          properties:
+            total:
+              type: number
+              format: double
+              example: 2847392.50
+            today:
+              type: number
+              format: double
+              example: 14823.75
+            this_month:
+              type: number
+              format: double
+              example: 387420.00
+            currency:
+              type: string
+              example: "usd"
+        users:
+          type: object
+          required: [total, new_today, new_this_month]
+          properties:
+            total:
+              type: integer
+              example: 8743
+            new_today:
+              type: integer
+              example: 34
+            new_this_month:
+              type: integer
+              example: 892
+        inventory:
+          type: object
+          properties:
+            low_stock_count:
+              type: integer
+              description: Number of products below reorder threshold
+              example: 7
+            out_of_stock_count:
+              type: integer
+              example: 2
+        generated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T12:00:00Z"
+
+    RevenueReport:
+      type: object
+      required: [date_from, date_to, granularity, total_revenue, total_orders, data]
+      properties:
+        date_from:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+        date_to:
+          type: string
+          format: date-time
+          example: "2024-01-31T23:59:59Z"
+        granularity:
+          type: string
+          enum: [day, week, month]
+          example: "day"
+        total_revenue:
+          type: number
+          format: double
+          example: 387420.00
+        total_orders:
+          type: integer
+          example: 2341
+        average_order_value:
+          type: number
+          format: double
+          example: 165.49
+        currency:
+          type: string
+          example: "usd"
+        data:
+          type: array
+          items:
+            type: object
+            required: [period, revenue, orders]
+            properties:
+              period:
+                type: string
+                format: date-time
+                description: Start of the aggregation period
+                example: "2024-01-15T00:00:00Z"
+              revenue:
+                type: number
+                format: double
+                example: 14823.75
+              orders:
+                type: integer
+                example: 87
+              refunds:
+                type: number
+                format: double
+                example: 299.98
+
+    ExportResponse:
+      type: object
+      required: [download_url, expires_at, record_count, format]
+      properties:
+        download_url:
+          type: string
+          format: uri
+          description: S3 presigned URL for downloading the export file (valid for 1 hour)
+          example: "https://exports.s3.amazonaws.com/orders-2024-01.csv?X-Amz-Signature=..."
+        expires_at:
+          type: string
+          format: date-time
+          description: Presigned URL expiry time
+          example: "2024-01-15T13:00:00Z"
+        record_count:
+          type: integer
+          description: Number of records in the export
+          example: 2341
+        format:
+          type: string
+          enum: [csv, xlsx]
+          example: "csv"
+        s3_key:
+          type: string
+          description: S3 object key of the export file
+          example: "exports/orders/orders-2024-01-15T12:00:00Z.csv"
+        generated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T12:00:30Z"
