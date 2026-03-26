@@ -291,3 +291,70 @@ This document defines the functional and non-functional requirements for the Eco
 4. WHEN a CloudWatch alarm detects an OpenSearch cluster error, THE platform SHALL trigger an alert for operator review.
 5. THE Catalog_Service SHALL fall back to Aurora-based product listing when OpenSearch is unavailable, returning results without full-text ranking or facets.
 6. WHEN any microservice starts up, THE service SHALL verify connectivity to its required dependencies (Aurora, Redis, DynamoDB, OpenSearch) and expose a `/health` endpoint reflecting readiness status.
+
+---
+
+### Requirement 15: Shopping Assistant Agent
+
+**User Story:** As a customer, I want a conversational AI assistant that can search products, manage my cart, and check my orders using natural language, so that I can shop without navigating multiple pages.
+
+#### Acceptance Criteria
+
+1. WHEN a customer sends a natural language message, THE Shopping_Assistant_Agent SHALL interpret the intent and call the appropriate tool (search_products, add_to_cart, get_cart, get_order_status, get_recommendations, check_stock).
+2. THE Shopping_Assistant_Agent SHALL maintain conversation context across turns using AgentCore Memory (short-term session memory + long-term user preference memory).
+3. WHEN a customer says "find me running shoes under $100", THE agent SHALL call search_products with the extracted query and price filter and return formatted results.
+4. WHEN a customer says "add the first one to my cart", THE agent SHALL resolve the reference from conversation context and call add_to_cart.
+5. WHEN a customer asks about order status, THE agent SHALL call get_order_status with the user's most recent order ID from memory.
+6. THE Shopping_Assistant_Agent SHALL be deployed on AgentCore Runtime and exposed via a FastAPI Agent_Service at POST /agent/chat.
+7. THE Agent_Service SHALL authenticate requests using the user's Cognito JWT and pass the user_id to AgentCore Identity for scoped tool access.
+8. THE agent SHALL use AgentCore Gateway as an MCP server exposing all 9 microservice tools with Cognito-scoped authorization.
+9. THE agent SHALL use AgentCore Observability to trace every tool call, latency, and model decision for debugging.
+10. IF a tool call fails, THE agent SHALL gracefully inform the user and suggest an alternative action.
+
+---
+
+### Requirement 16: Ops Agent (Admin-Facing)
+
+**User Story:** As an operations manager, I want an AI agent that can query platform data and generate operational reports using natural language, so that I can monitor the business without writing SQL or navigating dashboards.
+
+#### Acceptance Criteria
+
+1. WHEN an admin asks "show me orders stuck in processing for more than 24 hours", THE Ops_Agent SHALL query the Admin Service and return a formatted list with order IDs, customer names, and elapsed time.
+2. WHEN an admin asks "which products are low on stock?", THE Ops_Agent SHALL call the Inventory Service low-stock endpoint and return a prioritized list.
+3. WHEN an admin asks "generate a revenue summary for last week", THE Ops_Agent SHALL call the Admin revenue report endpoint and return a formatted summary with totals and daily breakdown.
+4. THE Ops_Agent SHALL be restricted to users with the `"admins"` Cognito group claim — all tool calls SHALL be rejected with HTTP 403 for non-admin users.
+5. THE Ops_Agent SHALL use AgentCore Memory to remember the admin's preferred report formats and frequently asked queries.
+6. THE Ops_Agent SHALL be exposed at POST /agent/ops and share the same Agent_Service FastAPI app as the Shopping Assistant.
+7. THE Ops_Agent SHALL use AgentCore Observability to log all admin queries and tool calls for audit purposes.
+8. WHEN an admin asks to export data, THE Ops_Agent SHALL call the Admin export endpoint and return the presigned S3 download URL.
+
+---
+
+### Requirement 17: Price/Deal Agent
+
+**User Story:** As a merchandising manager, I want an AI agent that monitors inventory velocity and suggests pricing actions, so that I can optimize revenue and reduce slow-moving stock.
+
+#### Acceptance Criteria
+
+1. THE Price_Deal_Agent SHALL run on a scheduled basis (EventBridge cron: daily at 08:00 UTC) to analyze inventory and sales data.
+2. WHEN a product has been in stock for more than 30 days with fewer than 5 units sold, THE agent SHALL flag it as slow-moving and suggest a markdown percentage.
+3. WHEN `quantity_available` falls below `reorder_threshold`, THE agent SHALL generate a restock recommendation with suggested reorder quantity.
+4. THE agent SHALL publish pricing suggestions as `pricing.suggestion` events to SNS for admin review before any price changes are applied.
+5. THE agent SHALL use AgentCore Memory to track historical pricing decisions and their outcomes (did the markdown increase sales?).
+6. THE Price_Deal_Agent SHALL be triggered via EventBridge and run as an AgentCore Runtime async task.
+7. WHEN the agent generates suggestions, THE Admin_Service SHALL store them in Aurora and surface them in the admin dashboard.
+8. THE agent SHALL use Claude 3.5 Sonnet via Amazon Bedrock as the underlying model for reasoning about pricing strategy.
+
+---
+
+## Glossary (additions)
+
+- **Shopping_Assistant_Agent**: AgentCore-powered conversational agent for customer-facing shopping assistance.
+- **Ops_Agent**: AgentCore-powered admin-facing operational intelligence agent.
+- **Price_Deal_Agent**: AgentCore-powered scheduled agent for pricing optimization and inventory analysis.
+- **Agent_Service**: FastAPI microservice hosting the AgentCore agent endpoints.
+- **AgentCore_Runtime**: Amazon Bedrock AgentCore Runtime for deploying and operating AI agents.
+- **AgentCore_Memory**: AgentCore Memory service for short-term session and long-term user preference storage.
+- **AgentCore_Gateway**: AgentCore Gateway acting as MCP server exposing microservice tools to agents.
+- **AgentCore_Identity**: AgentCore Identity for mapping agent actions to user Cognito identities.
+- **AgentCore_Observability**: AgentCore Observability for tracing agent decisions, tool calls, and latency.

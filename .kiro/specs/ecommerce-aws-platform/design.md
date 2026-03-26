@@ -1467,3 +1467,231 @@ graph TD
 *For any* OpenSearch query that returns a 5xx error, the Search_Service should retry the request with exponential backoff (via `tenacity`) before returning an error to the caller, and should not return a 5xx to the client on the first failure.
 
 **Validates: Requirements 13.7**
+
+
+---
+
+## AI Agents (Amazon Bedrock AgentCore)
+
+### Architecture
+
+```mermaid
+graph TD
+    subgraph Frontend["Next.js Frontend"]
+        ChatWidget["Chat Widget (floating button)"]
+        AdminChat["Admin Ops Chat Panel"]
+    end
+
+    subgraph AgentService["Agent Service (FastAPI — ECS Fargate)"]
+        ShoppingAPI["POST /agent/chat (Shopping Assistant)"]
+        OpsAPI["POST /agent/ops (Ops Agent)"]
+        PriceAPI["EventBridge trigger (Price/Deal Agent)"]
+    end
+
+    subgraph AgentCore["Amazon Bedrock AgentCore"]
+        Runtime["AgentCore Runtime"]
+        Memory["AgentCore Memory"]
+        Gateway["AgentCore Gateway (MCP)"]
+        Identity["AgentCore Identity"]
+        Observability["AgentCore Observability"]
+    end
+
+    subgraph Tools["MCP Tools via Gateway"]
+        SearchTool["search_products → Search Service"]
+        CartTool["add_to_cart / get_cart → Cart Service"]
+        OrderTool["get_order_status → Order Service"]
+        RecoTool["get_recommendations → Recommendation Service"]
+        StockTool["check_stock → Inventory Service"]
+        AdminTool["admin_query → Admin Service"]
+        PriceTool["suggest_pricing → Catalog + Inventory"]
+    end
+
+    subgraph Bedrock["Amazon Bedrock"]
+        Claude["Claude 3.5 Sonnet"]
+    end
+
+    ChatWidget --> ShoppingAPI
+    AdminChat --> OpsAPI
+    ShoppingAPI --> Runtime
+    OpsAPI --> Runtime
+    PriceAPI --> Runtime
+    Runtime --> Memory
+    Runtime --> Gateway
+    Runtime --> Identity
+    Runtime --> Observability
+    Runtime --> Claude
+    Gateway --> SearchTool
+    Gateway --> CartTool
+    Gateway --> OrderTool
+    Gateway --> RecoTool
+    Gateway --> StockTool
+    Gateway --> AdminTool
+    Gateway --> PriceTool
+```
+
+---
+
+### Agent Tool Definitions
+
+```python
+# Shopping Assistant tools
+SHOPPING_TOOLS = [
+    {
+        "name": "search_products",
+        "description": "Search the product catalog by keyword with optional price and category filters",
+        "input_schema": {
+            "query": "str — search keywords",
+            "price_min": "float | None — minimum price filter",
+            "price_max": "float | None — maximum price filter",
+            "category": "str | None — category slug filter",
+            "limit": "int — max results (default 5)"
+        }
+    },
+    {
+        "name": "add_to_cart",
+        "description": "Add a product to the authenticated user's cart",
+        "input_schema": {
+            "product_id": "str — UUID of the product",
+            "quantity": "int — number of units to add"
+        }
+    },
+    {
+        "name": "get_cart",
+        "description": "Retrieve the current cart contents and subtotal for the authenticated user",
+        "input_schema": {}
+    },
+    {
+        "name": "get_order_status",
+        "description": "Get the status and details of a specific order or the most recent order",
+        "input_schema": {
+            "order_id": "str | None — UUID of order, or None for most recent"
+        }
+    },
+    {
+        "name": "get_recommendations",
+        "description": "Get personalized product recommendations for the authenticated user",
+        "input_schema": {
+            "limit": "int — number of recommendations (default 5)"
+        }
+    },
+    {
+        "name": "check_stock",
+        "description": "Check the available stock level for a specific product",
+        "input_schema": {
+            "product_id": "str — UUID of the product"
+        }
+    }
+]
+
+# Ops Agent tools
+OPS_TOOLS = [
+    {
+        "name": "get_stuck_orders",
+        "description": "Find orders that have been in a given status for longer than a specified duration",
+        "input_schema": {
+            "status": "str — order status to check (e.g. 'processing')",
+            "hours": "int — minimum hours in that status (default 24)"
+        }
+    },
+    {
+        "name": "get_low_stock_items",
+        "description": "List products where available quantity is below the reorder threshold",
+        "input_schema": {
+            "threshold": "int | None — override threshold (default: each product's reorder_threshold)"
+        }
+    },
+    {
+        "name": "get_revenue_report",
+        "description": "Generate a revenue summary for a date range",
+        "input_schema": {
+            "start_date": "str — ISO date (e.g. '2024-01-01')",
+            "end_date": "str — ISO date (e.g. '2024-01-31')",
+            "granularity": "str — 'day' | 'week' | 'month'"
+        }
+    },
+    {
+        "name": "get_dashboard_metrics",
+        "description": "Get current platform metrics: order counts, revenue totals, user counts",
+        "input_schema": {}
+    },
+    {
+        "name": "export_orders",
+        "description": "Generate a CSV export of orders and return a presigned download URL",
+        "input_schema": {
+            "status": "str | None — filter by order status",
+            "date_from": "str | None — ISO date",
+            "date_to": "str | None — ISO date"
+        }
+    }
+]
+
+# Price/Deal Agent tools
+PRICING_TOOLS = [
+    {
+        "name": "get_slow_moving_products",
+        "description": "Find products with low sales velocity relative to stock age",
+        "input_schema": {
+            "days_in_stock": "int — minimum days since last restock (default 30)",
+            "max_units_sold": "int — maximum units sold in that period (default 5)"
+        }
+    },
+    {
+        "name": "suggest_markdown",
+        "description": "Calculate and publish a markdown suggestion for a slow-moving product",
+        "input_schema": {
+            "product_id": "str — UUID of the product",
+            "suggested_discount_pct": "float — suggested discount percentage (0-50)"
+        }
+    },
+    {
+        "name": "get_restock_recommendations",
+        "description": "List products below reorder threshold with suggested reorder quantities",
+        "input_schema": {}
+    },
+    {
+        "name": "publish_pricing_suggestion",
+        "description": "Publish a pricing suggestion event to SNS for admin review",
+        "input_schema": {
+            "product_id": "str",
+            "action": "str — 'markdown' | 'restock' | 'promote'",
+            "suggested_price": "float | None",
+            "reason": "str — explanation of the suggestion"
+        }
+    }
+]
+```
+
+---
+
+### Agent Service Interface
+
+```python
+class AgentRouter:
+    async def chat(user_id: str, body: ChatRequest) -> ChatResponse: ...
+    # POST /agent/chat — Shopping Assistant
+    # body: { message: str, session_id: str | None }
+    # response: { reply: str, session_id: str, tool_calls: list[ToolCall] | None }
+
+    async def ops_chat(user_id: str, body: ChatRequest) -> ChatResponse: ...
+    # POST /agent/ops — Ops Agent (admin only)
+
+    async def run_pricing_agent() -> PricingRunResponse: ...
+    # POST /agent/pricing/run — triggered by EventBridge
+```
+
+---
+
+### Memory Design
+
+- Short-term (session): conversation history, last 10 turns, stored in AgentCore Memory with session_id TTL 1 hour
+- Long-term (user): preferred categories, size preferences, brand preferences, past purchase patterns — stored in AgentCore Memory with user_id key, no expiry
+- Admin long-term: frequently queried report types, preferred date ranges
+
+---
+
+### Frontend Chat Widget
+
+- Floating chat button (bottom-right) on all shop pages
+- Opens a slide-over panel with message history
+- Supports text input + suggested quick actions ("Find deals", "Track my order", "What's new?")
+- Streams responses using Server-Sent Events (SSE)

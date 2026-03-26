@@ -290,3 +290,36 @@ Incremental implementation of a cloud-native ecommerce platform using FastAPI (P
 - Property tests use the `hypothesis` library; integration tests use `pytest-asyncio` with LocalStack
 - Checkpoints ensure incremental validation before moving to the next service group
 - The design uses Python/FastAPI for all backend services and Next.js 14 for the frontend
+
+- [ ] 20. Agent Service — Shopping Assistant
+  - [ ] 20.1 Create `services/agent/` directory with `app/main.py`, `app/routers/agent.py`, `app/tools/shopping.py`, `app/tools/ops.py`, `app/tools/pricing.py`, `requirements.txt`, `Dockerfile`
+  - [ ] 20.2 Implement `POST /agent/chat` endpoint — accepts `{ message, session_id }`, authenticates via Cognito JWT, invokes AgentCore Runtime with Shopping Assistant agent config
+  - [ ] 20.3 Implement AgentCore tool handlers in `app/tools/shopping.py` — each tool calls the corresponding microservice via HTTP (search, cart, orders, recommendations, inventory)
+  - [ ] 20.4 Configure AgentCore Memory for session (TTL 1h) and long-term user preferences
+  - [ ] 20.5 Configure AgentCore Gateway as MCP server with all 6 shopping tools
+  - [ ] 20.6 Configure AgentCore Identity to scope tool calls to the authenticated user's Cognito sub
+  - [ ] 20.7 Add `/health` endpoint and Dockerfile for ECS Fargate deployment
+  - _Requirements: 15.1–15.10_
+
+- [ ] 21. Agent Service — Ops Agent
+  - [ ] 21.1 Implement `POST /agent/ops` endpoint — admin-only (verify `admins` Cognito group), invokes AgentCore Runtime with Ops Agent config
+  - [ ] 21.2 Implement Ops Agent tool handlers in `app/tools/ops.py` — get_stuck_orders, get_low_stock_items, get_revenue_report, get_dashboard_metrics, export_orders
+  - [ ] 21.3 Configure AgentCore Memory for admin long-term preferences (report formats, date ranges)
+  - [ ] 21.4 Configure AgentCore Observability to log all admin queries for audit trail
+  - _Requirements: 16.1–16.8_
+
+- [ ] 22. Agent Service — Price/Deal Agent
+  - [ ] 22.1 Implement `POST /agent/pricing/run` endpoint — triggered by EventBridge daily at 08:00 UTC
+  - [ ] 22.2 Implement pricing tool handlers in `app/tools/pricing.py` — get_slow_moving_products, suggest_markdown, get_restock_recommendations, publish_pricing_suggestion
+  - [ ] 22.3 Implement SNS publisher for `pricing.suggestion` events
+  - [ ] 22.4 Add `pricing_suggestions` table to Aurora for storing agent suggestions
+  - [ ] 22.5 Add EventBridge rule `daily-pricing-agent` (cron: `0 8 * * ? *`) in Terraform messaging module
+  - _Requirements: 17.1–17.8_
+
+- [ ] 23. Frontend — Chat Widget
+  - [ ] 23.1 Create `frontend/src/components/chat/chat-widget.tsx` — floating button + slide-over panel
+  - [ ] 23.2 Implement SSE streaming for agent responses using `EventSource`
+  - [ ] 23.3 Add quick action chips: "Find deals", "Track my order", "What's new?", "My cart"
+  - [ ] 23.4 Add admin chat panel at `/admin/ops` using the Ops Agent endpoint
+  - [ ] 23.5 Add chat widget to shop layout (visible on all shop pages)
+  - _Requirements: 15.6, 16.6_
