@@ -1,12 +1,14 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 
 from app.database import get_db
 from app.models import ProductIndex
 from app.schemas import SearchResponse, SearchProductOut, AutocompleteResponse
+from app.ai import embed_text, extract_image_attributes, hybrid_search
 
 router = APIRouter(tags=["Search"])
 
@@ -60,26 +62,96 @@ async def search_products(
     db: AsyncSession = Depends(get_db),
 ):
     await seed_data(db)
-    query = select(ProductIndex).where(
-        or_(
-            ProductIndex.name.ilike(f"%{q}%"),
-            ProductIndex.description.ilike(f"%{q}%"),
-            ProductIndex.brand.ilike(f"%{q}%"),
-            ProductIndex.category.ilike(f"%{q}%"),
-        )
-    )
-    if priceMin is not None:
-        query = query.where(ProductIndex.price >= priceMin)
-    if priceMax is not None:
-        query = query.where(ProductIndex.price <= priceMax)
-    if inStock is not None:
-        query = query.where(ProductIndex.in_stock == inStock)
 
-    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
-    total = total_result.scalar()
-    result = await db.execute(query.offset((page - 1) * limit).limit(limit))
-    products = result.scalars().all()
-    return SearchResponse(items=products, total=total, page=page, limit=limit)
+    # Attempt to embed the query for hybrid search (Requirement 18.4)
+    embedding = await embed_text(q)  # returns None on failure → keyword-only fallback
+
+    result = await hybrid_search(
+        query=q,
+        embedding=embedding,
+        price_min=priceMin,
+        price_max=priceMax,
+        in_stock=inStock,
+        page=page,
+        limit=limit,
+        db=db,
+    )
+    return SearchResponse(items=result["items"], total=result["total"], page=page, limit=limit)
+
+
+# ---------------------------------------------------------------------------
+# Visual Search (Requirements 19.1–19.6)
+# ---------------------------------------------------------------------------
+
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+class VisualSearchResponse(BaseModel):
+    items: list[SearchProductOut]
+    total: int
+    page: int
+    limit: int
+    extracted_attributes: dict
+
+
+@router.post("/visual", response_model=VisualSearchResponse)
+async def visual_search(
+    file: UploadFile = File(...),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Visual search — upload a product image (JPEG, PNG, WebP, max 5 MB) and
+    receive matching products based on AI-extracted attributes.
+    """
+    await seed_data(db)
+
+    # Validate content type
+    content_type = (file.content_type or "").lower()
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported image format '{content_type}'. Accepted: JPEG, PNG, WebP.",
+        )
+
+    # Read and validate size
+    image_bytes = await file.read()
+    if len(image_bytes) > MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(status_code=422, detail="Image exceeds the 5 MB size limit.")
+
+    # Extract product attributes via Claude Vision
+    try:
+        attributes = await extract_image_attributes(image_bytes, content_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # Build a natural-language query from the extracted attributes
+    query_parts = [v for v in attributes.values() if isinstance(v, str) and v]
+    query_text = " ".join(query_parts) if query_parts else "product"
+
+    # Embed the query for hybrid search
+    embedding = await embed_text(query_text)
+
+    result = await hybrid_search(
+        query=query_text,
+        embedding=embedding,
+        price_min=None,
+        price_max=None,
+        in_stock=None,
+        page=page,
+        limit=limit,
+        db=db,
+    )
+
+    return VisualSearchResponse(
+        items=result["items"],
+        total=result["total"],
+        page=page,
+        limit=limit,
+        extracted_attributes=attributes,
+    )
 
 
 @router.get("/autocomplete", response_model=AutocompleteResponse)

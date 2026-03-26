@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -12,6 +13,7 @@ from app.schemas import (
     ProductOut, CategoryOut, CreateProductRequest, UpdateProductRequest,
     ImageUploadResponse, PaginatedProducts
 )
+from app.ai import generate_product_description
 
 router = APIRouter(tags=["Catalog"])
 
@@ -176,3 +178,85 @@ async def list_categories(db: AsyncSession = Depends(get_db)):
     await seed_data(db)
     result = await db.execute(select(Category))
     return result.scalars().all()
+
+
+# ---------------------------------------------------------------------------
+# AI Product Description Generator (Requirements 20.1–20.6)
+# ---------------------------------------------------------------------------
+
+class GeneratedDescriptionResponse(BaseModel):
+    product_id: str
+    title: str
+    description: str
+    bullets: list[str]
+
+
+class ApplyDescriptionRequest(BaseModel):
+    title: str
+    description: str
+
+
+@router.post("/products/{productId}/generate-description", response_model=GeneratedDescriptionResponse)
+async def generate_description(productId: str, db: AsyncSession = Depends(get_db)):
+    """
+    Generate an AI-powered SEO-optimized title, description, and bullet points
+    for a product using Claude 3.5 Sonnet via Amazon Bedrock.
+
+    The product is NOT updated automatically — the generated content is returned
+    for admin review. Call /apply-description to persist the changes.
+    """
+    result = await db.execute(select(Product).where(Product.id == productId))
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Resolve category name for the prompt
+    category_name = ""
+    if product.category_id:
+        cat_result = await db.execute(select(Category).where(Category.id == product.category_id))
+        cat = cat_result.scalar_one_or_none()
+        if cat:
+            category_name = cat.name
+
+    product_dict = {
+        "name": product.name,
+        "sku": product.sku,
+        "category": category_name,
+        "brand": product.brand or "",
+        "attributes": {},  # attributes stored as JSON string in this model
+    }
+
+    try:
+        generated = await generate_product_description(product_dict)
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail=f"AI generation failed: {exc}")
+
+    return GeneratedDescriptionResponse(
+        product_id=productId,
+        title=generated["title"],
+        description=generated["description"],
+        bullets=generated["bullets"],
+    )
+
+
+@router.post("/products/{productId}/apply-description", response_model=ProductOut)
+async def apply_description(
+    productId: str,
+    body: ApplyDescriptionRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Apply a previously generated description to the product record in Aurora.
+    Updates the product name (title) and description fields.
+    """
+    result = await db.execute(select(Product).where(Product.id == productId))
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    product.name = body.title
+    product.description = body.description
+    product.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(product)
+    return _product_to_out(product)

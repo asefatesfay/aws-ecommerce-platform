@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, Float, Integer, Text, ForeignKey
+from sqlalchemy import String, DateTime, Float, Integer, Text, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -18,6 +18,9 @@ class Order(Base):
     shipping_address: Mapped[str] = mapped_column(Text, nullable=False)  # JSON
     payment_id: Mapped[str | None] = mapped_column(String, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Fraud detection fields (Requirement 21.7)
+    fraud_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fraud_signals: Mapped[list | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     items: Mapped[list["OrderItem"]] = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, X } from 'lucide-react'
+import { Search, X, Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Suggestion {
@@ -16,8 +16,10 @@ export function SearchBar() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [visualSearching, setVisualSearching] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchSuggestions = useCallback(async (q: string) => {
     try {
@@ -76,6 +78,33 @@ export function SearchBar() {
     inputRef.current?.focus()
   }
 
+  const handleVisualSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setVisualSearching(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/search/visual', { method: 'POST', body: formData })
+      if (res.ok) {
+        const data = await res.json()
+        const attrs = data.extracted_attributes as Record<string, string>
+        const attrQuery = Object.values(attrs).filter(Boolean).join(' ')
+        router.push(`/search?q=${encodeURIComponent(attrQuery)}&visual=1`)
+      } else {
+        const err = await res.json().catch(() => ({ detail: 'Visual search failed' }))
+        alert(err.detail ?? 'Visual search failed')
+      }
+    } catch {
+      alert('Visual search failed. Please try again.')
+    } finally {
+      setVisualSearching(false)
+      // Reset file input so the same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="relative w-full">
       <form onSubmit={handleSubmit} className="relative">
@@ -89,22 +118,50 @@ export function SearchBar() {
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={handleKeyDown}
           placeholder="Search products..."
-          className="w-full rounded-full border border-gray-300 bg-gray-50 py-2.5 pl-10 pr-10 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          className="w-full rounded-full border border-gray-300 bg-gray-50 py-2.5 pl-10 pr-20 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all"
           aria-label="Search products"
           aria-autocomplete="list"
           aria-expanded={open}
         />
-        {query && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="rounded-full p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {/* Visual search button */}
           <button
             type="button"
-            onClick={handleClear}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Clear search"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={visualSearching}
+            className={cn(
+              'rounded-full p-1.5 transition-colors',
+              visualSearching
+                ? 'text-indigo-400 cursor-wait'
+                : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
+            )}
+            aria-label="Search by image"
+            title="Search by image"
           >
-            <X className="h-3.5 w-3.5" />
+            <Camera className="h-4 w-4" />
           </button>
-        )}
+        </div>
       </form>
+
+      {/* Hidden file input for visual search */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleVisualSearch}
+        aria-hidden="true"
+      />
 
       {open && suggestions.length > 0 && (
         <ul

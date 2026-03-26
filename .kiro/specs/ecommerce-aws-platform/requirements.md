@@ -358,3 +358,75 @@ This document defines the functional and non-functional requirements for the Eco
 - **AgentCore_Gateway**: AgentCore Gateway acting as MCP server exposing microservice tools to agents.
 - **AgentCore_Identity**: AgentCore Identity for mapping agent actions to user Cognito identities.
 - **AgentCore_Observability**: AgentCore Observability for tracing agent decisions, tool calls, and latency.
+
+---
+
+### Requirement 18: Semantic/Vector Search
+
+**User Story:** As a customer, I want to search using natural language descriptions, so that I can find products even when I don't know the exact product name.
+
+#### Acceptance Criteria
+
+1. WHEN a product is created or updated, THE Search_Service SHALL generate a vector embedding using Amazon Bedrock Titan Embeddings and store it in the OpenSearch k-NN index alongside the existing text index.
+2. WHEN a search request is received, THE Search_Service SHALL perform a hybrid search combining BM25 keyword scoring and k-NN vector similarity, weighted 50/50 by default.
+3. THE Search_Service SHALL use the `amazon.titan-embed-text-v2:0` model for generating embeddings with 1024 dimensions.
+4. WHEN a search query is received, THE Search_Service SHALL embed the query using Titan Embeddings before executing the hybrid search.
+5. THE vector embeddings SHALL be stored in an OpenSearch field named `embedding` with `type: knn_vector` and `dimension: 1024`.
+6. THE hybrid search results SHALL be ranked by a combined score: `0.5 * bm25_score + 0.5 * knn_score`.
+7. THE Search_Service SHALL fall back to keyword-only search if the Bedrock embedding call fails.
+
+---
+
+### Requirement 19: Visual Search
+
+**User Story:** As a customer, I want to search by uploading a photo, so that I can find products that look like something I already have or want.
+
+#### Acceptance Criteria
+
+1. WHEN a customer uploads an image to `POST /search/visual`, THE Search_Service SHALL send the image to Claude 3.5 Sonnet via Bedrock to extract product attributes (category, color, style, material, occasion).
+2. THE Search_Service SHALL use the extracted attributes to construct a search query and execute a hybrid search against the product catalog.
+3. THE visual search endpoint SHALL accept images in JPEG, PNG, and WebP formats up to 5MB.
+4. THE Search_Service SHALL return the extracted attributes alongside the search results so the customer can see what was detected.
+5. IF Claude cannot identify product attributes from the image, THE Search_Service SHALL return HTTP 422 with a descriptive error message.
+6. THE visual search results SHALL include the same facets and pagination as regular search results.
+
+---
+
+### Requirement 20: AI Product Description Generator
+
+**User Story:** As an admin, I want AI to generate product descriptions from basic product information, so that I can populate the catalog faster without writing copy manually.
+
+#### Acceptance Criteria
+
+1. WHEN an admin calls `POST /catalog/products/{productId}/generate-description`, THE Catalog_Service SHALL send the product name, SKU, category, brand, and attributes to Claude 3.5 Sonnet via Bedrock.
+2. THE generated content SHALL include: an SEO-optimized product title (max 80 chars), a product description (150-300 words), and 5 bullet points highlighting key features.
+3. THE Catalog_Service SHALL NOT automatically update the product — it SHALL return the generated content for admin review before applying.
+4. WHEN an admin calls `POST /catalog/products/{productId}/apply-description` with the generated content, THE Catalog_Service SHALL update the product name and description in Aurora.
+5. THE generated descriptions SHALL be appropriate for ecommerce (benefit-focused, no hallucinated specifications).
+6. THE Catalog_Service SHALL use the `anthropic.claude-3-5-sonnet-20241022-v2:0` model via Amazon Bedrock.
+
+---
+
+### Requirement 21: Order Fraud Detection
+
+**User Story:** As a platform engineer, I want AI-powered fraud detection at checkout, so that fraudulent orders are flagged before payment is processed.
+
+#### Acceptance Criteria
+
+1. WHEN an order is created, THE Order_Service SHALL call the Fraud_Detection component to score the order before creating the Stripe PaymentIntent.
+2. THE fraud score SHALL be a float between 0.0 (no risk) and 1.0 (high risk).
+3. THE Fraud_Detection component SHALL evaluate: account age (< 7 days = higher risk), order value vs. account history, shipping/billing address mismatch, order velocity (> 3 orders in 1 hour), and high-value items with expedited shipping.
+4. IF fraud_score >= 0.8, THE Order_Service SHALL reject the order with HTTP 422 and reason "Order flagged for review".
+5. IF 0.5 <= fraud_score < 0.8, THE Order_Service SHALL create the order with status `"under_review"` and notify the admin via SNS.
+6. IF fraud_score < 0.5, THE Order_Service SHALL proceed normally with order creation.
+7. THE fraud score and contributing factors SHALL be stored in the order record for audit purposes.
+8. THE Fraud_Detection component SHALL use a rule-based scorer for local dev and Amazon Bedrock Claude for production scoring with a structured prompt.
+
+---
+
+## Glossary (AI Features additions)
+
+- **Titan_Embeddings**: Amazon Bedrock Titan Embeddings model used to generate vector representations of products and search queries.
+- **Hybrid_Search**: Combined keyword (BM25) and vector (k-NN) search strategy used by the Search_Service.
+- **Visual_Search**: Feature allowing customers to search by uploading an image, processed by Claude Vision.
+- **Fraud_Detection**: Order risk scoring component integrated into the Order_Service checkout flow.

@@ -1695,3 +1695,77 @@ class AgentRouter:
 - Opens a slide-over panel with message history
 - Supports text input + suggested quick actions ("Find deals", "Track my order", "What's new?")
 - Streams responses using Server-Sent Events (SSE)
+
+
+---
+
+## AI-Powered Features
+
+### Semantic Search Architecture
+
+```
+Query → Bedrock Titan Embeddings → 1024-dim vector
+                                        ↓
+OpenSearch hybrid query: {
+  "query": {
+    "hybrid": {
+      "queries": [
+        { "match": { "name": query_text } },          // BM25
+        { "knn": { "embedding": { "vector": [...], "k": 20 } } }  // k-NN
+      ]
+    }
+  }
+}
+```
+
+The `embedding` field is mapped as `knn_vector` with `dimension: 1024` and `space_type: cosine`. When a product is indexed, `build_product_document()` calls Bedrock Titan Embeddings to generate the vector and includes it in the document. At query time, the query string is embedded with the same model and the hybrid query is executed. If the Bedrock call fails, the service falls back to BM25-only search.
+
+---
+
+### Visual Search Flow
+
+```
+Image upload → Claude Vision → extracted attributes dict
+                                        ↓
+{ "category": "shoes", "color": "black", "style": "running", "material": "mesh" }
+                                        ↓
+Hybrid search with extracted attributes as query
+```
+
+`POST /search/visual` accepts a multipart image upload (JPEG, PNG, WebP, max 5MB). The image bytes are base64-encoded and sent to `claude-3-5-sonnet-20241022` via Bedrock with a structured prompt requesting JSON attribute extraction. The extracted attributes are joined into a natural-language query string and passed to the hybrid search. The response includes both the search results and the `extracted_attributes` dict so the customer can see what was detected.
+
+---
+
+### Fraud Detection Scoring
+
+```python
+FRAUD_SIGNALS = {
+    "new_account": 0.3,          # account < 7 days old
+    "high_value_new": 0.25,      # order > $200 + new account
+    "address_mismatch": 0.2,     # billing != shipping country
+    "velocity": 0.15,            # > 3 orders in 1 hour
+    "expedited_high_value": 0.1, # overnight shipping + order > $500
+}
+# score = sum of triggered signals, capped at 1.0
+```
+
+`score_order()` is called inside `create_order` before any PaymentIntent is created. If `score >= 0.8` the order is rejected with HTTP 422. If `0.5 <= score < 0.8` the order is created with `status = "under_review"` and an SNS alert is published. Otherwise the order proceeds normally. The `fraud_score` (Float) and `fraud_signals` (JSON list) are persisted on the Order record for audit. When `BEDROCK_FRAUD_ENABLED=true`, the rule-based score is augmented by a Claude classifier that receives a structured JSON prompt describing the order context.
+
+---
+
+### Product Description Prompt Template
+
+```
+You are an expert ecommerce copywriter. Generate product content for:
+Product: {name}
+Category: {category}
+Brand: {brand}
+Attributes: {attributes}
+
+Return JSON with:
+- title: SEO-optimized title (max 80 chars)
+- description: 150-300 word product description
+- bullets: list of 5 benefit-focused bullet points
+```
+
+`POST /catalog/products/{productId}/generate-description` fetches the product from Aurora, builds the prompt, and calls `anthropic.claude-3-5-sonnet-20241022-v2:0` via Bedrock. The generated `{title, description, bullets}` JSON is returned to the admin for review — the product is NOT updated automatically. The admin then calls `POST /catalog/products/{productId}/apply-description` with the approved content to persist the changes.

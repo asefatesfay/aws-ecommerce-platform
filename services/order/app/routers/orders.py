@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Order, OrderItem
 from app.schemas import CreateOrderRequest, UpdateStatusRequest, OrderOut, OrderItemOut, PaginatedOrders
+from app.fraud import score_order
 
 router = APIRouter(tags=["Orders"])
 
@@ -56,16 +57,44 @@ async def create_order(
     tax = round(subtotal * TAX_RATE, 2)
     total = round(subtotal + tax + SHIPPING_COST, 2)
 
+    # --- Fraud detection (Requirement 21) ---
+    order_data = {
+        "total": total,
+        "items": [i.model_dump() for i in body.items],
+        "shipping_address": body.shipping_address.model_dump(),
+        "billing_address": body.shipping_address.model_dump(),  # use shipping as billing if not provided
+        "shipping_method": getattr(body, "shipping_method", "standard"),
+    }
+    user_data = {
+        "created_at": None,  # unknown without auth service call; treated as new account
+        "recent_order_count": 0,
+    }
+    fraud_result = await score_order(order_data, user_data)
+    fraud_score = fraud_result["score"]
+    fraud_signals = fraud_result["signals"]
+    recommendation = fraud_result["recommendation"]
+
+    if recommendation == "block":
+        raise HTTPException(
+            status_code=422,
+            detail="Order flagged for review",
+        )
+
+    order_status = "under_review" if recommendation == "review" else "pending"
+    # -----------------------------------------
+
     order = Order(
         id=str(uuid.uuid4()),
         user_id=user_id,
-        status="pending",
+        status=order_status,
         subtotal=round(subtotal, 2),
         tax=tax,
         shipping_cost=SHIPPING_COST,
         total=total,
         shipping_address=json.dumps(body.shipping_address.model_dump()),
         notes=body.notes,
+        fraud_score=fraud_score,
+        fraud_signals=fraud_signals,
     )
     db.add(order)
     await db.flush()

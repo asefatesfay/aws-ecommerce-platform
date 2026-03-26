@@ -323,3 +323,31 @@ Incremental implementation of a cloud-native ecommerce platform using FastAPI (P
   - [ ] 23.4 Add admin chat panel at `/admin/ops` using the Ops Agent endpoint
   - [ ] 23.5 Add chat widget to shop layout (visible on all shop pages)
   - _Requirements: 15.6, 16.6_
+
+- [ ] 24. Semantic/Vector Search
+  - [ ] 24.1 Update OpenSearch index mapping to add `embedding` field (knn_vector, 1024 dims, cosine similarity)
+  - [ ] 24.2 Update `build_product_document()` in Search Service to call Bedrock Titan Embeddings and include vector in document
+  - [ ] 24.3 Update `search_products()` to embed the query and execute hybrid BM25 + k-NN search
+  - [ ] 24.4 Add fallback to keyword-only search when Bedrock embedding call fails
+  - _Requirements: 18.1–18.7_
+
+- [ ] 25. Visual Search
+  - [ ] 25.1 Add `POST /search/visual` endpoint to Search Service — accepts multipart image upload
+  - [ ] 25.2 Implement Claude Vision call to extract product attributes from uploaded image
+  - [ ] 25.3 Construct search query from extracted attributes and execute hybrid search
+  - [ ] 25.4 Add visual search button to frontend search bar
+  - _Requirements: 19.1–19.6_
+
+- [ ] 26. AI Product Description Generator
+  - [ ] 26.1 Add `POST /catalog/products/{productId}/generate-description` endpoint to Catalog Service
+  - [ ] 26.2 Implement Bedrock Claude call with product description prompt template
+  - [ ] 26.3 Add `POST /catalog/products/{productId}/apply-description` endpoint to apply generated content
+  - [ ] 26.4 Add "Generate Description" button to admin product edit UI
+  - _Requirements: 20.1–20.6_
+
+- [ ] 27. Order Fraud Detection
+  - [ ] 27.1 Implement `app/fraud.py` in Order Service with rule-based scorer (local dev) and Bedrock Claude scorer (production)
+  - [ ] 27.2 Integrate fraud scoring into order creation flow — call before PaymentIntent creation
+  - [ ] 27.3 Add `fraud_score` and `fraud_signals` JSONB fields to orders table
+  - [ ] 27.4 Implement `under_review` order status and admin SNS notification for medium-risk orders
+  - _Requirements: 21.1–21.8_
