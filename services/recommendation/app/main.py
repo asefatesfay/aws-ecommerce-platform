@@ -1,12 +1,24 @@
-"""Recommendation Service entry point."""
 import os
-
 os.environ.setdefault("SERVICE_NAME", "recommendation-service")
 
-from app.main import create_app  # noqa: E402
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from app.database import init_db
+from app.routers.recommendations import router
 
-app = create_app(title="Recommendation Service")
 
-# Routers are added in later tasks
-# from app.routers import recommendation
-# app.include_router(recommendation.router, prefix="/recommendations")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+
+app = FastAPI(title="Recommendation Service", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(router, prefix="/recommendations")
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "recommendation-service"}
