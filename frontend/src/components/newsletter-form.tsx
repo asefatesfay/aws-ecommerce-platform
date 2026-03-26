@@ -3,17 +3,17 @@
 export function NewsletterForm() {
   return (
     <form
-      className="mt-6 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+      className="flex flex-col sm:flex-row gap-2"
       onSubmit={(e) => e.preventDefault()}
     >
       <input
         type="email"
-        placeholder="Enter your email"
-        className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+        placeholder="Enter your email address"
+        className="flex-1 rounded-full border border-gray-600 bg-white px-4 py-2.5 text-sm text-[#0f1111] outline-none focus:border-[#ff9900] focus:ring-2 focus:ring-[#ff9900]/30 placeholder:text-gray-400"
       />
       <button
         type="submit"
-        className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+        className="shrink-0 rounded-full bg-[#ffd814] hover:bg-[#f7ca00] border border-[#fcd200] px-6 py-2.5 text-sm font-bold text-[#0f1111] transition-colors"
       >
         Subscribe
       </button>
