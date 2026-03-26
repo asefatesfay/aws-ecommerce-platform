@@ -2,18 +2,24 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ShoppingBag, ShoppingCart, User, Menu, X, ChevronDown } from 'lucide-react'
+import { ShoppingCart, User, MapPin, ChevronDown, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
 import { useAuthStore } from '@/store/auth'
 import { SearchBar } from '@/components/search/search-bar'
 import { cn } from '@/lib/utils'
 
 const CATEGORIES = [
+  { label: 'All', slug: '' },
   { label: 'Electronics', slug: 'electronics' },
   { label: 'Clothing', slug: 'clothing' },
   { label: 'Sports', slug: 'sports' },
   { label: 'Home & Garden', slug: 'home-garden' },
   { label: 'Books', slug: 'books' },
+  { label: "Today's Deals", slug: '' },
+  { label: 'Customer Service', slug: '' },
+  { label: 'Registry', slug: '' },
+  { label: 'Gift Cards', slug: '' },
+  { label: 'Sell', slug: '' },
 ]
 
 export function Navbar() {
@@ -21,107 +27,103 @@ export function Navbar() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
   const user = useAuthStore((s) => s.user)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [categoriesOpen, setCategoriesOpen] = useState(false)
+
+  const firstName = user?.fullName?.split(' ')[0] ?? 'Sign in'
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
-      {/* Main bar */}
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-1.5 shrink-0">
-          <ShoppingBag className="h-6 w-6 text-indigo-600" />
-          <span className="text-xl font-extrabold tracking-tight text-indigo-600">NEXMART</span>
-        </Link>
+    <header className="sticky top-0 z-50">
+      {/* ── Top bar (navy) ─────────────────────────────────────────────── */}
+      <div className="bg-[#131921] text-white">
+        <div className="mx-auto flex max-w-[1500px] items-center gap-2 px-3 py-2">
 
-        {/* Search — hidden on mobile, shown on sm+ */}
-        <div className="hidden sm:flex flex-1 max-w-2xl">
-          <SearchBar />
-        </div>
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex items-center shrink-0 rounded border-2 border-transparent px-1 py-0.5 hover:border-white transition-colors"
+          >
+            <span className="text-2xl font-extrabold tracking-tight text-white leading-none">
+              nexmart
+            </span>
+            <span className="text-[10px] text-[#ff9900] font-bold self-end mb-0.5">.com</span>
+          </Link>
 
-        {/* Right actions */}
-        <nav className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
-          {/* Categories dropdown — desktop */}
-          <div className="relative hidden md:block">
-            <button
-              onClick={() => setCategoriesOpen((v) => !v)}
-              onBlur={() => setTimeout(() => setCategoriesOpen(false), 150)}
-              className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              Categories
-              <ChevronDown className={cn('h-4 w-4 transition-transform', categoriesOpen && 'rotate-180')} />
-            </button>
-            {categoriesOpen && (
-              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-gray-100 bg-white shadow-lg py-1 z-50">
-                {CATEGORIES.map((cat) => (
-                  <Link
-                    key={cat.slug}
-                    href={`/products?category=${cat.slug}`}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                    onClick={() => setCategoriesOpen(false)}
-                  >
-                    {cat.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+          {/* Deliver to */}
+          <div className="hidden lg:flex flex-col shrink-0 px-2 py-0.5 rounded border-2 border-transparent hover:border-white cursor-pointer transition-colors">
+            <span className="text-[11px] text-gray-300 leading-none">Deliver to</span>
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 text-white" />
+              <span className="text-sm font-bold text-white leading-none">United States</span>
+            </div>
           </div>
+
+          {/* Search bar */}
+          <div className="flex-1 min-w-0">
+            <SearchBar />
+          </div>
+
+          {/* Account */}
+          <Link
+            href={isAuthenticated ? '/profile' : '/login'}
+            className="hidden sm:flex flex-col shrink-0 px-2 py-0.5 rounded border-2 border-transparent hover:border-white transition-colors"
+          >
+            <span className="text-[11px] text-gray-300 leading-none">
+              Hello, {firstName}
+            </span>
+            <div className="flex items-center gap-0.5">
+              <span className="text-sm font-bold text-white leading-none">Account & Lists</span>
+              <ChevronDown className="h-3 w-3 text-white" />
+            </div>
+          </Link>
+
+          {/* Returns & Orders */}
+          <Link
+            href="/orders"
+            className="hidden md:flex flex-col shrink-0 px-2 py-0.5 rounded border-2 border-transparent hover:border-white transition-colors"
+          >
+            <span className="text-[11px] text-gray-300 leading-none">Returns</span>
+            <span className="text-sm font-bold text-white leading-none">& Orders</span>
+          </Link>
 
           {/* Cart */}
           <Link
             href="/cart"
-            className="relative p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-indigo-600 transition-colors"
-            aria-label="Cart"
+            className="flex items-end gap-1 shrink-0 px-2 py-0.5 rounded border-2 border-transparent hover:border-white transition-colors"
+            aria-label={`Cart with ${itemCount} items`}
           >
-            <ShoppingCart className="h-5 w-5" />
-            {itemCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">
-                {itemCount > 99 ? '99+' : itemCount}
+            <div className="relative">
+              <ShoppingCart className="h-8 w-8 text-white" />
+              <span className="absolute -top-1 left-4 min-w-[18px] text-center text-sm font-bold text-[#ff9900] leading-none">
+                {itemCount}
               </span>
-            )}
+            </div>
+            <span className="hidden sm:block text-sm font-bold text-white leading-none mb-1">Cart</span>
           </Link>
 
-          {/* Auth */}
-          {isAuthenticated ? (
-            <Link
-              href="/profile"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{user?.fullName?.split(' ')[0] ?? 'Profile'}</span>
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-            >
-              Login
-            </Link>
-          )}
-
-          {/* Mobile hamburger */}
+          {/* Mobile menu toggle */}
           <button
-            className="ml-1 p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors sm:hidden"
+            className="sm:hidden p-1 rounded border-2 border-transparent hover:border-white transition-colors"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-        </nav>
+        </div>
       </div>
 
-      {/* Mobile search */}
-      <div className="sm:hidden px-4 pb-3">
-        <SearchBar />
-      </div>
+      {/* ── Nav bar (dark navy) ─────────────────────────────────────────── */}
+      <div className="bg-[#232f3e] text-white">
+        <div className="mx-auto flex max-w-[1500px] items-center gap-0 px-3 overflow-x-auto scrollbar-hide">
+          {/* All menu */}
+          <button className="flex items-center gap-1.5 shrink-0 px-3 py-2.5 text-sm font-bold hover:bg-white/10 rounded transition-colors border-2 border-transparent hover:border-white">
+            <Menu className="h-4 w-4" />
+            All
+          </button>
 
-      {/* Category bar — desktop only */}
-      <div className="hidden md:block border-t border-gray-100 bg-gray-50">
-        <div className="mx-auto flex max-w-7xl items-center gap-1 px-6 py-1.5">
-          {CATEGORIES.map((cat) => (
+          {CATEGORIES.slice(1).map((cat) => (
             <Link
-              key={cat.slug}
-              href={`/products?category=${cat.slug}`}
-              className="rounded-md px-3 py-1 text-sm text-gray-600 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all"
+              key={cat.label}
+              href={cat.slug ? `/products?category=${cat.slug}` : '/products'}
+              className="shrink-0 px-3 py-2.5 text-sm whitespace-nowrap hover:bg-white/10 rounded transition-colors border-2 border-transparent hover:border-white"
             >
               {cat.label}
             </Link>
@@ -129,39 +131,29 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* ── Mobile drawer ───────────────────────────────────────────────── */}
       {mobileOpen && (
-        <div className="sm:hidden border-t border-gray-100 bg-white shadow-lg">
+        <div className="sm:hidden bg-white border-b border-gray-200 shadow-lg">
           <div className="px-4 py-3 space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 px-2 mb-2">Categories</p>
+            {!isAuthenticated && (
+              <Link
+                href="/login"
+                className="block w-full text-center rounded bg-[#ff9900] px-4 py-2 text-sm font-bold text-[#131921] hover:bg-[#e68a00] transition-colors mb-3"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign in
+              </Link>
+            )}
             {CATEGORIES.map((cat) => (
               <Link
-                key={cat.slug}
-                href={`/products?category=${cat.slug}`}
-                className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                key={cat.label}
+                href={cat.slug ? `/products?category=${cat.slug}` : '/products'}
+                className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 {cat.label}
               </Link>
             ))}
-            <div className="border-t border-gray-100 pt-2 mt-2">
-              <Link
-                href="/products"
-                className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                All Products
-              </Link>
-              {!isAuthenticated && (
-                <Link
-                  href="/register"
-                  className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Create Account
-                </Link>
-              )}
-            </div>
           </div>
         </div>
       )}

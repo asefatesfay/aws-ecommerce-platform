@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
+  --color-amazon-navy: #131921;
+  --color-amazon-navy-light: #232f3e;
+  --color-amazon-orange: #ff9900;
+  --color-amazon-orange-hover: #e68a00;
+  --color-amazon-yellow: #febd69;
+  --color-amazon-teal: #007185;
+  --color-amazon-teal-hover: #005f6b;
+  --color-amazon-red: #b12704;
+  --color-amazon-green: #007600;
   --font-sans: var(--font-geist-sans);
 }

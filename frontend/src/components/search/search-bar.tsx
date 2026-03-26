@@ -107,7 +107,7 @@ export function SearchBar() {
 
   return (
     <div className="relative w-full">
-      <form onSubmit={handleSubmit} className="relative">
+      <form onSubmit={handleSubmit} className="relative flex w-full">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
         <input
           ref={inputRef}
@@ -118,39 +118,40 @@ export function SearchBar() {
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={handleKeyDown}
           placeholder="Search products..."
-          className="w-full rounded-full border border-gray-300 bg-gray-50 py-2.5 pl-10 pr-20 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          className="w-full rounded-l-md border-0 bg-white py-2.5 pl-10 pr-10 text-sm text-[#0f1111] outline-none focus:ring-2 focus:ring-[#ff9900] placeholder:text-gray-400"
           aria-label="Search products"
           aria-autocomplete="list"
           aria-expanded={open}
         />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {query && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="rounded-full p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {/* Visual search button */}
+        {query && (
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={visualSearching}
-            className={cn(
-              'rounded-full p-1.5 transition-colors',
-              visualSearching
-                ? 'text-indigo-400 cursor-wait'
-                : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
-            )}
-            aria-label="Search by image"
-            title="Search by image"
+            onClick={handleClear}
+            className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Clear search"
           >
-            <Camera className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
-        </div>
+        )}
+        {/* Visual search button */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={visualSearching}
+          className="absolute right-[52px] top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-[#ff9900] transition-colors"
+          aria-label="Search by image"
+          title="Search by image"
+        >
+          <Camera className={cn('h-4 w-4', visualSearching && 'animate-pulse text-[#ff9900]')} />
+        </button>
+        {/* Orange search button */}
+        <button
+          type="submit"
+          className="shrink-0 rounded-r-md bg-[#febd69] hover:bg-[#f3a847] px-4 py-2.5 transition-colors"
+          aria-label="Search"
+        >
+          <Search className="h-5 w-5 text-[#131921]" />
+        </button>
       </form>
 
       {/* Hidden file input for visual search */}
@@ -166,14 +167,14 @@ export function SearchBar() {
       {open && suggestions.length > 0 && (
         <ul
           role="listbox"
-          className="absolute top-full mt-1.5 w-full rounded-2xl border border-gray-200 bg-white shadow-xl z-50 overflow-hidden py-1"
+          className="absolute top-full mt-0.5 w-full rounded border border-gray-300 bg-white shadow-xl z-50 overflow-hidden py-1"
         >
           {suggestions.map((s, i) => (
             <li key={s.id} role="option" aria-selected={i === activeIndex}>
               <button
                 className={cn(
-                  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors',
-                  i === activeIndex ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'
+                  'flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors',
+                  i === activeIndex ? 'bg-[#eaf4fe]' : 'text-[#0f1111] hover:bg-gray-100'
                 )}
                 onMouseDown={() => {
                   router.push(`/products/${s.id}`)

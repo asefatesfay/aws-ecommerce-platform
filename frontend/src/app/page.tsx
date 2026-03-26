@@ -1,107 +1,143 @@
 import Link from 'next/link'
-import { ArrowRight, Truck } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { NewsletterForm } from '@/components/newsletter-form'
 
 const CATEGORIES = [
-  { emoji: '📱', label: 'Electronics', slug: 'electronics' },
-  { emoji: '👕', label: 'Clothing', slug: 'clothing' },
-  { emoji: '🏃', label: 'Sports', slug: 'sports' },
-  { emoji: '🏠', label: 'Home & Garden', slug: 'home-garden' },
-  { emoji: '📚', label: 'Books', slug: 'books' },
+  { emoji: '📱', label: 'Electronics', slug: 'electronics', bg: 'bg-blue-50' },
+  { emoji: '👕', label: 'Clothing', slug: 'clothing', bg: 'bg-pink-50' },
+  { emoji: '🏃', label: 'Sports & Outdoors', slug: 'sports', bg: 'bg-green-50' },
+  { emoji: '🏠', label: 'Home & Garden', slug: 'home-garden', bg: 'bg-yellow-50' },
+  { emoji: '📚', label: 'Books', slug: 'books', bg: 'bg-orange-50' },
+  { emoji: '🎮', label: 'Gaming', slug: 'electronics', bg: 'bg-purple-50' },
+  { emoji: '💄', label: 'Beauty', slug: 'clothing', bg: 'bg-red-50' },
+  { emoji: '🐾', label: 'Pet Supplies', slug: '', bg: 'bg-teal-50' },
+]
+
+const DEALS = [
+  { label: 'Up to 50% off Electronics', sub: 'Limited time deal', color: 'bg-[#cc0c39]' },
+  { label: 'New Arrivals in Clothing', sub: 'Shop the latest styles', color: 'bg-[#007185]' },
+  { label: 'Sports & Outdoors Sale', sub: 'Save on top brands', color: 'bg-[#007600]' },
+  { label: 'Home Essentials', sub: 'Refresh your space', color: 'bg-[#c45500]' },
 ]
 
 export default function HomePage() {
   return (
-    <main className="bg-gray-50">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
-        <div className="mx-auto max-w-7xl px-6 py-24 text-center">
-          <span className="inline-block rounded-full bg-white/20 px-4 py-1 text-sm font-medium mb-6">
-            New arrivals every week
-          </span>
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl">
-            Discover Amazing Products
-          </h1>
-          <p className="mt-5 text-xl text-indigo-100 max-w-2xl mx-auto">
-            Shop thousands of products across every category — fast shipping, easy returns, unbeatable prices.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+    <div className="bg-[#eaeded] min-h-screen">
+      {/* Hero banner */}
+      <div className="relative bg-gradient-to-b from-[#c9e4f0] to-[#eaeded] overflow-hidden">
+        <div className="mx-auto max-w-[1500px] px-4 py-8">
+          <div className="text-center py-8">
+            <p className="text-sm text-gray-600 mb-2">Shop smarter with AI-powered search</p>
+            <h1 className="text-3xl font-bold text-[#0f1111] mb-4">
+              Welcome to Nexmart
+            </h1>
+            <p className="text-gray-600 mb-6 max-w-xl mx-auto">
+              Millions of products. Fast delivery. Powered by AI.
+            </p>
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-indigo-600 shadow-lg hover:bg-indigo-50 transition-colors"
+              className="inline-block bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111] font-medium px-8 py-2.5 rounded-full border border-[#fcd200] transition-colors text-sm"
             >
               Shop Now
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/products"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-white/50 px-8 py-3.5 text-base font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              Browse Categories
             </Link>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Category cards */}
-      <section className="mx-auto max-w-7xl px-6 py-14">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop by Category</h2>
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {CATEGORIES.map((cat) => (
+      <div className="mx-auto max-w-[1500px] px-4 py-4 space-y-4">
+
+        {/* Deal cards row */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {DEALS.map((deal) => (
             <Link
-              key={cat.slug}
-              href={`/products?category=${cat.slug}`}
-              className="flex-shrink-0 flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white px-8 py-6 shadow-sm hover:shadow-md hover:border-indigo-200 hover:-translate-y-0.5 transition-all"
+              key={deal.label}
+              href="/products"
+              className="bg-white p-4 hover:shadow-md transition-shadow group"
             >
-              <span className="text-4xl">{cat.emoji}</span>
-              <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">{cat.label}</span>
+              <div className={`${deal.color} text-white text-xs font-bold px-2 py-0.5 rounded-sm inline-block mb-2`}>
+                Deal
+              </div>
+              <div className="aspect-square bg-gray-100 mb-3 flex items-center justify-center">
+                <div className="w-16 h-16 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <p className="text-sm font-medium text-[#0f1111] line-clamp-2 group-hover:text-[#c45500] transition-colors">
+                {deal.label}
+              </p>
+              <p className="text-xs text-[#cc0c39] mt-0.5">{deal.sub}</p>
+              <p className="text-xs text-[#007185] mt-2 group-hover:text-[#c45500] transition-colors">
+                See all deals <ChevronRight className="inline h-3 w-3" />
+              </p>
             </Link>
           ))}
         </div>
-      </section>
 
-      {/* Featured products skeleton */}
-      <section className="mx-auto max-w-7xl px-6 pb-14">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Featured Products</h2>
-          <Link href="/products" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
-            View all <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+        {/* Shop by category */}
+        <div className="bg-white p-4">
+          <h2 className="text-lg font-bold text-[#0f1111] mb-4">Shop by Category</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.slug + cat.label}
+                href={cat.slug ? `/products?category=${cat.slug}` : '/products'}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className={`${cat.bg} w-full aspect-square rounded flex items-center justify-center text-3xl group-hover:opacity-80 transition-opacity`}>
+                  {cat.emoji}
+                </div>
+                <span className="text-xs text-center text-[#0f1111] font-medium group-hover:text-[#c45500] transition-colors leading-tight">
+                  {cat.label}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-gray-200 bg-white overflow-hidden animate-pulse">
-              <div className="aspect-[4/3] bg-gray-200" />
-              <div className="p-4 space-y-3">
-                <div className="h-3 bg-gray-200 rounded w-1/3" />
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
+
+        {/* Featured products */}
+        <div className="bg-white p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-[#0f1111]">Featured Products</h2>
+            <Link href="/products" className="text-sm text-[#007185] hover:text-[#c45500] hover:underline transition-colors">
+              See all deals
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-square bg-gray-200 mb-2" />
+                <div className="h-3 bg-gray-200 rounded mb-1" />
+                <div className="h-3 bg-gray-200 rounded w-2/3 mb-1" />
                 <div className="h-4 bg-gray-200 rounded w-1/2" />
-                <div className="h-5 bg-gray-200 rounded w-1/4" />
-                <div className="h-9 bg-gray-200 rounded-lg" />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* Free shipping banner */}
-      <section className="bg-amber-400">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-center gap-3">
-          <Truck className="h-5 w-5 text-amber-900" />
-          <p className="text-sm font-semibold text-amber-900">
-            Free shipping on all orders over $50 — no code needed!
+        {/* Sign in prompt (Amazon-style) */}
+        <div className="bg-white p-6 text-center">
+          <h2 className="text-lg font-bold text-[#0f1111] mb-2">Sign in for the best experience</h2>
+          <p className="text-sm text-gray-600 mb-4">Get personalized recommendations, track orders, and more.</p>
+          <Link
+            href="/login"
+            className="inline-block bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111] font-medium px-8 py-2 rounded-full border border-[#fcd200] transition-colors text-sm"
+          >
+            Sign in
+          </Link>
+          <p className="text-xs text-gray-500 mt-3">
+            New customer?{' '}
+            <Link href="/register" className="text-[#007185] hover:text-[#c45500] hover:underline">
+              Start here
+            </Link>
           </p>
         </div>
-      </section>
 
-      {/* Newsletter */}
-      <section className="bg-white border-t border-gray-100">
-        <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Stay in the loop</h2>
-          <p className="mt-2 text-gray-500">Get the latest deals and new arrivals straight to your inbox.</p>
+        {/* Newsletter */}
+        <div className="bg-white p-6 text-center">
+          <h2 className="text-base font-bold text-[#0f1111] mb-1">Stay up to date</h2>
+          <p className="text-sm text-gray-500 mb-4">Get deals, new arrivals, and more in your inbox.</p>
           <NewsletterForm />
         </div>
-      </section>
-    </main>
+
+      </div>
+    </div>
   )
 }
