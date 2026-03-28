@@ -27,7 +27,7 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: order, isLoading } = useSWR<Order>(
     id ? ['order', id] : null,
-    () => getOrder(id)
+    () => getOrder(id, '')
   )
 
   if (isLoading) {
@@ -100,8 +100,7 @@ export default function OrderDetailPage() {
         <h2 className="font-semibold mb-3">Shipping Address</h2>
         <address className="not-italic text-sm text-gray-600 space-y-0.5">
           <p>{order.shippingAddress.fullName}</p>
-          <p>{order.shippingAddress.line1}</p>
-          {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
+          <p>{order.shippingAddress.street}</p>
           <p>
             {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
             {order.shippingAddress.postalCode}

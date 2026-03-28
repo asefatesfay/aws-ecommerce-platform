@@ -21,7 +21,7 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useSWR<PaginatedResponse<Order>>(
     ['orders', page],
-    () => listOrders(page, 10)
+    () => listOrders(page, 10, '')
   )
 
   return (

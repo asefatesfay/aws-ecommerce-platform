@@ -3,30 +3,29 @@ import { useAuthStore } from '@/store/auth'
 async function refreshAccessToken(): Promise<string | null> {
   const { refreshToken, setTokens, logout } = useAuthStore.getState()
   if (!refreshToken) return null
-
   try {
-    const res = await fetch('/api/auth/refresh', {
+    const res = await fetch('/auth/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({ refresh_token: refreshToken }),
     })
-    if (!res.ok) {
-      logout()
-      return null
-    }
+    if (!res.ok) { logout(); return null }
     const data = await res.json()
-    setTokens(data.accessToken, data.refreshToken ?? refreshToken)
-    return data.accessToken as string
+    setTokens(data.access_token, data.refresh_token ?? refreshToken)
+    return data.access_token as string
   } catch {
     logout()
     return null
   }
 }
 
-export async function fetcher<T = unknown>(url: string): Promise<T> {
+export async function fetcher<T = unknown>(
+  url: string,
+  extraHeaders: Record<string, string> = {}
+): Promise<T> {
   const { accessToken } = useAuthStore.getState()
 
-  const headers: HeadersInit = { 'Content-Type': 'application/json' }
+  const headers: HeadersInit = { 'Content-Type': 'application/json', ...extraHeaders }
   if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
 
   let res = await fetch(url, { headers })
@@ -41,7 +40,7 @@ export async function fetcher<T = unknown>(url: string): Promise<T> {
   }
 
   if (!res.ok) {
-    const error = new Error(`API error: ${res.status}`)
+    const error = new Error(`API error: ${res.status} ${url}`)
     throw error
   }
 

@@ -1,3 +1,4 @@
+import asyncio
 import os
 os.environ.setdefault("SERVICE_NAME", "order-service")
 
@@ -11,7 +12,14 @@ from app.routers.orders import router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    from app.consumers import poll_sqs
+    task = asyncio.create_task(poll_sqs())
     yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
 
 
 app = FastAPI(title="Order Service", lifespan=lifespan)

@@ -1,3 +1,4 @@
+import asyncio
 import os
 os.environ.setdefault("SERVICE_NAME", "inventory-service")
 
@@ -11,7 +12,15 @@ from app.routers.inventory import router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # Start SQS consumer in background if queue URL is configured
+    from app.consumers import poll_sqs
+    task = asyncio.create_task(poll_sqs())
     yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
 
 
 app = FastAPI(title="Inventory Service", lifespan=lifespan)

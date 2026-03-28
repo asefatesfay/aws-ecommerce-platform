@@ -1,5 +1,6 @@
 import uuid
 import json
+import os
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
@@ -11,6 +12,28 @@ from app.database import get_db
 from app.models import Order, OrderItem
 from app.schemas import CreateOrderRequest, UpdateStatusRequest, OrderOut, OrderItemOut, PaginatedOrders
 from app.fraud import score_order
+
+# SNS topic ARNs — injected via env vars
+ORDER_EVENTS_TOPIC_ARN = os.getenv("ORDER_EVENTS_TOPIC_ARN", "")
+
+def _publish_order_event(event_type: str, order_id: str, user_id: str, status: str):
+    """Fire-and-forget SNS publish — never raises."""
+    try:
+        import boto3, json as _json
+        endpoint = os.getenv("AWS_ENDPOINT_URL")
+        kwargs = {"region_name": os.getenv("AWS_REGION", "us-east-1")}
+        if endpoint:
+            kwargs["endpoint_url"] = endpoint
+        sns = boto3.client("sns", **kwargs)
+        sns.publish(
+            TopicArn=ORDER_EVENTS_TOPIC_ARN,
+            Message=_json.dumps({"event_type": event_type, "order_id": order_id,
+                                  "user_id": user_id, "status": status}),
+            MessageAttributes={"event_type": {"DataType": "String", "StringValue": event_type}},
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("SNS publish failed (%s): %s", event_type, exc)
 
 router = APIRouter(tags=["Orders"])
 
@@ -117,6 +140,9 @@ async def create_order(
         select(Order).where(Order.id == order.id).options(selectinload(Order.items))
     )
     order = result.scalar_one()
+    # Publish order.created event
+    if ORDER_EVENTS_TOPIC_ARN:
+        _publish_order_event("order.created", order.id, user_id, order.status)
     return _order_to_out(order)
 
 

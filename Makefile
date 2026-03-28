@@ -57,6 +57,22 @@ tf-init-prod: ## Terraform init (prod)
 tf-plan-prod: ## Terraform plan (prod)
 	cd infra/environments/prod && terraform plan
 
+test-e2e: ## Run end-to-end local test
+	./scripts/test-e2e.sh
+
+logs-order: ## Tail order service logs
+	docker compose logs -f order
+
+logs-inventory: ## Tail inventory service logs
+	docker compose logs -f inventory
+
+logs-payment: ## Tail payment service logs
+	docker compose logs -f payment
+
+localstack-status: ## Check LocalStack queues and topics
+	@echo "=== SNS Topics ===" && docker compose exec localstack awslocal sns list-topics --region us-east-1
+	@echo "=== SQS Queues ===" && docker compose exec localstack awslocal sqs list-queues --region us-east-1
+
 clean: ## Remove all containers, volumes, and build artifacts
 	docker compose down -v --remove-orphans
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

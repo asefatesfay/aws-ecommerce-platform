@@ -20,12 +20,18 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.example.com'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://nginx'
     return [
-      {
-        source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`,
-      },
+      { source: '/auth/:path*',            destination: `${apiUrl}/auth/:path*` },
+      { source: '/catalog/:path*',         destination: `${apiUrl}/catalog/:path*` },
+      { source: '/cart/:path*',            destination: `${apiUrl}/cart/:path*` },
+      { source: '/orders/:path*',          destination: `${apiUrl}/orders/:path*` },
+      { source: '/payments/:path*',        destination: `${apiUrl}/payments/:path*` },
+      { source: '/search/:path*',          destination: `${apiUrl}/search/:path*` },
+      { source: '/search',                 destination: `${apiUrl}/search` },
+      { source: '/recommendations/:path*', destination: `${apiUrl}/recommendations/:path*` },
+      { source: '/inventory/:path*',       destination: `${apiUrl}/inventory/:path*` },
+      { source: '/admin/:path*',           destination: `${apiUrl}/admin/:path*` },
     ]
   },
 }
