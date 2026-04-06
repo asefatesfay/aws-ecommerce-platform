@@ -24,6 +24,25 @@ Think of sorting a hand of playing cards: you pick up one card at a time and ins
 | Average | O(n²) | O(1) |
 | Worst (reverse sorted) | O(n²) | O(1) |
 
+## Python Implementation
+
+```python
+def insertion_sort(nums):
+	arr = nums[:]
+
+	for i in range(1, len(arr)):
+		key = arr[i]
+		j = i - 1
+
+		while j >= 0 and arr[j] > key:
+			arr[j + 1] = arr[j]
+			j -= 1
+
+		arr[j + 1] = key
+
+	return arr
+```
+
 ## When to Use
 
 - Small arrays (n < 20) — very low constant factor, cache-friendly
@@ -41,3 +60,9 @@ The number of operations is proportional to the number of inversions in the arra
 - Fewer writes than Bubble Sort
 - Adaptive: naturally fast on nearly-sorted input
 - Used internally by Python's Timsort and Java's Arrays.sort for small subarrays
+
+## Typical Interview Use Cases
+
+- Nearly sorted arrays where O(n) best case is valuable
+- Small partitions inside hybrid algorithms
+- Online insertion into a sorted list (conceptual usage)

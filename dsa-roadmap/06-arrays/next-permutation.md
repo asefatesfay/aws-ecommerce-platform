@@ -43,3 +43,33 @@ The replacement must be in place and use only constant extra memory.
 **Space Complexity:** O(1)
 
 Three steps: (1) find the rightmost "dip" (index i where nums[i] < nums[i+1]), (2) find the smallest element to the right of i that is greater than nums[i] and swap them, (3) reverse the suffix starting at i+1 to get the smallest arrangement.
+
+## Python Implementation
+
+```python
+def next_permutation(nums):
+	n = len(nums)
+	i = n - 2
+
+	while i >= 0 and nums[i] >= nums[i + 1]:
+		i -= 1
+
+	if i >= 0:
+		j = n - 1
+		while nums[j] <= nums[i]:
+			j -= 1
+		nums[i], nums[j] = nums[j], nums[i]
+
+	left, right = i + 1, n - 1
+	while left < right:
+		nums[left], nums[right] = nums[right], nums[left]
+		left += 1
+		right -= 1
+```
+
+## Typical Interview Use Cases
+
+- Lexicographic permutation transitions in-place
+- Reverse-suffix and pivot-swap pattern practice
+- Follow-up to permutation generation/combinatorics tasks
+

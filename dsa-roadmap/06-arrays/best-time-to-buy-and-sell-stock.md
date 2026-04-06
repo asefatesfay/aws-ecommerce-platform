@@ -38,3 +38,24 @@ You are given an array `prices` where `prices[i]` is the price of a given stock 
 **Space Complexity:** O(1)
 
 Single pass: track the minimum price seen so far and the maximum profit. At each price, compute the profit if selling today (current price minus minimum so far), update the maximum profit, then update the minimum price.
+
+## Python Implementation
+
+```python
+def max_profit(prices):
+	min_price = float("inf")
+	best = 0
+
+	for p in prices:
+		min_price = min(min_price, p)
+		best = max(best, p - min_price)
+
+	return best
+```
+
+## Typical Interview Use Cases
+
+- Single transaction optimization with one-pass tracking
+- Prefix minimum + current value difference pattern
+- Common baseline before multi-transaction stock variants
+

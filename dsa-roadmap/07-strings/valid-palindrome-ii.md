@@ -41,3 +41,32 @@ Given a string `s`, return `true` if the `s` can be palindrome after deleting at
 **Space Complexity:** O(1)
 
 Two-pointer scan; on the first mismatch, check if either s[i+1..j] or s[i..j-1] is a palindrome using a helper function. Return true if either check passes.
+
+## Python Implementation
+
+```python
+def valid_palindrome(s):
+	def is_pal(i, j):
+		while i < j:
+			if s[i] != s[j]:
+				return False
+			i += 1
+			j -= 1
+		return True
+
+	left, right = 0, len(s) - 1
+	while left < right:
+		if s[left] != s[right]:
+			return is_pal(left + 1, right) or is_pal(left, right - 1)
+		left += 1
+		right -= 1
+
+	return True
+```
+
+## Typical Interview Use Cases
+
+- One allowed modification or deletion in a near-palindrome
+- Branching only at the first mismatch to keep O(n)
+- Strong example of helper-function decomposition with indices
+

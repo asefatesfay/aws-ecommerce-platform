@@ -36,6 +36,27 @@ The choice of gap sequence significantly affects performance:
 | Average | Depends on gap sequence | O(1) |
 | Worst | O(n²) to O(n^1.5) | O(1) |
 
+## Python Implementation
+
+```python
+def shell_sort(nums):
+	arr = nums[:]
+	n = len(arr)
+	gap = n // 2
+
+	while gap > 0:
+		for i in range(gap, n):
+			temp = arr[i]
+			j = i
+			while j >= gap and arr[j - gap] > temp:
+				arr[j] = arr[j - gap]
+				j -= gap
+			arr[j] = temp
+		gap //= 2
+
+	return arr
+```
+
 ## When to Use
 
 - When you need better than O(n²) but can't use O(n) extra space
@@ -46,3 +67,9 @@ The choice of gap sequence significantly affects performance:
 ## Key Insight
 
 Shell Sort's efficiency comes from the fact that Insertion Sort is fast on nearly-sorted data. By pre-sorting with large gaps, each subsequent pass has fewer inversions to fix.
+
+## Typical Interview Use Cases
+
+- Rare in mainstream interviews, but useful for discussing gap-based optimization
+- Demonstrating how algorithm performance can depend on tuning parameters
+- Good contrast against Insertion Sort and O(n log n) algorithms

@@ -41,3 +41,20 @@ Given a non-empty array of integers `nums`, every element appears twice except f
 **Space Complexity:** O(1)
 
 XOR all elements together. Pairs cancel to 0, and the single element XORed with 0 gives itself.
+
+## Python Implementation
+
+```python
+def single_number(nums):
+	result = 0
+	for x in nums:
+		result ^= x
+	return result
+```
+
+## Typical Interview Use Cases
+
+- XOR cancellation when all duplicates appear exactly twice
+- O(1) extra-space alternative to hash-map counting
+- Core entry point for many bit-manipulation interview patterns
+

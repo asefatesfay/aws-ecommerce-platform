@@ -30,6 +30,41 @@ After hundreds digit: [2, 24, 45, 66, 75, 90, 170, 802]
 
 Where d = number of digits, b = base (radix), n = number of elements.
 
+## Python Implementation
+
+```python
+def radix_sort(nums):
+   if not nums:
+      return []
+   if any(x < 0 for x in nums):
+      raise ValueError("radix_sort example assumes non-negative integers")
+
+   arr = nums[:]
+   exp = 1
+   max_val = max(arr)
+
+   while max_val // exp > 0:
+      count = [0] * 10
+
+      for x in arr:
+         digit = (x // exp) % 10
+         count[digit] += 1
+
+      for i in range(1, 10):
+         count[i] += count[i - 1]
+
+      out = [0] * len(arr)
+      for x in reversed(arr):
+         digit = (x // exp) % 10
+         count[digit] -= 1
+         out[count[digit]] = x
+
+      arr = out
+      exp *= 10
+
+   return arr
+```
+
 For fixed-width integers: d = O(log_b(max_value)), so total is O(n × log_b(max_value)).
 
 With b = n: O(n × log_n(max_value)) which approaches O(n) for bounded integers.
@@ -53,3 +88,9 @@ Radix Sort achieves linear time by exploiting the structure of integer represent
 ## Interview Relevance
 
 Radix Sort appears in "Maximum Gap" (LeetCode 164) where it enables O(n) sorting. Understanding it helps recognize when linear-time sorting is possible.
+
+## Typical Interview Use Cases
+
+- Non-negative integer sorting with bounded digit count
+- Linear-time sorting alternatives to comparison sorts
+- Problems where sorting cost must beat O(n log n)

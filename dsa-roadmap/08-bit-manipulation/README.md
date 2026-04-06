@@ -2,6 +2,8 @@
 
 Bit manipulation uses bitwise operators to solve problems at the binary level. It's often the key to achieving O(1) space or O(n) time where other approaches fall short.
 
+Each problem page in this section includes a Python implementation, complexity summary, and typical interview use cases.
+
 ## Key Operators
 
 | Operator | Symbol | Example | Result |

@@ -46,3 +46,22 @@ You can use the operations on either string as many times as necessary. Given tw
 **Space Complexity:** O(1) (at most 26 distinct characters)
 
 Count character frequencies for both strings. Verify two conditions: same set of characters used, and same sorted list of frequency values.
+
+## Python Implementation
+
+```python
+from collections import Counter
+
+
+def close_strings(word1, word2):
+	c1 = Counter(word1)
+	c2 = Counter(word2)
+	return set(c1) == set(c2) and sorted(c1.values()) == sorted(c2.values())
+```
+
+## Typical Interview Use Cases
+
+- Comparing reachable states under allowed operations
+- Frequency multiset reasoning rather than exact character mapping
+- Good example of separating symbol set from count distribution
+

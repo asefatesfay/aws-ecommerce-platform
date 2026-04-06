@@ -37,3 +37,29 @@ Given a string `s` which consists of lowercase or uppercase letters, return the 
 **Space Complexity:** O(1) (at most 52 distinct characters)
 
 Count character frequencies. Sum up all even-count contributions (freq // 2 * 2). If any character has an odd count, add 1 for the center character.
+
+## Python Implementation
+
+```python
+from collections import Counter
+
+
+def longest_palindrome(s):
+	counts = Counter(s)
+	length = 0
+	has_odd = False
+
+	for freq in counts.values():
+		length += (freq // 2) * 2
+		if freq % 2 == 1:
+			has_odd = True
+
+	return length + 1 if has_odd else length
+```
+
+## Typical Interview Use Cases
+
+- Frequency counting with parity reasoning
+- Constructibility checks rather than explicit construction
+- Often paired with anagram and character-bucket problems
+

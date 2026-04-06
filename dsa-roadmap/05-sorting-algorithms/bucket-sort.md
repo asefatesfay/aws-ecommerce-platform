@@ -25,6 +25,33 @@ Given n elements in range [min, max]:
 
 Where k is the number of buckets.
 
+## Python Implementation
+
+```python
+def bucket_sort(nums):
+	if len(nums) <= 1:
+		return nums[:]
+
+	min_val = min(nums)
+	max_val = max(nums)
+
+	if min_val == max_val:
+		return nums[:]
+
+	n = len(nums)
+	buckets = [[] for _ in range(n)]
+
+	for x in nums:
+		idx = int((x - min_val) * (n - 1) / (max_val - min_val))
+		buckets[idx].append(x)
+
+	out = []
+	for b in buckets:
+		out.extend(sorted(b))
+
+	return out
+```
+
 ## When to Use
 
 - Input is uniformly distributed over a known range
@@ -45,3 +72,9 @@ The efficiency of Bucket Sort depends entirely on how evenly elements are distri
 ## Comparison with Counting Sort
 
 Counting Sort is a special case of Bucket Sort where each bucket holds exactly one distinct value. Bucket Sort generalizes this to ranges of values and works for non-integers.
+
+## Typical Interview Use Cases
+
+- Uniformly distributed floats (often in [0, 1))
+- Distribution-sort discussions and assumption-based optimization
+- Conceptual follow-up when Counting Sort range is too large

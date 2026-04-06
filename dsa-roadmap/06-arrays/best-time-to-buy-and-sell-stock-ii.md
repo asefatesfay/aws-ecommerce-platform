@@ -42,3 +42,21 @@ You are given an integer array `prices` where `prices[i]` is the price of a give
 **Space Complexity:** O(1)
 
 Sum up all positive consecutive differences. This greedy approach works because any multi-day gain can be decomposed into a sum of single-day gains, and we capture all of them.
+
+## Python Implementation
+
+```python
+def max_profit(prices):
+	profit = 0
+	for i in range(1, len(prices)):
+		if prices[i] > prices[i - 1]:
+			profit += prices[i] - prices[i - 1]
+	return profit
+```
+
+## Typical Interview Use Cases
+
+- Unlimited transactions greedy pattern
+- Demonstrating decomposition of uphill segments into local gains
+- Transition point into DP-based stock variants (cooldown/fee/k-transactions)
+

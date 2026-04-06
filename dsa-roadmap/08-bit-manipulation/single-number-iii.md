@@ -38,3 +38,30 @@ Given an integer array `nums`, in which exactly two elements appear only once an
 **Space Complexity:** O(1)
 
 XOR all elements to get `a ^ b`. Use the lowest set bit to split numbers into two groups. XOR each group independently to isolate a and b.
+
+## Python Implementation
+
+```python
+def single_number(nums):
+	xor_all = 0
+	for x in nums:
+		xor_all ^= x
+
+	diff_bit = xor_all & -xor_all
+	a = b = 0
+
+	for x in nums:
+		if x & diff_bit:
+			a ^= x
+		else:
+			b ^= x
+
+	return [a, b]
+```
+
+## Typical Interview Use Cases
+
+- Isolating two unique numbers among paired duplicates
+- Splitting by the lowest differing bit after aggregate XOR
+- Important follow-up to the simpler single-number pattern
+

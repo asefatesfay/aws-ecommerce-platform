@@ -46,3 +46,30 @@ Given two strings `s` and `t`, return `true` if they are both one edit distance 
 **Space Complexity:** O(1)
 
 Find the first differing position. Based on whether lengths are equal or differ by 1, check if the remaining suffixes match after making the appropriate single edit.
+
+## Python Implementation
+
+```python
+def is_one_edit_distance(s, t):
+	m, n = len(s), len(t)
+	if abs(m - n) > 1:
+		return False
+
+	if m > n:
+		return is_one_edit_distance(t, s)
+
+	for i in range(m):
+		if s[i] != t[i]:
+			if m == n:
+				return s[i + 1 :] == t[i + 1 :]
+			return s[i:] == t[i + 1 :]
+
+	return m + 1 == n
+```
+
+## Typical Interview Use Cases
+
+- Single edit validation across insert, delete, and replace cases
+- Length-based case splitting to simplify logic
+- Common neighbor problem to edit distance and typo detection
+

@@ -49,3 +49,49 @@ Given an array of strings `words` and a width `maxWidth`, format the text such t
 **Space Complexity:** O(maxWidth) per line
 
 Greedy line packing, then for each line compute the space distribution. The tricky part is the edge cases: single-word lines and the last line both use left-justification.
+
+## Python Implementation
+
+```python
+def full_justify(words, max_width):
+	result = []
+	i = 0
+
+	while i < len(words):
+		line_len = len(words[i])
+		j = i + 1
+
+		while j < len(words) and line_len + 1 + len(words[j]) <= max_width:
+			line_len += 1 + len(words[j])
+			j += 1
+
+		line_words = words[i:j]
+		gaps = j - i - 1
+
+		if j == len(words) or gaps == 0:
+			line = " ".join(line_words)
+			line += " " * (max_width - len(line))
+		else:
+			total_chars = sum(len(word) for word in line_words)
+			total_spaces = max_width - total_chars
+			base, extra = divmod(total_spaces, gaps)
+
+			parts = []
+			for k in range(gaps):
+				parts.append(line_words[k])
+				parts.append(" " * (base + (1 if k < extra else 0)))
+			parts.append(line_words[-1])
+			line = "".join(parts)
+
+		result.append(line)
+		i = j
+
+	return result
+```
+
+## Typical Interview Use Cases
+
+- Greedy packing plus careful formatting rules
+- Even distribution with left-biased remainder handling
+- Strong test of edge-case discipline in simulation problems
+

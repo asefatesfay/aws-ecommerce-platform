@@ -24,6 +24,24 @@ Divide the array into a sorted portion (left) and unsorted portion (right). On e
 
 Note: Unlike Bubble Sort, there's no early-exit optimization — it always does O(n²) comparisons.
 
+## Python Implementation
+
+```python
+def selection_sort(nums):
+	arr = nums[:]
+	n = len(arr)
+
+	for i in range(n - 1):
+		min_idx = i
+		for j in range(i + 1, n):
+			if arr[j] < arr[min_idx]:
+				min_idx = j
+		if min_idx != i:
+			arr[i], arr[min_idx] = arr[min_idx], arr[i]
+
+	return arr
+```
+
 ## When to Use
 
 - When the cost of swapping is high (e.g., large objects) — Selection Sort does at most n-1 swaps, the minimum possible for a comparison sort
@@ -41,3 +59,9 @@ When swapping the minimum element into position, it may jump over equal elements
 ## Comparison with Bubble Sort
 
 Both are O(n²), but Selection Sort does far fewer swaps (O(n) vs O(n²)). However, Bubble Sort can exit early on sorted input; Selection Sort cannot.
+
+## Typical Interview Use Cases
+
+- Explain trade-off between comparisons and writes
+- Situations where minimizing swaps is important
+- Mostly conceptual; usually replaced by better O(n log n) solutions

@@ -35,3 +35,23 @@ Given two integers `a` and `b`, return the sum of the two integers without using
 **Space Complexity:** O(1)
 
 Iteratively compute XOR (sum without carry) and AND shifted left (carry), using the carry as the new addend, until carry is 0.
+
+## Python Implementation
+
+```python
+def get_sum(a, b):
+	mask = 0xFFFFFFFF
+	max_int = 0x7FFFFFFF
+
+	while b != 0:
+		a, b = (a ^ b) & mask, ((a & b) << 1) & mask
+
+	return a if a <= max_int else ~(a ^ mask)
+```
+
+## Typical Interview Use Cases
+
+- Simulating addition with XOR and carry propagation
+- Understanding fixed-width masking in Python for signed behavior
+- Strong bit-level explanation problem with clear operator semantics
+

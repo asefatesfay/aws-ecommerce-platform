@@ -43,3 +43,28 @@ Return the shortest sorted list of ranges that exactly covers all the missing nu
 **Space Complexity:** O(1) (excluding output)
 
 Iterate through the array with a "previous" pointer initialized to `lower - 1`. For each element (and finally `upper + 1`), check if the gap between previous+1 and current-1 is non-empty, and if so, add it to the result.
+
+## Python Implementation
+
+```python
+def find_missing_ranges(nums, lower, upper):
+	def fmt(lo, hi):
+		return str(lo) if lo == hi else f"{lo}->{hi}"
+
+	out = []
+	prev = lower - 1
+
+	for cur in nums + [upper + 1]:
+		if cur - prev >= 2:
+			out.append(fmt(prev + 1, cur - 1))
+		prev = cur
+
+	return out
+```
+
+## Typical Interview Use Cases
+
+- Gap detection in sorted arrays
+- Inclusive range boundary handling with sentinels
+- Formatting logic mixed with algorithmic scanning
+

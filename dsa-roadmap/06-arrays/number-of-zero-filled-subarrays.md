@@ -38,3 +38,27 @@ Given an integer array `nums`, return the number of subarrays filled with `0`. A
 **Space Complexity:** O(1)
 
 Track the current run length of zeros. When you see a zero, increment the run length and add it to the total count (each new zero creates exactly `run_length` new subarrays ending at the current position). Reset the run length to 0 on non-zero elements.
+
+## Python Implementation
+
+```python
+def zero_filled_subarray(nums):
+	run = 0
+	total = 0
+
+	for x in nums:
+		if x == 0:
+			run += 1
+			total += run
+		else:
+			run = 0
+
+	return total
+```
+
+## Typical Interview Use Cases
+
+- Counting subarrays by run-length contribution
+- Applying k*(k+1)/2 logic without explicit segmentation pass
+- Common pattern for streak-based combinatorial counting
+

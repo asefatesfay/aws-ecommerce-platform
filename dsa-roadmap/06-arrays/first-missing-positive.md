@@ -40,3 +40,32 @@ Given an unsorted integer array `nums`, return the smallest missing positive int
 **Space Complexity:** O(1)
 
 Cyclic sort: for each element, if it's in range [1, n] and not already at its correct position (index value-1), swap it to its correct position. After sorting, the first index where the value doesn't match is the answer.
+
+## Python Implementation
+
+```python
+def first_missing_positive(nums):
+	n = len(nums)
+	i = 0
+
+	while i < n:
+		x = nums[i]
+		correct = x - 1
+		if 1 <= x <= n and nums[i] != nums[correct]:
+			nums[i], nums[correct] = nums[correct], nums[i]
+		else:
+			i += 1
+
+	for i, x in enumerate(nums):
+		if x != i + 1:
+			return i + 1
+
+	return n + 1
+```
+
+## Typical Interview Use Cases
+
+- O(n) + O(1) constraints forcing index-as-hash/cyclic placement
+- Missing smallest positive / first missing index-style questions
+- Strong example of in-place value-to-index mapping
+

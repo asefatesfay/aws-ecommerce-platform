@@ -2,6 +2,8 @@
 
 Sorting is foundational. Many problems become trivial once the input is sorted. Understanding how sorting algorithms work — and their trade-offs — is essential for both interviews and system design.
 
+Each algorithm page in this section includes a Python implementation, complexity breakdown, and typical interview use cases.
+
 ## Quick Reference
 
 | Algorithm | Best | Average | Worst | Space | Stable? |

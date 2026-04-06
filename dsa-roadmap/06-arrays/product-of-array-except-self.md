@@ -38,3 +38,30 @@ Given an integer array `nums`, return an array `answer` such that `answer[i]` is
 **Space Complexity:** O(1) extra (output array doesn't count)
 
 Two-pass approach: first pass fills the output with prefix products. Second pass multiplies each position by the running suffix product, computed on the fly from right to left.
+
+## Python Implementation
+
+```python
+def product_except_self(nums):
+	n = len(nums)
+	out = [1] * n
+
+	prefix = 1
+	for i in range(n):
+		out[i] = prefix
+		prefix *= nums[i]
+
+	suffix = 1
+	for i in range(n - 1, -1, -1):
+		out[i] *= suffix
+		suffix *= nums[i]
+
+	return out
+```
+
+## Typical Interview Use Cases
+
+- Prefix/suffix decomposition without division
+- O(1) auxiliary-space follow-up handling
+- Core pattern reused in many left-right accumulation problems
+

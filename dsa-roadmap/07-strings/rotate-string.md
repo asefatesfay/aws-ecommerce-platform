@@ -37,3 +37,17 @@ Given two strings `s` and `goal`, return `true` if and only if `s` can become `g
 **Space Complexity:** O(n)
 
 Concatenate s with itself and check if goal appears as a substring. Also verify equal lengths.
+
+## Python Implementation
+
+```python
+def rotate_string(s, goal):
+	return len(s) == len(goal) and goal in (s + s)
+```
+
+## Typical Interview Use Cases
+
+- Rotation detection via doubled-string trick
+- Reducing a problem to substring search
+- Good example of spotting a compact invariant-based solution
+

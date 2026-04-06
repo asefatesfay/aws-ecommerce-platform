@@ -37,3 +37,26 @@ Given an integer array `nums`, move all `0`s to the end of it while maintaining 
 **Space Complexity:** O(1)
 
 Use a write pointer starting at 0. Scan through the array; whenever a non-zero element is found, place it at the write pointer and advance both pointers. After the scan, fill everything from the write pointer onward with zeros.
+
+## Python Implementation
+
+```python
+def move_zeroes(nums):
+	write = 0
+
+	for read in range(len(nums)):
+		if nums[read] != 0:
+			nums[write] = nums[read]
+			write += 1
+
+	while write < len(nums):
+		nums[write] = 0
+		write += 1
+```
+
+## Typical Interview Use Cases
+
+- In-place filtering with stable relative order
+- Read/write pointer warm-up for two-pointer array questions
+- Any "move all X to end" variant
+

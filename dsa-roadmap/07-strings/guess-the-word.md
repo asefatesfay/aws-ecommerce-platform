@@ -36,3 +36,40 @@ You are given an array of unique strings `words` where `words[i]` is 6 letters l
 **Space Complexity:** O(n)
 
 Maintain a list of candidate words. After each guess, filter candidates to only those with the same match count against the guessed word. For word selection, use a heuristic like picking the candidate that minimizes the maximum remaining candidates after filtering.
+
+## Python Implementation
+
+```python
+def find_secret_word(words, master):
+	def match_count(a, b):
+		return sum(x == y for x, y in zip(a, b))
+
+	candidates = words[:]
+
+	for _ in range(10):
+		best_word = None
+		best_score = float("inf")
+
+		for word in candidates:
+			groups = [0] * 7
+			for other in candidates:
+				if other != word:
+					groups[match_count(word, other)] += 1
+			score = max(groups)
+			if score < best_score:
+				best_score = score
+				best_word = word
+
+		matches = master.guess(best_word)
+		if matches == 6:
+			return
+
+		candidates = [w for w in candidates if match_count(w, best_word) == matches]
+```
+
+## Typical Interview Use Cases
+
+- Interactive search with feedback-driven pruning
+- Minimax-style heuristic selection under limited attempts
+- Candidate filtering by consistency with observed responses
+

@@ -37,3 +37,20 @@ Given an integer `n`, return an array `ans` of length `n + 1` such that for each
 **Space Complexity:** O(n) for the output array
 
 DP with the recurrence `ans[i] = ans[i >> 1] + (i & 1)`. Right-shifting removes the lowest bit, and we add back whether that bit was set.
+
+## Python Implementation
+
+```python
+def count_bits(n):
+	ans = [0] * (n + 1)
+	for i in range(1, n + 1):
+		ans[i] = ans[i >> 1] + (i & 1)
+	return ans
+```
+
+## Typical Interview Use Cases
+
+- DP over binary representations
+- Reusing smaller subproblems via right shift
+- Common precursor to bitmask DP and subset-state reasoning
+

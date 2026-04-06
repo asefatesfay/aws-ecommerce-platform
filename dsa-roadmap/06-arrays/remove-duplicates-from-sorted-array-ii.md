@@ -38,3 +38,26 @@ Given an integer array `nums` sorted in non-decreasing order, remove some duplic
 **Space Complexity:** O(1)
 
 Start the write pointer at 2. For each element from index 2 onward, if it differs from the element two positions behind the write pointer, write it and advance the pointer. The key insight: in a sorted array, if `nums[i] == nums[k-2]`, then `nums[i]` would be at least the third occurrence of that value.
+
+## Python Implementation
+
+```python
+def remove_duplicates(nums):
+	n = len(nums)
+	if n <= 2:
+		return n
+
+	k = 2
+	for i in range(2, n):
+		if nums[i] != nums[k - 2]:
+			nums[k] = nums[i]
+			k += 1
+	return k
+```
+
+## Typical Interview Use Cases
+
+- Variant where each value can appear at most twice
+- Extending sorted-array dedupe from 1 copy to k copies
+- Pointer logic proofs using local window checks
+

@@ -40,3 +40,21 @@ Write a function that takes the binary representation of a positive integer and 
 **Space Complexity:** O(1)
 
 Brian Kernighan's algorithm: repeatedly clear the lowest set bit with `n &= (n-1)` and count how many times until n = 0.
+
+## Python Implementation
+
+```python
+def hamming_weight(n):
+	count = 0
+	while n:
+		n &= n - 1
+		count += 1
+	return count
+```
+
+## Typical Interview Use Cases
+
+- Popcount and set-bit counting in O(number of set bits)
+- Foundation for Hamming distance and bit-mask state compression
+- Strong example of Brian Kernighan's algorithm in practice
+

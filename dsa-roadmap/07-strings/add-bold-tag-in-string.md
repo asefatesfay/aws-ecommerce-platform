@@ -41,3 +41,33 @@ Return `s` after adding the bold tags.
 **Space Complexity:** O(n)
 
 Mark bold positions using a boolean array, then build the result string by inserting tags at bold/non-bold transitions.
+
+## Python Implementation
+
+```python
+def add_bold_tag(s, words):
+	bold = [False] * len(s)
+
+	for i in range(len(s)):
+		for word in words:
+			if s.startswith(word, i):
+				for j in range(i, i + len(word)):
+					bold[j] = True
+
+	parts = []
+	for i, ch in enumerate(s):
+		if bold[i] and (i == 0 or not bold[i - 1]):
+			parts.append("<b>")
+		parts.append(ch)
+		if bold[i] and (i == len(s) - 1 or not bold[i + 1]):
+			parts.append("</b>")
+
+	return "".join(parts)
+```
+
+## Typical Interview Use Cases
+
+- Interval marking followed by formatted output construction
+- Merging overlapping or adjacent highlighted regions
+- Good bridge between strings and interval-style thinking
+

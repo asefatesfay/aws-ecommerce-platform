@@ -41,3 +41,22 @@ The judge will check the first `k` elements of `nums` (where `k` is your return 
 **Space Complexity:** O(1)
 
 Maintain a write pointer `k`. Scan through the array; whenever the current element is not equal to `val`, write it to position `k` and increment `k`. Return `k` as the new length.
+
+## Python Implementation
+
+```python
+def remove_element(nums, val):
+	k = 0
+	for x in nums:
+		if x != val:
+			nums[k] = x
+			k += 1
+	return k
+```
+
+## Typical Interview Use Cases
+
+- In-place removal with returned logical length
+- Follow-up on unstable output ordering constraints
+- Foundation for deduplication and stream-compaction patterns
+

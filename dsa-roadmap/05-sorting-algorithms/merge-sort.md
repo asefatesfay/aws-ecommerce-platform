@@ -25,6 +25,33 @@ The merge step: maintain two pointers, one for each half. Always pick the smalle
 
 The recursion tree has log n levels, and each level does O(n) work total → O(n log n) guaranteed.
 
+## Python Implementation
+
+```python
+def merge_sort(nums):
+	if len(nums) <= 1:
+		return nums[:]
+
+	mid = len(nums) // 2
+	left = merge_sort(nums[:mid])
+	right = merge_sort(nums[mid:])
+
+	merged = []
+	i = j = 0
+
+	while i < len(left) and j < len(right):
+		if left[i] <= right[j]:
+			merged.append(left[i])
+			i += 1
+		else:
+			merged.append(right[j])
+			j += 1
+
+	merged.extend(left[i:])
+	merged.extend(right[j:])
+	return merged
+```
+
 ## When to Use
 
 - When stability is required (preserving relative order of equal elements)
@@ -44,3 +71,9 @@ Merge Sort is the go-to for linked list sorting because it doesn't require rando
 ## Interview Relevance
 
 Merge Sort appears directly in problems like "Sort List" (LeetCode 148) and "Count of Inversions". The merge step pattern also appears in "Merge k Sorted Lists".
+
+## Typical Interview Use Cases
+
+- Stable sorting requirements
+- Linked-list sorting with O(n log n) complexity
+- Inversion counting and merge-based divide-and-conquer patterns

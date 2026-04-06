@@ -40,3 +40,37 @@ Given an integer array of size `n`, find all elements that appear more than `⌊
 **Space Complexity:** O(1)
 
 Two-pass Boyer-Moore with two candidates: first pass finds up to 2 candidates using the voting logic, second pass counts actual occurrences to confirm which candidates truly exceed n/3.
+
+## Python Implementation
+
+```python
+def majority_element(nums):
+	cand1 = cand2 = None
+	cnt1 = cnt2 = 0
+
+	for x in nums:
+		if x == cand1:
+			cnt1 += 1
+		elif x == cand2:
+			cnt2 += 1
+		elif cnt1 == 0:
+			cand1, cnt1 = x, 1
+		elif cnt2 == 0:
+			cand2, cnt2 = x, 1
+		else:
+			cnt1 -= 1
+			cnt2 -= 1
+
+	out = []
+	for c in (cand1, cand2):
+		if c is not None and nums.count(c) > len(nums) // 3:
+			out.append(c)
+	return out
+```
+
+## Typical Interview Use Cases
+
+- Frequency threshold problems with strict O(1) extra space
+- Understanding why at most 2 candidates can exceed n/3
+- Follow-up to classic Boyer-Moore majority element
+

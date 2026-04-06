@@ -37,3 +37,22 @@ The Hamming distance between two integers is the number of positions at which th
 **Space Complexity:** O(1)
 
 Compute `x ^ y`, then count the number of set bits in the result.
+
+## Python Implementation
+
+```python
+def hamming_distance(x, y):
+	diff = x ^ y
+	count = 0
+	while diff:
+		diff &= diff - 1
+		count += 1
+	return count
+```
+
+## Typical Interview Use Cases
+
+- Counting differing bit positions between two values
+- Using XOR to convert comparison into set-bit counting
+- Often paired with similarity metrics and bitset problems
+

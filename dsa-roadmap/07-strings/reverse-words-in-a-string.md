@@ -43,3 +43,17 @@ Given an input string `s`, reverse the order of the words. A word is defined as 
 **Space Complexity:** O(n) for the output (O(1) extra with in-place approach on char array)
 
 Split, filter, reverse, join — or use the two-reversal trick on a character array: reverse all, then reverse each word individually.
+
+## Python Implementation
+
+```python
+def reverse_words(s):
+	return " ".join(s.split()[::-1])
+```
+
+## Typical Interview Use Cases
+
+- Tokenization plus normalization of extra spaces
+- Reordering words rather than characters
+- Comparison point between Python built-ins and in-place char-array approaches
+

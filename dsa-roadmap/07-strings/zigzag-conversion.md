@@ -50,3 +50,32 @@ And then read line by line: `"PAHNAPLSIIGYIR"`. Write the code that will take a 
 **Space Complexity:** O(n)
 
 Maintain numRows string builders. Simulate the zigzag traversal, appending each character to the appropriate row's builder. Concatenate all builders at the end.
+
+## Python Implementation
+
+```python
+def convert(s, num_rows):
+	if num_rows == 1 or num_rows >= len(s):
+		return s
+
+	rows = ["" for _ in range(num_rows)]
+	row = 0
+	direction = 1
+
+	for ch in s:
+		rows[row] += ch
+		if row == 0:
+			direction = 1
+		elif row == num_rows - 1:
+			direction = -1
+		row += direction
+
+	return "".join(rows)
+```
+
+## Typical Interview Use Cases
+
+- Row-based string simulation
+- Direction flipping while traversing structured output
+- Good example of converting a visual pattern into state transitions
+

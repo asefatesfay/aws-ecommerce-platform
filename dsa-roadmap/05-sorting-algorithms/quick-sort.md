@@ -25,6 +25,33 @@ Choose a pivot element, partition the array so all elements less than the pivot 
 | Average | O(n log n) | O(log n) |
 | Worst (sorted input, bad pivot) | O(n²) | O(n) |
 
+## Python Implementation
+
+```python
+def quick_sort(nums):
+	arr = nums[:]
+
+	def partition(lo, hi):
+		pivot = arr[hi]
+		i = lo
+		for j in range(lo, hi):
+			if arr[j] <= pivot:
+				arr[i], arr[j] = arr[j], arr[i]
+				i += 1
+		arr[i], arr[hi] = arr[hi], arr[i]
+		return i
+
+	def sort(lo, hi):
+		if lo >= hi:
+			return
+		p = partition(lo, hi)
+		sort(lo, p - 1)
+		sort(p + 1, hi)
+
+	sort(0, len(arr) - 1)
+	return arr
+```
+
 ## Avoiding Worst Case
 
 - **Random pivot:** Shuffle input or pick random pivot → O(n log n) expected with high probability
@@ -45,3 +72,9 @@ Quick Sort's average performance is excellent because the partition step is cach
 ## Interview Relevance
 
 The partition logic appears in "Kth Largest Element in an Array" (QuickSelect — same idea, only recurse into one side). Understanding Quick Sort deeply helps with many selection problems.
+
+## Typical Interview Use Cases
+
+- In-place average-case fast sorting
+- Partition-based problems (QuickSelect, Dutch National Flag variants)
+- Comparing expected vs worst-case behavior and pivot strategy choices

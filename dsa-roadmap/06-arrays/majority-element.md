@@ -38,3 +38,29 @@ Given an array `nums` of size `n`, return the majority element. The majority ele
 **Space Complexity:** O(1)
 
 Boyer-Moore Voting: maintain a candidate and a vote count. The majority element's votes can never be fully cancelled out by minority elements, so the final candidate is always the majority element.
+
+## Python Implementation
+
+```python
+def majority_element(nums):
+	candidate = None
+	count = 0
+
+	for x in nums:
+		if count == 0:
+			candidate = x
+			count = 1
+		elif x == candidate:
+			count += 1
+		else:
+			count -= 1
+
+	return candidate
+```
+
+## Typical Interview Use Cases
+
+- Majority threshold > n/2 with guaranteed existence
+- Core example for cancellation/invariant proof techniques
+- Stepping stone to n/3 and generalized voting variants
+

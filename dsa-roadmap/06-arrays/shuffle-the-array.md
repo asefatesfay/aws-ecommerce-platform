@@ -38,3 +38,21 @@ Given an array `nums` consisting of `2n` elements in the form `[x1, x2, ..., xn,
 **Space Complexity:** O(n)
 
 Create a result array of size 2n. For each index i from 0 to n-1, place nums[i] at result[2*i] and nums[n+i] at result[2*i+1].
+
+## Python Implementation
+
+```python
+def shuffle(nums, n):
+	out = [0] * (2 * n)
+	for i in range(n):
+		out[2 * i] = nums[i]
+		out[2 * i + 1] = nums[n + i]
+	return out
+```
+
+## Typical Interview Use Cases
+
+- Straightforward index-mapping transformation
+- Warm-up for interleaving and zipper-merge style tasks
+- Testing off-by-one correctness in derived index formulas
+

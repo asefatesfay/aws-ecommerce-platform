@@ -2,6 +2,8 @@
 
 Strings are arrays of characters with extra constraints and operations. Most string problems reduce to array problems, but strings have unique patterns worth knowing.
 
+Each problem page in this section includes a Python implementation, complexity summary, and typical interview use cases.
+
 ## Key Concepts
 
 - **Immutability:** In Python and Java, strings are immutable. Building a string character by character in a loop is O(n²). Use a list/StringBuilder and join at the end.

@@ -38,3 +38,31 @@ Given an integer array `nums`, rotate the array to the right by `k` steps, where
 **Space Complexity:** O(1)
 
 Use the three-reversal trick: reverse the entire array, then reverse the first k elements, then reverse the last n-k elements. The key insight is that reversing the whole array and then reversing the two halves separately achieves the rotation.
+
+## Python Implementation
+
+```python
+def rotate(nums, k):
+	n = len(nums)
+	if n == 0:
+		return
+
+	k %= n
+
+	def reverse(i, j):
+		while i < j:
+			nums[i], nums[j] = nums[j], nums[i]
+			i += 1
+			j -= 1
+
+	reverse(0, n - 1)
+	reverse(0, k - 1)
+	reverse(k, n - 1)
+```
+
+## Typical Interview Use Cases
+
+- In-place array transformation with O(1) extra space
+- Comparing cyclic replacement vs reversal approaches
+- Common follow-up after string/array reversal practice
+

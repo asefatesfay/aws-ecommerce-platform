@@ -35,3 +35,21 @@ Reverse bits of a given 32-bit unsigned integer.
 **Space Complexity:** O(1)
 
 Iterate 32 times: each iteration shifts the result left, appends the current lowest bit of n, and shifts n right. After 32 iterations, result contains the reversed bits.
+
+## Python Implementation
+
+```python
+def reverse_bits(n):
+	result = 0
+	for _ in range(32):
+		result = (result << 1) | (n & 1)
+		n >>= 1
+	return result
+```
+
+## Typical Interview Use Cases
+
+- Fixed-width bit transformations
+- Careful use of shifts and bit extraction in loops
+- Common warm-up for low-level binary manipulation tasks
+

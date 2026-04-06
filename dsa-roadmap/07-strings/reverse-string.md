@@ -36,3 +36,21 @@ Write a function that reverses a string. The input string is given as an array o
 **Space Complexity:** O(1)
 
 Two pointers starting at both ends, swapping and moving inward until they meet.
+
+## Python Implementation
+
+```python
+def reverse_string(s):
+	left, right = 0, len(s) - 1
+	while left < right:
+		s[left], s[right] = s[right], s[left]
+		left += 1
+		right -= 1
+```
+
+## Typical Interview Use Cases
+
+- Basic in-place two-pointer reversal
+- Warm-up for palindrome and array reversal questions
+- Character-array mutation under O(1) space constraints
+

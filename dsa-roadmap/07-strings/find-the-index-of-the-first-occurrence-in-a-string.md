@@ -38,3 +38,24 @@ Given two strings `haystack` and `needle`, return the index of the first occurre
 **Space Complexity:** O(1) brute force, O(m) with KMP
 
 Brute force: slide a window of size len(needle) across haystack and compare. For optimal solution, KMP preprocesses the needle to build a failure function that allows skipping redundant comparisons.
+
+## Python Implementation
+
+```python
+def str_str(haystack, needle):
+	if needle == "":
+		return 0
+
+	m = len(needle)
+	for i in range(len(haystack) - m + 1):
+		if haystack[i : i + m] == needle:
+			return i
+	return -1
+```
+
+## Typical Interview Use Cases
+
+- Substring search baseline before KMP or Rabin-Karp follow-ups
+- Sliding fixed-length window comparison
+- Distinguishing brute-force and linear-time string matching
+

@@ -40,3 +40,22 @@ Given two integers `left` and `right` that represent the range `[left, right]`, 
 **Space Complexity:** O(1)
 
 Right-shift both numbers until they're equal (counting shifts). The equal value is the common binary prefix. Left-shift it back by the shift count to get the answer.
+
+## Python Implementation
+
+```python
+def range_bitwise_and(left, right):
+	shift = 0
+	while left < right:
+		left >>= 1
+		right >>= 1
+		shift += 1
+	return left << shift
+```
+
+## Typical Interview Use Cases
+
+- Recognizing common-prefix behavior across a numeric range
+- Eliminating changing suffix bits by repeated shifting
+- Useful contrast against brute-force range iteration
+

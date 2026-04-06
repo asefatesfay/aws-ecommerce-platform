@@ -37,3 +37,32 @@ You have a set of integers `s`, which originally contains all the numbers from `
 **Space Complexity:** O(1) with index-marking approach, O(n) with HashMap
 
 Index-marking: use sign of nums[v-1] to track visited values. The duplicate is found when you try to mark an already-marked position. The missing is the index with a positive value after all marking.
+
+## Python Implementation
+
+```python
+def find_error_nums(nums):
+	duplicate = -1
+
+	for x in nums:
+		idx = abs(x) - 1
+		if nums[idx] < 0:
+			duplicate = abs(x)
+		else:
+			nums[idx] *= -1
+
+	missing = -1
+	for i, x in enumerate(nums):
+		if x > 0:
+			missing = i + 1
+			break
+
+	return [duplicate, missing]
+```
+
+## Typical Interview Use Cases
+
+- In-place marking by sign to simulate visited state
+- Detecting one duplicate and one missing value together
+- Bridge between array indexing tricks and bitwise/constant-space reasoning
+

@@ -41,3 +41,17 @@ Given an integer `n`, return `true` if it is a power of two. Otherwise, return `
 **Space Complexity:** O(1)
 
 Check that n is positive and `n & (n-1) == 0`. Powers of two have exactly one set bit; subtracting 1 flips all lower bits, so AND gives 0.
+
+## Python Implementation
+
+```python
+def is_power_of_two(n):
+	return n > 0 and (n & (n - 1)) == 0
+```
+
+## Typical Interview Use Cases
+
+- Fast validation of one-hot binary values
+- Common helper inside divide/dp/bitmask problems
+- Classic example of lowest-set-bit clearing behavior
+

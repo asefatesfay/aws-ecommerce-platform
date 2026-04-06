@@ -45,3 +45,31 @@ Given a string `s`, return `true` if it is a palindrome, or `false` otherwise.
 **Space Complexity:** O(1)
 
 Two pointers from both ends, skipping non-alphanumeric characters and comparing case-insensitively. Return false on any mismatch, true if pointers cross.
+
+## Python Implementation
+
+```python
+def is_palindrome(s):
+	left, right = 0, len(s) - 1
+
+	while left < right:
+		while left < right and not s[left].isalnum():
+			left += 1
+		while left < right and not s[right].isalnum():
+			right -= 1
+
+		if s[left].lower() != s[right].lower():
+			return False
+
+		left += 1
+		right -= 1
+
+	return True
+```
+
+## Typical Interview Use Cases
+
+- Two-pointer comparison with skipped characters
+- Case normalization without building a cleaned string
+- Foundation for near-palindrome and deletion variants
+

@@ -37,3 +37,27 @@ Given a binary array `nums`, return the maximum number of consecutive `1`s in th
 **Space Complexity:** O(1)
 
 Single pass: maintain a current count and a maximum count. Increment current on 1, reset to 0 on 0, and update maximum at each step.
+
+## Python Implementation
+
+```python
+def find_max_consecutive_ones(nums):
+	best = 0
+	cur = 0
+
+	for x in nums:
+		if x == 1:
+			cur += 1
+			best = max(best, cur)
+		else:
+			cur = 0
+
+	return best
+```
+
+## Typical Interview Use Cases
+
+- Run-length counting on binary arrays
+- Base form of sliding-window style streak tracking
+- Extends naturally to "max consecutive ones with at most k flips"
+

@@ -38,3 +38,27 @@ Write a function to find the longest common prefix string amongst an array of st
 **Space Complexity:** O(1)
 
 Use the first string as the initial prefix. For each subsequent string, shrink the prefix from the right until it matches the beginning of that string. Return the final prefix.
+
+## Python Implementation
+
+```python
+def longest_common_prefix(strs):
+	if not strs:
+		return ""
+
+	prefix = strs[0]
+	for word in strs[1:]:
+		while not word.startswith(prefix):
+			prefix = prefix[:-1]
+			if not prefix:
+				return ""
+
+	return prefix
+```
+
+## Typical Interview Use Cases
+
+- Prefix shrinking across multiple strings
+- Early termination when shared prefix disappears
+- Good introduction to trie follow-ups for larger datasets
+

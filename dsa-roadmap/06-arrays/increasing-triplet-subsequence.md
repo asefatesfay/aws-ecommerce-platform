@@ -45,3 +45,28 @@ Follow-up: Can you implement a solution that runs in O(n) time and O(1) space?
 **Space Complexity:** O(1)
 
 Maintain two variables representing the smallest and second-smallest values in a potential increasing triplet. Greedily update them as you scan; if any element exceeds both, an increasing triplet exists.
+
+## Python Implementation
+
+```python
+def increasing_triplet(nums):
+	first = float("inf")
+	second = float("inf")
+
+	for x in nums:
+		if x <= first:
+			first = x
+		elif x <= second:
+			second = x
+		else:
+			return True
+
+	return False
+```
+
+## Typical Interview Use Cases
+
+- Existence checks for increasing subsequences of fixed length
+- Greedy state compression from O(n^2) DP intuition to O(1)
+- Precursor to LIS reasoning and patience sorting discussions
+

@@ -44,3 +44,20 @@ Given an array `nums` containing `n` distinct numbers in the range `[0, n]`, ret
 **Space Complexity:** O(1)
 
 Math approach: expected sum = n*(n+1)/2, actual sum = sum of array. Missing number = expected - actual. XOR approach: XOR all indices 0..n with all array values; everything cancels except the missing number.
+
+## Python Implementation
+
+```python
+def missing_number(nums):
+	result = len(nums)
+	for i, x in enumerate(nums):
+		result ^= i ^ x
+	return result
+```
+
+## Typical Interview Use Cases
+
+- Recovering one missing value from 0..n under O(1) extra space
+- Comparing arithmetic-sum and XOR cancellation approaches
+- Common example of using indices as part of the bitwise invariant
+

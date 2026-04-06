@@ -36,3 +36,20 @@ Given two strings `s` and `t`, return `true` if `t` is an anagram of `s`, and `f
 **Space Complexity:** O(1) (fixed 26-character alphabet)
 
 Count character frequencies in both strings using a 26-element array (or HashMap for Unicode follow-up). Compare the two frequency arrays for equality.
+
+## Python Implementation
+
+```python
+from collections import Counter
+
+
+def is_anagram(s, t):
+	return Counter(s) == Counter(t)
+```
+
+## Typical Interview Use Cases
+
+- Frequency equality across two strings
+- Comparing counting-array and hash-map trade-offs
+- Common prerequisite for grouping-anagrams follow-ups
+

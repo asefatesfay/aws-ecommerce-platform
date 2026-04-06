@@ -39,3 +39,21 @@ Given two strings `s` and `t`, return `true` if `s` is a subsequence of `t`, or 
 **Space Complexity:** O(1)
 
 Greedy two-pointer: scan through t, advancing the s pointer whenever there's a match. Return true if s is fully matched.
+
+## Python Implementation
+
+```python
+def is_subsequence(s, t):
+	i = 0
+	for ch in t:
+		if i < len(s) and s[i] == ch:
+			i += 1
+	return i == len(s)
+```
+
+## Typical Interview Use Cases
+
+- Greedy matching across two ordered sequences
+- Basis for many subsequence and stream-matching questions
+- Follow-up path to preprocessing for many repeated queries
+

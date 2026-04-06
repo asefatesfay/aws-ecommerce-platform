@@ -43,3 +43,33 @@ Given an integer array `nums`, return the third distinct maximum number in this 
 **Space Complexity:** O(1)
 
 Maintain three variables for the top three distinct maximums. For each element, skip if it equals any of the three. Otherwise, update the three variables in order, cascading values down. If the third maximum was never set, return the first maximum.
+
+## Python Implementation
+
+```python
+def third_max(nums):
+	first = second = third = None
+
+	for x in nums:
+		if x == first or x == second or x == third:
+			continue
+
+		if first is None or x > first:
+			third = second
+			second = first
+			first = x
+		elif second is None or x > second:
+			third = second
+			second = x
+		elif third is None or x > third:
+			third = x
+
+	return third if third is not None else first
+```
+
+## Typical Interview Use Cases
+
+- Distinct top-k tracking in one pass
+- Sentinel handling and duplicate filtering
+- Alternative to sorting when only small-order statistics are needed
+

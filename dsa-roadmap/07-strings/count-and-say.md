@@ -46,3 +46,33 @@ Given a positive integer `n`, return the `n`th element of the count-and-say sequ
 **Space Complexity:** O(2^n)
 
 Iteratively apply run-length encoding n-1 times, starting from "1". Each iteration scans the current string and builds the next by counting consecutive identical characters.
+
+## Python Implementation
+
+```python
+def count_and_say(n):
+	s = "1"
+
+	for _ in range(n - 1):
+		parts = []
+		count = 1
+
+		for i in range(1, len(s) + 1):
+			if i < len(s) and s[i] == s[i - 1]:
+				count += 1
+			else:
+				parts.append(str(count))
+				parts.append(s[i - 1])
+				count = 1
+
+		s = "".join(parts)
+
+	return s
+```
+
+## Typical Interview Use Cases
+
+- Iterative string generation from previous output
+- Run-length encoding simulation
+- Careful loop design around group boundaries
+

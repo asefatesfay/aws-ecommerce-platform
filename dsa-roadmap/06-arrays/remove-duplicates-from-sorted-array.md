@@ -39,3 +39,25 @@ Given an integer array `nums` sorted in non-decreasing order, remove the duplica
 **Space Complexity:** O(1)
 
 Use a write pointer starting at 1. Scan from index 1; whenever the current element differs from the previous element (or from the last written element), copy it to the write position and advance the write pointer.
+
+## Python Implementation
+
+```python
+def remove_duplicates(nums):
+	if not nums:
+		return 0
+
+	k = 1
+	for i in range(1, len(nums)):
+		if nums[i] != nums[k - 1]:
+			nums[k] = nums[i]
+			k += 1
+	return k
+```
+
+## Typical Interview Use Cases
+
+- Sorted array deduplication with O(1) extra space
+- Building intuition for write-pointer correctness invariants
+- Basis for "keep at most k duplicates" generalization
+

@@ -26,6 +26,34 @@ The right-to-left iteration in step 4 is what makes it stable.
 
 Where k is the range of input values.
 
+## Python Implementation
+
+```python
+def counting_sort(nums):
+	if not nums:
+		return []
+
+	min_val = min(nums)
+	max_val = max(nums)
+	offset = -min_val
+	k = max_val - min_val + 1
+
+	count = [0] * k
+	for x in nums:
+		count[x + offset] += 1
+
+	for i in range(1, k):
+		count[i] += count[i - 1]
+
+	out = [0] * len(nums)
+	for x in reversed(nums):  # right-to-left keeps stability
+		idx = x + offset
+		count[idx] -= 1
+		out[count[idx]] = x
+
+	return out
+```
+
 ## When to Use
 
 - Integer keys in a small, known range (k is not much larger than n)
@@ -49,3 +77,9 @@ Input: [4, 2, 2, 8, 3, 3, 1], range [1, 8]
 Count: [0, 1, 2, 2, 1, 0, 0, 0, 1] (indices 0-8)
 After prefix sum: [0, 1, 3, 5, 6, 6, 6, 6, 7]
 Output built right-to-left: [1, 2, 2, 3, 3, 4, 8]
+
+## Typical Interview Use Cases
+
+- Integer arrays with small value range
+- Frequency-based reordering questions
+- Stable subroutine inside Radix Sort

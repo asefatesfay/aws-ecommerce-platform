@@ -44,3 +44,27 @@ Given a string `s` consisting of words and spaces, return the length of the last
 **Space Complexity:** O(1)
 
 Scan from the right: skip trailing spaces, then count non-space characters until hitting a space or the start of the string.
+
+## Python Implementation
+
+```python
+def length_of_last_word(s):
+	i = len(s) - 1
+
+	while i >= 0 and s[i] == " ":
+		i -= 1
+
+	length = 0
+	while i >= 0 and s[i] != " ":
+		length += 1
+		i -= 1
+
+	return length
+```
+
+## Typical Interview Use Cases
+
+- Reverse scan with delimiter skipping
+- String parsing without split allocation
+- Boundary-condition practice with trailing separators
+

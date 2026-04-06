@@ -23,6 +23,25 @@ Repeatedly step through the list, compare adjacent elements, and swap them if th
 | Average | O(n²) | O(1) |
 | Worst (reverse sorted) | O(n²) | O(1) |
 
+## Python Implementation
+
+```python
+def bubble_sort(nums):
+	arr = nums[:]  # keep input unchanged
+	n = len(arr)
+
+	for i in range(n - 1):
+		swapped = False
+		for j in range(0, n - 1 - i):
+			if arr[j] > arr[j + 1]:
+				arr[j], arr[j + 1] = arr[j + 1], arr[j]
+				swapped = True
+		if not swapped:
+			break
+
+	return arr
+```
+
 ## When to Use
 
 - Teaching/learning purposes
@@ -37,3 +56,9 @@ After k passes, the last k elements are guaranteed to be in their final sorted p
 ## Comparison with Insertion Sort
 
 Both are O(n²) average, but Insertion Sort is generally faster in practice because it does fewer comparisons and writes. Bubble Sort's main advantage is its simplicity and the easy early-exit optimization.
+
+## Typical Interview Use Cases
+
+- Rarely used as the final optimal solution
+- Useful as a warm-up to explain stability and in-place sorting
+- Occasionally accepted for very small input constraints

@@ -2,6 +2,8 @@
 
 Arrays are the most fundamental data structure. Most DSA problems involve arrays in some form. Mastering array manipulation patterns is the foundation for everything else.
 
+Each problem page in this section includes a Python implementation, complexity summary, and typical interview use cases.
+
 ## Key Concepts
 
 - **In-place modification:** Modify the array without extra space. Common tricks: two-pointer (read/write pointers), swapping, overwriting.
