@@ -30,6 +30,46 @@ Left pointer at 0, right pointer at end. Move inward while characters match.
 ### Expand Around Center
 For palindromic substrings: try each character (and each gap between characters) as a center, expand outward while characters match.
 
+## Visual Playbook
+
+### Valid Palindrome (Two-Pointer)
+
+**Input:** `"A man, a plan, a canal: Panama"`
+**Output:** `true`
+
+```mermaid
+flowchart TD
+	A[Set left and right pointers] --> B[Skip non-alphanumeric chars]
+	B --> C{lower(s[left]) == lower(s[right])?}
+	C -- No --> D[Return false]
+	C -- Yes --> E[Move inward]
+	E --> F{left < right?}
+	F -- Yes --> B
+	F -- No --> G[Return true]
+```
+
+### Subsequence Check
+
+**Input:** `s = "abc", t = "ahbgdc"`
+**Output:** `true`
+
+```mermaid
+flowchart TD
+	A[Pointer i on s, j on t] --> B{j at end of t?}
+	B -- Yes --> C{all chars in s matched?}
+	C -- Yes --> D[Return true]
+	C -- No --> E[Return false]
+	B -- No --> F{s[i] == t[j]?}
+	F -- Yes --> G[i += 1, j += 1]
+	F -- No --> H[j += 1]
+	G --> B
+	H --> B
+```
+
+Why these visuals matter:
+- Many string tasks are pointer movement problems.
+- Flow diagrams make skip/compare rules easy to remember in interviews.
+
 ## Problems in This Section
 
 | Problem | Difficulty |

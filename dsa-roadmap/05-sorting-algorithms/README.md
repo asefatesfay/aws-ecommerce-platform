@@ -29,6 +29,51 @@ Each algorithm page in this section includes a Python implementation, complexity
 - **Multi-digit integers:** Radix Sort
 - **Memory constrained:** Heap Sort — O(1) space, O(n log n) guaranteed
 
+## Visual Playbook
+
+### Bubble Sort Flow (Adjacent Swaps)
+
+**Input:** `[5, 2, 8, 1]`
+**Output:** `[1, 2, 5, 8]`
+
+```mermaid
+flowchart TD
+	A[Start array] --> B[Compare arr[j] and arr[j+1]]
+	B --> C{arr[j] > arr[j+1]?}
+	C -- Yes --> D[Swap]
+	C -- No --> E[Keep order]
+	D --> F[Move to next pair]
+	E --> F
+	F --> G{End of pass?}
+	G -- No --> B
+	G -- Yes --> H{Any swap this pass?}
+	H -- Yes --> I[Next pass]
+	H -- No --> J[Already sorted]
+	I --> B
+```
+
+### Merge Sort Flow (Divide and Conquer)
+
+**Input:** `[5, 2, 8, 1]`
+**Output:** `[1, 2, 5, 8]`
+
+```mermaid
+flowchart TD
+	A[Array] --> B{Length <= 1?}
+	B -- Yes --> C[Return as sorted]
+	B -- No --> D[Split into left and right]
+	D --> E[Sort left recursively]
+	D --> F[Sort right recursively]
+	E --> G[Merge two sorted halves]
+	F --> G
+	G --> H[Return merged array]
+```
+
+Why this helps:
+- Bubble Sort visualizes local swaps.
+- Merge Sort visualizes global structure.
+- Same input, very different algorithmic strategy.
+
 ## Files in This Section
 
 - [Bubble Sort](./bubble-sort.md)

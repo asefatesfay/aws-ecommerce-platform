@@ -326,6 +326,66 @@ Maximum depth: n
 
 Tip: In Python interviews, consider iterative solutions when recursion depth can exceed ~1000.
 
+## Visual Playbook: Subsets and Permutations
+
+These two patterns explain why recursive branching can explode.
+
+### Subset Generation (Include/Exclude)
+
+**Input:** `nums = [1, 2, 3]`
+**Output count:** `8` subsets (`2^3`)
+
+```mermaid
+flowchart TD
+    A[Start: []] --> B{Take 1?}
+    B -- Yes --> C[[1]]
+    B -- No --> D[[]]
+
+    C --> E{Take 2?}
+    D --> F{Take 2?}
+
+    E -- Yes --> G[[1,2]]
+    E -- No --> H[[1]]
+    F -- Yes --> I[[2]]
+    F -- No --> J[[]]
+
+    G --> K{Take 3?}
+    H --> L{Take 3?}
+    I --> M{Take 3?}
+    J --> N{Take 3?}
+```
+
+### Permutation Generation (Pick Next Unused)
+
+**Input:** `nums = [1, 2, 3]`
+**Output count:** `6` permutations (`3!`)
+
+```mermaid
+flowchart TD
+    A[Start []] --> B[Pick 1]
+    A --> C[Pick 2]
+    A --> D[Pick 3]
+
+    B --> E[Pick 2]
+    B --> F[Pick 3]
+    E --> G[[1,2,3]]
+    F --> H[[1,3,2]]
+
+    C --> I[Pick 1]
+    C --> J[Pick 3]
+    I --> K[[2,1,3]]
+    J --> L[[2,3,1]]
+
+    D --> M[Pick 1]
+    D --> N[Pick 2]
+    M --> O[[3,1,2]]
+    N --> P[[3,2,1]]
+```
+
+Key growth intuition:
+- Subsets: each element has 2 choices -> `2^n`
+- Permutations: choices shrink each level -> `n!`
+
 ## Common Patterns in Fundamentals
 
 ```

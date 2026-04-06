@@ -214,9 +214,39 @@ Input Size (n) | O(1)  | O(log n) | O(n)  | O(n log n) | O(n²) | O(2^n)
 100            | 1    | 7        | 100   | 664        | 10K   | 2^100
 1000           | 1    | 10       | 1K    | 10K        | 1M    | 2^1000
 ```
+
+## Visual Walkthrough: Subset Generation (O(2^n))
+
+```mermaid
+flowchart TD
+    A["count_subsets(3)"] --> B["count_subsets(2)"]
+    A --> C["count_subsets(2)"]
+
+    B --> D["count_subsets(1)"]
+    B --> E["count_subsets(1)"]
+    C --> F["count_subsets(1)"]
+    C --> G["count_subsets(1)"]
+
+    D --> H["count_subsets(0)=1"]
+    D --> I["count_subsets(0)=1"]
+    E --> J["count_subsets(0)=1"]
+    E --> K["count_subsets(0)=1"]
+    F --> L["count_subsets(0)=1"]
+    F --> M["count_subsets(0)=1"]
+    G --> N["count_subsets(0)=1"]
+    G --> O["count_subsets(0)=1"]
 ```
 
-### O(n!) - Factorial
+**Input:** `n = 3`
+**Output:** `8`
+
+How it works:
+1. At each level, branch into include/exclude.
+2. Branching factor is 2.
+3. Tree depth is n.
+4. Leaves are all complete subsets, so total leaves are $2^n$.
+
+## O(n!) - Factorial (Permutation Generation)
 
 ```python
 def permutations(nums):
@@ -230,6 +260,37 @@ def permutations(nums):
             result.append([nums[i]] + p)
     return result
 ```
+
+```mermaid
+flowchart TD
+    A[Start []] --> B[Choose 1]
+    A --> C[Choose 2]
+    A --> D[Choose 3]
+
+    B --> E[Choose 2]
+    B --> F[Choose 3]
+    E --> G[[1,2,3]]
+    F --> H[[1,3,2]]
+
+    C --> I[Choose 1]
+    C --> J[Choose 3]
+    I --> K[[2,1,3]]
+    J --> L[[2,3,1]]
+
+    D --> M[Choose 1]
+    D --> N[Choose 2]
+    M --> O[[3,1,2]]
+    N --> P[[3,2,1]]
+```
+
+**Input:** `[1, 2, 3]`
+**Output:** `6` permutations
+
+How it works:
+1. First position has 3 choices.
+2. Second position has 2 choices.
+3. Third position has 1 choice.
+4. Total permutations are $3 \times 2 \times 1 = 3!$.
 
 ## Growth Intuition (Approximate Operation Counts)
 

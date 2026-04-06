@@ -30,6 +30,42 @@ For arrays containing values 1..n, each value belongs at index value-1. Swap ele
 ### Boyer-Moore Voting
 Find majority element in O(n) time, O(1) space. Maintain a candidate and count; increment on match, decrement on mismatch; reset when count hits 0.
 
+## Visual Playbook
+
+### Two-Pointer Read/Write (Move Zeroes Pattern)
+
+**Input:** `[0, 1, 0, 3, 12]`
+**Output:** `[1, 3, 12, 0, 0]`
+
+```mermaid
+flowchart TD
+	A[Initialize write=0] --> B[Scan read from left to right]
+	B --> C{nums[read] != 0?}
+	C -- Yes --> D[Write nums[read] at nums[write]]
+	D --> E[write += 1]
+	E --> B
+	C -- No --> B
+	B --> F{Read finished?}
+	F -- Yes --> G[Fill remaining with zeros]
+```
+
+### Prefix x Suffix (Product Except Self Pattern)
+
+**Input:** `[1, 2, 3, 4]`
+**Output:** `[24, 12, 8, 6]`
+
+```mermaid
+flowchart TD
+	A[Initialize out with 1s] --> B[Left pass: store prefix product]
+	B --> C[Right pass: multiply suffix product]
+	C --> D[Return out]
+```
+
+Quick intuition:
+- Two-pointer patterns are about position management.
+- Prefix/suffix patterns are about decomposition.
+- Both often reduce extra space while keeping O(n) time.
+
 ## Problems in This Section
 
 | Problem | Difficulty |

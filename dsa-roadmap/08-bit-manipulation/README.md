@@ -45,6 +45,42 @@ Each problem page in this section includes a Python implementation, complexity s
 ### XOR to find single number
 XOR all elements — pairs cancel out, leaving the unique element.
 
+## Visual Playbook
+
+### XOR Cancellation (Single Number)
+
+**Input:** `[4, 1, 2, 1, 2]`
+**Output:** `4`
+
+```mermaid
+flowchart TD
+	A[result = 0] --> B[result ^= 4]
+	B --> C[result ^= 1]
+	C --> D[result ^= 2]
+	D --> E[result ^= 1]
+	E --> F[result ^= 2]
+	F --> G[Pairs cancel, result is single number]
+```
+
+### Sum Without Plus (Carry Propagation)
+
+**Input:** `a = 5`, `b = 3`
+**Output:** `8`
+
+```mermaid
+flowchart TD
+	A[Compute sum_no_carry = a XOR b] --> B[Compute carry = (a AND b) << 1]
+	B --> C{carry == 0?}
+	C -- Yes --> D[Answer is sum_no_carry]
+	C -- No --> E[a = sum_no_carry, b = carry]
+	E --> A
+```
+
+Bit intuition:
+- XOR keeps bits that differ.
+- AND finds where carry is needed.
+- Left shift moves carry to the next bit position.
+
 ## Problems in This Section
 
 | Problem | Difficulty |
