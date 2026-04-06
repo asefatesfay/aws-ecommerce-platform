@@ -16,11 +16,29 @@ For d-digit numbers with digits in base b:
    - Stability ensures previously sorted digits remain in order
 2. After processing all d digits, the array is fully sorted
 
-**Example with base 10:**
+### Visual Example (base 10)
+
+```
 Input: [170, 45, 75, 90, 802, 24, 2, 66]
-After ones digit: [170, 90, 802, 2, 24, 45, 75, 66]
-After tens digit: [802, 2, 24, 45, 66, 170, 75, 90]
-After hundreds digit: [2, 24, 45, 66, 75, 90, 170, 802]
+
+Pass 1 (Sort by ones digit):
+  One's: 0  1  2  3  4  5  6  7  8  9
+         ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓
+  [170][__][2,802][__][24,45][75][66][__][90][__]
+  After: [170, 90, 802, 2, 24, 45, 75, 66]
+
+Pass 2 (Sort by tens digit on above):
+  Ten's: 0  1  2  3  4  5  6  7  8  9
+         ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓
+  [802,2][__][24][__][45][66][__][170,75][__][90]
+  After: [802, 2, 24, 45, 66, 170, 75, 90]
+
+Pass 3 (Sort by hundreds digit on above):
+  Hundred's: 0  1     2     3  4  5  6  7  8  9
+             ↓  ↓     ↓     ↓  ↓  ↓  ↓  ↓  ↓  ↓
+  [2,24,45,66,75,90][170][__][__][__][__][__][__][802][__]
+  After: [2, 24, 45, 66, 75, 90, 170, 802] ✓
+```
 
 ## Complexity
 
@@ -63,6 +81,10 @@ def radix_sort(nums):
       exp *= 10
 
    return arr
+
+# Example
+result = radix_sort([170, 45, 75, 90, 802, 24, 2, 66])
+# Output: [2, 24, 45, 66, 75, 90, 170, 802]
 ```
 
 For fixed-width integers: d = O(log_b(max_value)), so total is O(n × log_b(max_value)).

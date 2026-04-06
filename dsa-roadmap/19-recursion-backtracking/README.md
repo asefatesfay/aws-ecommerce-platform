@@ -38,6 +38,21 @@ The key to efficient backtracking is pruning — cutting off branches early:
 - Check constraints before recursing
 - Use bounds to prune (e.g., remaining sum can't reach target)
 
+Each problem page in this section includes a Python implementation, a step-by-step walkthrough, a flow diagram, and common edge cases to watch for.
+
+## Search Tree Intuition
+
+```mermaid
+flowchart TD
+    A[Start with empty state] --> B{Is current state complete?}
+    B -- Yes --> C[Record answer]
+    B -- No --> D[Enumerate valid choices]
+    D --> E[Choose one option]
+    E --> F[Recurse on smaller problem]
+    F --> G[Undo choice]
+    G --> D
+```
+
 ## Problems in This Section
 
 | Problem | Difficulty |

@@ -39,6 +39,34 @@ Given an integer array `nums`, return an array `answer` such that `answer[i]` is
 
 Two-pass approach: first pass fills the output with prefix products. Second pass multiplies each position by the running suffix product, computed on the fly from right to left.
 
+### Visual Example: Prefix × Suffix
+
+```
+Input: [1, 2, 3, 4]
+
+Pass 1: Fill output with LEFT products (prefix)
+  out[0] = 1 (nothing to left)
+  out[1] = 1 (1*1)
+  out[2] = 1*2 = 2
+  out[3] = 1*2*3 = 6
+  After Pass 1: [1, 1, 2, 6]
+
+Pass 2: Multiply by RIGHT products (suffix), right to left
+  i=3: suffix=1, out[3] *= 1 = 6, suffix *= 4 = 4
+       out[3] = 6 (left=1*2*3, right=1) ✓
+       
+  i=2: suffix=4, out[2] *= 4 = 8, suffix *= 3 = 12
+       out[2] = 8 (left=1*2, right=4) ✓
+       
+  i=1: suffix=12, out[1] *= 12 = 12, suffix *= 2 = 24
+       out[1] = 12 (left=1, right=3*4) ✓
+       
+  i=0: suffix=24, out[0] *= 24 = 24, suffix *= 1 = 24
+       out[0] = 24 (left=1, right=2*3*4) ✓
+
+Final output: [24, 12, 8, 6] ✓
+```
+
 ## Python Implementation
 
 ```python

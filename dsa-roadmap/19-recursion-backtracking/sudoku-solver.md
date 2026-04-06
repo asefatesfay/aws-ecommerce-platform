@@ -38,3 +38,88 @@ The `'.'` character indicates empty cells.
 **Space Complexity:** O(1) extra (modifying in-place)
 
 Backtracking: find empty cell, try digits 1-9 with validity check, recurse, backtrack on failure.
+
+## Python Implementation
+
+```python
+def solve_sudoku(board):
+	rows = [set() for _ in range(9)]
+	cols = [set() for _ in range(9)]
+	boxes = [set() for _ in range(9)]
+	empties = []
+
+	for row in range(9):
+		for col in range(9):
+			value = board[row][col]
+			if value == '.':
+				empties.append((row, col))
+				continue
+			box = (row // 3) * 3 + col // 3
+			rows[row].add(value)
+			cols[col].add(value)
+			boxes[box].add(value)
+
+	def backtrack(index):
+		if index == len(empties):
+			return True
+
+		row, col = empties[index]
+		box = (row // 3) * 3 + col // 3
+
+		for digit in '123456789':
+			if digit in rows[row] or digit in cols[col] or digit in boxes[box]:
+				continue
+
+			board[row][col] = digit
+			rows[row].add(digit)
+			cols[col].add(digit)
+			boxes[box].add(digit)
+
+			if backtrack(index + 1):
+				return True
+
+			board[row][col] = '.'
+			rows[row].remove(digit)
+			cols[col].remove(digit)
+			boxes[box].remove(digit)
+
+		return False
+
+	backtrack(0)
+```
+
+## Step-by-Step Example
+
+**Input:** a partially filled `9 x 9` board
+
+1. Precompute which digits already exist in every row, column, and box.
+2. Pick the first empty cell.
+3. Try digits `1` through `9`; skip any digit that conflicts with the row, column, or box.
+4. Place one valid digit and recurse to the next empty cell.
+5. If a later cell becomes impossible, undo the placement and try the next digit.
+6. Stop when all empty cells are filled.
+
+**Output:** the original board modified in-place into the unique solved board.
+
+## Flow Diagram
+
+```mermaid
+flowchart TD
+	A[find next empty cell] --> B{all empties filled?}
+	B -- Yes --> C[solved]
+	B -- No --> D[try digits 1 to 9]
+	D --> E{digit valid in row col box?}
+	E -- No --> D
+	E -- Yes --> F[place digit]
+	F --> G[recurse]
+	G --> H{solved below?}
+	H -- Yes --> C
+	H -- No --> I[remove digit]
+	I --> D
+```
+
+## Edge Cases
+
+- A nearly solved board should finish quickly.
+- If no digit fits a cell, immediate backtracking is required.
+- This version assumes the input puzzle has exactly one valid solution, matching the problem statement.

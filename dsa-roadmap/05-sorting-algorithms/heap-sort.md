@@ -19,6 +19,34 @@ Use a max-heap data structure to sort in-place. First, build a max-heap from the
 - Heapify down from root to restore heap property
 - Repeat until heap size is 1
 
+### Visual Example
+
+```
+Input: [5, 2, 8, 1, 9]
+
+Phase 1: Build Max-Heap
+    9          
+   / \
+  8   5       ( Tree structure)
+  / \
+ 2   1
+
+Array: [9, 8, 5, 2, 1] ( Heap property: parent ≥ children)
+
+Phase 2: Extract Max
+Iteration 1: Swap 9 and 1
+    1          
+   / \
+  8   5
+  / 
+ 2   [9]
+  After heapify: [8, 2, 5, 1, 9]
+
+Iteration 2: Swap 8 and 1 →…
+… repeat until sorted
+Final: [1, 2, 5, 8, 9]
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -62,6 +90,10 @@ def heap_sort(nums):
 		sift_down(0, end)
 
 	return arr
+
+# Example
+result = heap_sort([5, 2, 8, 1, 9])
+# Output: [1, 2, 5, 8, 9]
 ```
 
 ## When to Use

@@ -38,6 +38,37 @@ Given an integer array `nums`, move all `0`s to the end of it while maintaining 
 
 Use a write pointer starting at 0. Scan through the array; whenever a non-zero element is found, place it at the write pointer and advance both pointers. After the scan, fill everything from the write pointer onward with zeros.
 
+### Visual Example: Two-Pointer Movement
+
+```
+Input: [0, 1, 0, 3, 12]
+
+write=0 (where next non-zero should go)
+
+Step 1-2: read=0,1 → nums[0]=0 (skip), read=1 → nums[1]=1 (non-zero, place at write=0)
+  [1, 1, 0, 3, 12]
+   ↑        ↑
+  write    read=2
+
+Step 3: read=2 → nums[2]=0 (skip)
+  [1, 1, 0, 3, 12]
+   ↑           ↑
+  write       read=3
+
+Step 4: read=3 → nums[3]=3 (non-zero, place at write=1)
+  [1, 3, 0, 3, 12]
+     ↑           ↑
+  write        read=4
+
+Step 5: read=4 → nums[4]=12 (non-zero, place at write=2)
+  [1, 3, 12, 3, 12]
+        ↑           ↑
+     write        read=5 (end)
+
+Fill remaining with zeros (write=3 to end):
+  [1, 3, 12, 0, 0] ✓
+```
+
 ## Python Implementation
 
 ```python

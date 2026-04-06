@@ -15,6 +15,26 @@ Recursively split the array in half until you have subarrays of size 1 (triviall
 
 The merge step: maintain two pointers, one for each half. Always pick the smaller of the two current elements and advance that pointer.
 
+### Visual Example
+
+```
+Input: [5, 2, 8, 1]
+
+▼ Divide Phase
+        [5, 2, 8, 1]
+       /           \
+    [5, 2]        [8, 1]
+    /    \        /    \
+  [5]   [2]    [8]    [1]
+
+▼ Conquer Phase (Merge)
+    [5]   [2]        [1]   [8]
+     \    /           \    /
+   [2, 5]           [1, 8]
+        \            /
+        [1, 2, 5, 8]
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -50,6 +70,10 @@ def merge_sort(nums):
 	merged.extend(left[i:])
 	merged.extend(right[j:])
 	return merged
+
+# Example
+result = merge_sort([5, 2, 8, 1])
+# Output: [1, 2, 5, 8]
 ```
 
 ## When to Use

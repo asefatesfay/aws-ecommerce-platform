@@ -42,3 +42,65 @@ Given an encoded string, return its decoded string. The encoding rule is: `k[enc
 **Space Complexity:** O(n)
 
 Stack-based: push state on `[`, pop and expand on `]`. Build numbers and strings incrementally.
+
+## Python Implementation
+
+```python
+def decode_string(s):
+	stack = []
+	current_num = 0
+	current_str = []
+
+	for char in s:
+		if char.isdigit():
+			current_num = current_num * 10 + int(char)
+		elif char == '[':
+			stack.append((current_str, current_num))
+			current_str = []
+			current_num = 0
+		elif char == ']':
+			previous_str, repeat = stack.pop()
+			current_str = previous_str + current_str * repeat
+		else:
+			current_str.append(char)
+
+	return ''.join(current_str)
+```
+
+## Step-by-Step Example
+
+**Input:** `s = "3[a2[c]]"`
+
+1. Read `3`, so `current_num = 3`.
+2. Read `[`, push `([], 3)`.
+3. Read `a`, so `current_str = ['a']`.
+4. Read `2`, so `current_num = 2`.
+5. Read `[`, push `(['a'], 2)`.
+6. Read `c`, so `current_str = ['c']`.
+7. Read `]`, pop `(['a'], 2)` and build `['a'] + ['c'] * 2 = ['a', 'c', 'c']`.
+8. Read `]`, pop `([], 3)` and build `[] + ['a', 'c', 'c'] * 3`.
+
+**Output:** `"accaccacc"`
+
+## Flow Diagram
+
+```mermaid
+flowchart TD
+	A[read next character] --> B{digit?}
+	B -- Yes --> C[update current number]
+	B -- No --> D{opening bracket?}
+	D -- Yes --> E[push string and repeat count]
+	D -- No --> F{closing bracket?}
+	F -- Yes --> G[pop and expand current string]
+	F -- No --> H[append literal character]
+	C --> A
+	E --> A
+	G --> A
+	H --> A
+```
+
+## Edge Cases
+
+- Multi-digit repeat counts like `12[a]` need number accumulation.
+- Nested brackets work because the stack stores previous context.
+- Plain strings with no brackets should return unchanged.

@@ -16,6 +16,28 @@ Given n elements in range [min, max]:
 3. Sort each bucket (Insertion Sort works well for small buckets)
 4. Concatenate all buckets in order
 
+### Visual Example
+
+```
+Input: [0.5, 0.2, 0.8, 0.1, 0.9], n=5 buckets, range [0, 1]
+
+Bucket assignment:
+  0.5 → bucket 2   Bucket[0]: [0.1]
+  0.2 → bucket 1   Bucket[1]: [0.2]
+  0.8 → bucket 4   Bucket[2]: [0.5]
+  0.1 → bucket 0   Bucket[3]: []
+  0.9 → bucket 4   Bucket[4]: [0.8, 0.9]
+
+After sorting buckets individually:
+  Bucket[0]: [0.1]       (1 element)
+  Bucket[1]: [0.2]       (1 element)
+  Bucket[2]: [0.5]       (1 element)
+  Bucket[3]: []          (empty)
+  Bucket[4]: [0.8, 0.9]  (sorted)
+
+Concatenate: [0.1, 0.2, 0.5, 0.8, 0.9] ✓
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -50,6 +72,10 @@ def bucket_sort(nums):
 		out.extend(sorted(b))
 
 	return out
+
+# Example
+result = bucket_sort([0.5, 0.2, 0.8, 0.1, 0.9])
+# Output: [0.1, 0.2, 0.5, 0.8, 0.9]
 ```
 
 ## When to Use

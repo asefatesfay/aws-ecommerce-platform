@@ -22,12 +22,32 @@ Interviewers always ask about complexity. More importantly, understanding Big-O 
 
 ### O(1) - Constant
 
+**Concept:** Access operation has fixed cost regardless of input size.
+
 ```python
 def first_item(nums):
     return nums[0] if nums else None
 ```
 
+**Example:**
+- Input: `[10, 20, 30, 40]`
+- Output: `10` (accessed immediately)
+- Operations: 1 (always)
+
+**Visual:** No growth — flat line
+```
+Time/Space
+    |
+  1 |————————————
+    |
+    +——————————————→ n (input size)
+```
+
+---
+
 ### O(log n) - Logarithmic
+
+**Concept:** Problem space is halved each step (e.g., binary search).
 
 ```python
 def binary_search(nums, target):
@@ -43,7 +63,26 @@ def binary_search(nums, target):
     return -1
 ```
 
+**Example:**
+- Input: `nums = [1, 3, 5, 7, 9, 11]`, `target = 7`
+- Operations: ~2.6 (log₂ 6)
+- Output: `3` (index where 7 is found)
+
+**Visual:** Slow growth
+```
+Time
+    |     ╱
+  n |    ╱
+    |   ╱
+  1 |__╱
+    +——————————————→ n
+```
+
+---
+
 ### O(n) - Linear
+
+**Concept:** Work grows proportionally with input size.
 
 ```python
 def contains_value(nums, target):
@@ -53,7 +92,26 @@ def contains_value(nums, target):
     return False
 ```
 
+**Example:**
+- Input: `[2, 5, 8, 12]`, `target = 8`
+- Operations: 3
+- Output: `True`
+
+**Visual:** Straight diagonal line
+```
+Time
+    |\
+  n | \
+    |  \
+  1 |___\
+    +——————————————→ n
+```
+
+---
+
 ### O(n log n) - Linearithmic
+
+**Concept:** Divide-and-conquer (split n, process log n levels).
 
 ```python
 def merge_sort(nums):
@@ -79,7 +137,16 @@ def merge_sort(nums):
     return merged
 ```
 
-### O(n^2) - Quadratic
+**Example:**
+- Input: `[5, 3, 8, 1]`
+- Output: `[1, 3, 5, 8]`
+- Operations: 4 × log₂(4) = 8
+
+---
+
+### O(n²) - Quadratic
+
+**Concept:** Nested loops over input (compare all pairs).
 
 ```python
 def has_duplicate_pair(nums):
@@ -90,7 +157,27 @@ def has_duplicate_pair(nums):
     return False
 ```
 
+**Example:**
+- Input: `[1, 2, 1, 5]`
+- Operations: C(4,2) = 6 pairs checked
+- Output: `True` (1 appears twice)
+
+**Visual:** Steep growth
+```
+Time
+    |        ╱╱
+    |      ╱╱
+    |    ╱╱
+    |  ╱╱
+  1 |╱╱
+    +——————————————→ n
+```
+
+---
+
 ### O(2^n) - Exponential
+
+**Concept:** Work doubles with each added element (all subsets).
 
 ```python
 def count_subsets(n):
@@ -98,6 +185,35 @@ def count_subsets(n):
     if n == 0:
         return 1
     return count_subsets(n - 1) + count_subsets(n - 1)
+```
+
+**Example:**
+- Input: `n = 3`
+- Subsets: {}, {1}, {2}, {3}, {1,2}, {1,3}, {2,3}, {1,2,3} (8 total)
+- Output: `8` (2³)
+
+**Visual:** Explosive growth
+```
+Time
+    |               ╱╱
+    |            ╱╱
+    |         ╱╱
+    |      ╱╱
+  1 |___╱╱
+    +——————————————→ n
+```
+
+---
+
+## Complexity Comparison Chart
+
+```
+Input Size (n) | O(1)  | O(log n) | O(n)  | O(n log n) | O(n²) | O(2^n)
+───────────────┼──────┼──────────┼───────┼────────────┼───────┼────────
+10             | 1    | 3        | 10    | 33         | 100   | 1024
+100            | 1    | 7        | 100   | 664        | 10K   | 2^100
+1000           | 1    | 10       | 1K    | 10K        | 1M    | 2^1000
+```
 ```
 
 ### O(n!) - Factorial

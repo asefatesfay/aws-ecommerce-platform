@@ -31,13 +31,26 @@ def are_close(a, b, eps=1e-9):
 - Access: O(1), Search: O(n), Insert/Delete at end: O(1) amortized, Insert/Delete at middle: O(n)
 - Know how to: reverse in-place, rotate, find max/min, two-pointer traverse
 
+### Reverse In-Place
+
 ```python
 arr = [1, 2, 3, 4, 5]
+arr.reverse()
+# Output: [5, 4, 3, 2, 1]
+```
 
-# Reverse in-place
-arr.reverse()  # [5, 4, 3, 2, 1]
+**Visual Example:**
+```
+Initial:    [1, 2, 3, 4, 5]
+             ↑           ↑
+Step 1:     [5, 2, 3, 4, 1]
+             ↑           ↑
+Step 2:     [5, 4, 3, 2, 1]  ✓
+```
 
-# Rotate right by k
+### Rotate Right by k
+
+```python
 def rotate_right(nums, k):
 	n = len(nums)
 	if n == 0:
@@ -45,6 +58,17 @@ def rotate_right(nums, k):
 	k %= n
 	nums[:] = nums[-k:] + nums[:-k]
 	return nums
+
+# Example: rotate [1, 2, 3, 4, 5] right by 2
+# Output: [4, 5, 1, 2, 3]
+```
+
+**Visual Example (k=2):**
+```
+Original:     [1, 2, 3, 4, 5]
+Take last 2:   [4, 5]
+Take rest:     [1, 2, 3]
+Combine:       [4, 5, 1, 2, 3]
 ```
 
 ## Strings
@@ -53,17 +77,44 @@ def rotate_right(nums, k):
 - Know: character frequency counting, palindrome check, substring operations
 - ASCII: 'a' = 97, 'A' = 65, '0' = 48
 
+### Palindrome Check
+
 ```python
 s = "racecar"
-
-# Palindrome check
 is_pal = s == s[::-1]
+# Output: True
+```
 
-# Efficient string build
+**Visual Example:**
+```
+Input:  r a c e c a r
+         ↑           ↑
+        Yes — reverse matches
+```
+
+### Efficient String Building
+
+```python
+# ❌ Bad: O(n²) due to repeated concatenation
+result = ""
+for ch in ["a", "b", "c"]:
+    result += ch  # Slow!
+
+# ✓ Good: O(n) — build list, then join
 parts = []
 for ch in ["a", "b", "c"]:
-	parts.append(ch)
+    parts.append(ch)
 joined = "".join(parts)  # "abc"
+```
+
+**Complexity Comparison:**
+```
+String Concatenation in Loop
+n    | Bad (+=)  | Good (.join)
+─────┼───────────┼───────────
+10   | O(n²)     | O(n) ✓
+100  | 10,000 op | 100 op
+1000 | 1M op     | 1000 op
 ```
 
 ## Hash Maps & Hash Sets
@@ -72,17 +123,50 @@ joined = "".join(parts)  # "abc"
 - Use when you need fast lookup by key
 - Use set when you only care about membership
 
+### Frequency Counting
+
 ```python
 nums = [1, 2, 2, 3, 3, 3]
 
 # Frequency map
 freq = {}
 for x in nums:
-	freq[x] = freq.get(x, 0) + 1
+    freq[x] = freq.get(x, 0) + 1
 
-# Membership
+# Output: {1: 1, 2: 2, 3: 3}
+```
+
+**Visual Example:**
+```
+Input: [1, 2, 2, 3, 3, 3]
+
+Processing:
+  1 → freq = {1: 1}
+  2 → freq = {1: 1, 2: 1}
+  2 → freq = {1: 1, 2: 2}
+  3 → freq = {1: 1, 2: 2, 3: 1}
+  3 → freq = {1: 1, 2: 2, 3: 2}
+  3 → freq = {1: 1, 2: 2, 3: 3}
+
+Final: {1: 1, 2: 2, 3: 3}
+```
+
+### Membership Check
+
+```python
+nums = [1, 2, 2, 3, 3, 3]
 seen = set(nums)
 has_four = 4 in seen
+
+# Output: False (4 not in set)
+```
+
+**Time Comparison:**
+```
+Lookup in [1, 2, 2, 3, 3, 3]
+
+List:  O(n) — must scan all elements
+Set:   O(1) — direct hash lookup ✓
 ```
 
 ## Sorting
@@ -91,15 +175,35 @@ has_four = 4 in seen
 - Java: `Arrays.sort()` — dual-pivot quicksort for primitives, merge sort for objects
 - Custom comparator: sort by second element, sort descending, etc.
 
+### Sort by Key
+
 ```python
 pairs = [("apple", 3), ("banana", 1), ("pear", 2)]
 
 # Sort by second element
 pairs.sort(key=lambda x: x[1])
+# Output: [("banana", 1), ("pear", 2), ("apple", 3)]
+```
 
-# Sort numbers descending
+**Visual Example:**
+```
+Input:   [("apple", 3), ("banana", 1), ("pear", 2)]
+
+Sorted by value (second element):
+Step 1:  Compare 3, 1, 2
+Step 2:  Place 1 first → ("banana", 1)
+Step 3:  Place 2 next → ("pear", 2)
+Step 4:  Place 3 last → ("apple", 3)
+
+Output:  [("banana", 1), ("pear", 2), ("apple", 3)]
+```
+
+### Sort Descending
+
+```python
 nums = [5, 2, 8, 1]
 desc = sorted(nums, reverse=True)
+# Output: [8, 5, 2, 1]
 ```
 
 ## Math Essentials
@@ -110,17 +214,71 @@ desc = sorted(nums, reverse=True)
 - Powers: `x ** n` in Python, `Math.pow(x, n)` in Java
 - `float('inf')` / `float('-inf')` in Python for sentinel values
 
+### Integer Division & Modulo
+
 ```python
 n = 17
-quotient = n // 5   # 3
-remainder = n % 5   # 2
+quotient = n // 5   # 3 (divisions fit)
+remainder = n % 5   # 2 (what's left)
+# 5 * 3 + 2 = 17 ✓
+```
 
-# Circular index
+**Visual Example:**
+```
+n = 17, divisor = 5
+
+17 ÷ 5:
+  ⌊——⌋ ⌊——⌋ ⌊——⌋ ⌊—
+  1    2    3    4    5
+
+  Full groups: 3 (quotient)
+  Leftover:   2 (remainder)
+
+17 = 5 × 3 + 2
+```
+
+### Circular Indexing
+
+```python
 arr = [10, 20, 30]
-next_i = (2 + 1) % len(arr)  # 0
+current = 2
+next_i = (current + 1) % len(arr)  # 0 (wraps around)
 
+# Output: arr[0] = 10
+```
+
+**Visual Example:**
+```
+arr = [10, 20, 30]
+       [0]  [1]  [2]
+
+Indices form a circle:
+     [0] ← wraps
+      ↑
+    [2]
+    [1]
+
+(2 + 1) % 3 = 0 ✓
+```
+
+### Sentinel Values
+
+```python
 best = float("inf")
 best = min(best, 42)
+best = min(best, 5)
+# Output: 5 (minimum found)
+```
+
+**Why Sentinel Values?**
+```
+Without sentinel (what if first element is smallest?):
+  best = arr[0]  # Must handle separately
+
+With sentinel (unified code):
+  best = float("inf")
+  for x in arr:
+      best = min(best, x)  # Works for all elements
 ```
 
 ## Recursion Basics
@@ -132,11 +290,38 @@ Every recursive function needs:
 
 Stack depth = number of recursive calls. Deep recursion → stack overflow. Python default limit is ~1000.
 
+### Factorial Example
+
 ```python
 def factorial(n):
-	if n <= 1:          # base case
-		return 1
-	return n * factorial(n - 1)  # recursive case
+    if n <= 1:          # base case
+        return 1
+    return n * factorial(n - 1)  # recursive case
+
+# factorial(5) = 120
+```
+
+**Visual Call Stack:**
+```
+factorial(5)
+  5 * factorial(4)
+      4 * factorial(3)
+          3 * factorial(2)
+              2 * factorial(1)
+                  return 1
+              return 2 * 1 = 2
+          return 3 * 2 = 6
+      return 4 * 6 = 24
+  return 5 * 24 = 120
+```
+
+**Depth Progression:**
+```
+factorial(5) → calls factorial(4) → calls factorial(3) ...
+Depth:           1                   2                    3...
+
+Stack grows until base case (n=1), then unwinds.
+Maximum depth: n
 ```
 
 Tip: In Python interviews, consider iterative solutions when recursion depth can exceed ~1000.
@@ -162,18 +347,56 @@ from collections import defaultdict
 d = defaultdict(int)
 ```
 
+### Sliding Window Template (Fixed Size k)
+
 ```python
-# Sliding window template (fixed size k)
 def max_sum_k(nums, k):
-	if k > len(nums):
-		return None
-	window = sum(nums[:k])
-	best = window
-	for i in range(k, len(nums)):
-		window += nums[i] - nums[i - k]
-		best = max(best, window)
-	return best
+    if k > len(nums):
+        return None
+    window = sum(nums[:k])
+    best = window
+    for i in range(k, len(nums)):
+        window += nums[i] - nums[i - k]
+        best = max(best, window)
+    return best
+
+# Example: max_sum_k([1, 3, 2, 6, -1, 4, 1, 8, 2], k=3)
+# Output: 13 (window [6, -1, 4] = 9, [4, 1, 8] = 13)
 ```
+
+**Visual Example (k=3):**
+```
+Array: [1, 3, 2, 6, -1, 4, 1, 8, 2]
+
+Window slides right by 1 each step:
+
+Step 1: [1, 3, 2]  → sum=6
+        ↑  ↑  ↑
+
+Step 2: [3, 2, 6]  → sum=11
+           ↑  ↑  ↑
+
+Step 3: [2, 6, -1] → sum=7
+              ↑  ↑   ↑
+
+Step 4: [6, -1, 4] → sum=9
+                 ↑  ↑   ↑
+
+Step 5: [-1, 4, 1] → sum=4
+                    ↑  ↑   ↑
+
+Step 6: [4, 1, 8]  → sum=13 ← MAX ✓
+                       ↑  ↑   ↑
+
+Step 7: [1, 8, 2]  → sum=11
+                          ↑  ↑   ↑
+
+Output: 13
+```
+
+**Complexity:**
+- Traditional: O(n × k) — recompute sum each window
+- Sliding: O(n) — add one, remove one ✓
 
 ## Key Built-ins to Know
 

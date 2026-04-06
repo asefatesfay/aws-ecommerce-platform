@@ -15,6 +15,34 @@ Repeatedly step through the list, compare adjacent elements, and swap them if th
 
 **Optimization:** If no swaps occur during a pass, the array is already sorted — exit early. This gives O(n) best case on already-sorted input.
 
+### Visual Example
+
+```
+Input: [5, 2, 8, 1, 9]
+
+Pass 1 (Find max: 9):
+  [5, 2, 8, 1, 9]  → compare 5,2 → swap
+  [2, 5, 8, 1, 9]  → compare 5,8 → no swap
+  [2, 5, 8, 1, 9]  → compare 8,1 → swap
+  [2, 5, 1, 8, 9]  → compare 8,9 → no swap
+  [2, 5, 1, 8, 9]  ← 9 in place ✓
+
+Pass 2 (Find 2nd max: 8):
+  [2, 5, 1, 8, 9]  → compare 2,5 → no swap
+  [2, 5, 1, 8, 9]  → compare 5,1 → swap
+  [2, 1, 5, 8, 9]  → compare 5,8 → no swap
+  [2, 1, 5, 8, 9]  ← 8 in place ✓
+
+Pass 3 (Find 3rd max: 5):
+  [2, 1, 5, 8, 9]  → compare 2,1 → swap
+  [1, 2, 5, 8, 9]  → compare 2,5 → no swap
+  [1, 2, 5, 8, 9]  ← 5 in place ✓
+
+Pass 4 (Find 4th: 2):
+  [1, 2, 5, 8, 9]  → compare 1,2 → no swap
+  [1, 2, 5, 8, 9]  ✓ Sorted!
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -40,6 +68,10 @@ def bubble_sort(nums):
 			break
 
 	return arr
+
+# Example
+result = bubble_sort([5, 2, 8, 1, 9])
+# Output: [1, 2, 5, 8, 9]
 ```
 
 ## When to Use

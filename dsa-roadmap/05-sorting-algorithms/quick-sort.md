@@ -17,6 +17,24 @@ Choose a pivot element, partition the array so all elements less than the pivot 
 
 **Hoare partition scheme:** Two pointers from both ends moving toward each other. Slightly more efficient but trickier to implement.
 
+### Visual Example
+
+```
+Input: [5, 2, 8, 1, 9], pivot=last element (9)
+
+Partition phase (pivot=9):
+  [5, 2, 8, 1, 9]  → 5 ≤ 9 (i=0, j=0)
+  [5, 2, 8, 1, 9]  → 2 ≤ 9 (i=1, j=1)
+  [5, 2, 8, 1, 9]  → 8 ≤ 9 (i=2, j=2)
+  [5, 2, 8, 1, 9]  → 1 ≤ 9 (i=3, j=3)
+  [5, 2, 8, 1, 9]  → swap arr[4] (9) with arr[4]
+  [5, 2, 8, 1, 9]  ← 9 in final position ✓
+
+Left subarray [5, 2, 8, 1] sorted → [1, 2, 5, 8]
+Right subarray: empty
+Final: [1, 2, 5, 8, 9]
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -50,6 +68,10 @@ def quick_sort(nums):
 
 	sort(0, len(arr) - 1)
 	return arr
+
+# Example
+result = quick_sort([5, 2, 8, 1, 9])
+# Output: [1, 2, 5, 8, 9]
 ```
 
 ## Avoiding Worst Case

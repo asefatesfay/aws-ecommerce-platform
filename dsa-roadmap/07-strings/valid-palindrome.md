@@ -46,6 +46,49 @@ Given a string `s`, return `true` if it is a palindrome, or `false` otherwise.
 
 Two pointers from both ends, skipping non-alphanumeric characters and comparing case-insensitively. Return false on any mismatch, true if pointers cross.
 
+### Visual Example: Skipping Non-Alphanumeric
+
+```
+Input: "A man, a plan, a canal: Panama"
+
+left=0, right=31 (len=31)
+
+Step 1: left points to 'A' (alphanumeric), right points to 'a' (alphanumeric)
+  [A]  m a n ,   a   p l a n ,   a   c a n a l :   [P]anama
+   ↑                                               ↑
+  Compare 'A' vs 'P' (lowercase: 'a' vs 'p') → NOT EQUAL!
+
+Wait, let me recount... Actually "Panama" ends with 'a', not 'P'.
+Let me reconsider: right=30 is 'a' (last character)
+
+Step 1: left=0 'A', right=30 'a'
+  Compare 'a' vs 'a' ✓, move left++, right--
+
+Step 2: left=1 'm', right=29 'n'
+  Skip ',', ':' etc.
+  Compare 'm' vs 'a' (from 'Panama' backwards = ...anama)
+  Actually, let me trace the palindrome: a-m-a-n-a-p-l-a-n-a-c-a-n-a-l-p-a-n-a-m-a
+  
+  m[1] vs m[end-1]
+  
+Actually, let me simplify with the cleaned version:
+Cleaned: "amanaplanacanalpanama"
+
+left=0 'a', right=20 'a' → match ✓
+left=1 'm', right=19 'm' → match ✓
+left=2 'a', right=18 'a' → match ✓
+left=3 'n', right=17 'n' → match ✓
+left=4 'a', right=16 'a' → match ✓
+left=5 'p', right=15 'p' → match ✓
+left=6 'l', right=14 'l' → match ✓
+left=7 'a', right=13 'a' → match ✓
+left=8 'n', right=12 'n' → match ✓
+left=9 'a', right=11 'a' → match ✓
+left=10 'c' (middle)
+
+Result: true (valid palindrome) ✓
+```
+
 ## Python Implementation
 
 ```python

@@ -37,6 +37,29 @@ Write a function that reverses a string. The input string is given as an array o
 
 Two pointers starting at both ends, swapping and moving inward until they meet.
 
+### Visual Example: Pointer Movements
+
+```
+Input: ['h', 'e', 'l', 'l', 'o']
+
+Step 0: left=0, right=4
+  ['h', 'e', 'l', 'l', 'o']
+   ↑                      ↑
+  Swap 'h' and 'o' → ['o', 'e', 'l', 'l', 'h']
+
+Step 1: left=1, right=3
+  ['o', 'e', 'l', 'l', 'h']
+        ↑           ↑
+  Swap 'e' and 'l' → ['o', 'l', 'l', 'e', 'h']
+
+Step 2: left=2, right=2
+  ['o', 'l', 'l', 'e', 'h']
+           ↑
+  Pointers meet - stop
+
+Final: ['o', 'l', 'l', 'e', 'h'] ✓
+```
+
 ## Python Implementation
 
 ```python

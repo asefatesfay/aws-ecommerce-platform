@@ -38,3 +38,61 @@ Given an array of distinct integers `candidates` and a target integer `target`, 
 **Space Complexity:** O(T/M) recursion depth
 
 Backtracking with start index (allowing reuse). Prune when remaining < 0. Add to results when remaining == 0.
+
+## Python Implementation
+
+```python
+def combination_sum(candidates, target):
+	candidates.sort()
+	result = []
+	path = []
+
+	def backtrack(start, remaining):
+		if remaining == 0:
+			result.append(path[:])
+			return
+
+		for index in range(start, len(candidates)):
+			value = candidates[index]
+			if value > remaining:
+				break
+			path.append(value)
+			backtrack(index, remaining - value)
+			path.pop()
+
+	backtrack(0, target)
+	return result
+```
+
+## Step-by-Step Example
+
+**Input:** `candidates = [2, 3, 6, 7]`, `target = 7`
+
+1. Start with `remaining = 7`, `path = []`.
+2. Choose `2`, recurse with `remaining = 5`, `path = [2]`.
+3. Choose `2` again, recurse with `remaining = 3`, `path = [2, 2]`.
+4. Choose `3`, recurse with `remaining = 0`, record `[2, 2, 3]`.
+5. Backtrack until top level, then choose `7`, recurse with `remaining = 0`, record `[7]`.
+
+**Output:** `[[2, 2, 3], [7]]`
+
+## Flow Diagram
+
+```mermaid
+flowchart TD
+	A[start remaining=target] --> B{remaining == 0?}
+	B -- Yes --> C[record path]
+	B -- No --> D[iterate candidates from start]
+	D --> E{value > remaining?}
+	E -- Yes --> F[break branch]
+	E -- No --> G[append value]
+	G --> H[recurse with same index]
+	H --> I[pop value]
+	I --> D
+```
+
+## Edge Cases
+
+- No solution: `candidates = [5]`, `target = 3` returns `[]`.
+- Reuse is allowed here, so recursive calls stay at the same index.
+- Sorting enables the `break` pruning when values become too large.

@@ -35,3 +35,62 @@ Given `n` pairs of parentheses, write a function to generate all combinations of
 **Space Complexity:** O(n) recursion depth
 
 Backtracking with open/close counters. Add `(` when open < n, add `)` when close < open. Collect when length == 2n.
+
+## Python Implementation
+
+```python
+def generate_parenthesis(n):
+	result = []
+
+	def backtrack(path, open_used, close_used):
+		if len(path) == 2 * n:
+			result.append(''.join(path))
+			return
+
+		if open_used < n:
+			path.append('(')
+			backtrack(path, open_used + 1, close_used)
+			path.pop()
+
+		if close_used < open_used:
+			path.append(')')
+			backtrack(path, open_used, close_used + 1)
+			path.pop()
+
+	backtrack([], 0, 0)
+	return result
+```
+
+## Step-by-Step Example
+
+**Input:** `n = 2`
+
+1. Start with empty string.
+2. Add `(` because open count is less than `2`.
+3. Add another `(`, then only `)` is allowed twice, producing `(())`.
+4. Backtrack to `(` and instead add `)`, then add `(`, then `)` to produce `()()`.
+
+**Output:** `["(())", "()()"]`
+
+## Flow Diagram
+
+```mermaid
+flowchart TD
+	A[start path open=0 close=0] --> B{length == 2n?}
+	B -- Yes --> C[record string]
+	B -- No --> D{open < n?}
+	D -- Yes --> E[append open bracket]
+	E --> F[recurse]
+	F --> G[pop]
+	D -- No --> H{close < open?}
+	G --> H
+	H -- Yes --> I[append close bracket]
+	I --> J[recurse]
+	J --> K[pop]
+```
+
+## Edge Cases
+
+- `n = 1` returns only `"()"`.
+- A close bracket can never be added when `close_used == open_used`.
+- The recursion generates only valid strings, so no cleanup pass is needed.

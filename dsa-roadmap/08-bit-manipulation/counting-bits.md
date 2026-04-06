@@ -38,6 +38,48 @@ Given an integer `n`, return an array `ans` of length `n + 1` such that for each
 
 DP with the recurrence `ans[i] = ans[i >> 1] + (i & 1)`. Right-shifting removes the lowest bit, and we add back whether that bit was set.
 
+### Visual Example: Binary Patterns and Recurrence
+
+```
+n = 5
+
+Recurrence: ans[i] = ans[i >> 1] + (i & 1)
+  (i >> 1): Remove the rightmost bit
+  (i & 1):  Extract the rightmost bit (0 or 1)
+
+Building the array:
+
+i=0: binary=0b000
+     ans[0] = counted directly = 0
+
+i=1: binary=0b001
+     i >> 1 = 0 (0b000), ans[0] = 0
+     i & 1 = 1 (lowest bit set)
+     ans[1] = ans[0] + 1 = 0 + 1 = 1 ✓
+
+i=2: binary=0b010
+     i >> 1 = 1 (0b001), ans[1] = 1
+     i & 1 = 0 (lowest bit not set)
+     ans[2] = ans[1] + 0 = 1 + 0 = 1 ✓
+
+i=3: binary=0b011
+     i >> 1 = 1 (0b001), ans[1] = 1
+     i & 1 = 1 (lowest bit set)
+     ans[3] = ans[1] + 1 = 1 + 1 = 2 ✓
+
+i=4: binary=0b100
+     i >> 1 = 2 (0b010), ans[2] = 1
+     i & 1 = 0 (lowest bit not set)
+     ans[4] = ans[2] + 0 = 1 + 0 = 1 ✓
+
+i=5: binary=0b101
+     i >> 1 = 2 (0b010), ans[2] = 1
+     i & 1 = 1 (lowest bit set)
+     ans[5] = ans[2] + 1 = 1 + 1 = 2 ✓
+
+Final array: [0, 1, 1, 2, 1, 2] ✓
+```
+
 ## Python Implementation
 
 ```python

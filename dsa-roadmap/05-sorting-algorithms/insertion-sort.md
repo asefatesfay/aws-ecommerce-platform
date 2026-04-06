@@ -16,6 +16,36 @@ Think of sorting a hand of playing cards: you pick up one card at a time and ins
 - Shift all elements in the sorted portion that are greater than `key` one position to the right
 - Insert `key` into the gap
 
+### Visual Example
+
+```
+Input: [5, 2, 8, 1, 9]
+
+Pass 1: key=2 (at index 1)
+  Sorted: [5], Insert 2
+  [5, 2, 8, 1, 9]  → Shift 5 right
+  [_, 5, 8, 1, 9]  → Insert 2 at 0
+  [2, 5, 8, 1, 9]  ✓
+
+Pass 2: key=8 (at index 2)
+  Sorted: [2, 5], Insert 8
+  [2, 5, 8, 1, 9]  → 8 > 5, no shift needed
+  [2, 5, 8, 1, 9]  ✓
+
+Pass 3: key=1 (at index 3)
+  Sorted: [2, 5, 8], Insert 1
+  [2, 5, 8, 1, 9]  → Shift 8 right
+  [2, 5, _, 8, 9]  → Shift 5 right
+  [2, _, 5, 8, 9]  → Shift 2 right
+  [_, 2, 5, 8, 9]  → Insert 1 at 0
+  [1, 2, 5, 8, 9]  ✓
+
+Pass 4: key=9 (at index 4)
+  Sorted: [1, 2, 5, 8], Insert 9
+  [1, 2, 5, 8, 9]  → 9 > 8, no shift needed
+  [1, 2, 5, 8, 9]  ✓
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -41,6 +71,10 @@ def insertion_sort(nums):
 		arr[j + 1] = key
 
 	return arr
+
+# Example
+result = insertion_sort([5, 2, 8, 1, 9])
+# Output: [1, 2, 5, 8, 9]
 ```
 
 ## When to Use

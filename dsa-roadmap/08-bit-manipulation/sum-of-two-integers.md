@@ -36,6 +36,53 @@ Given two integers `a` and `b`, return the sum of the two integers without using
 
 Iteratively compute XOR (sum without carry) and AND shifted left (carry), using the carry as the new addend, until carry is 0.
 
+### Visual Example: Carry Propagation
+
+```
+a = 5 (binary: 0101)
+b = 3 (binary: 0011)
+Expected: 5 + 3 = 8 (binary: 1000)
+
+Iteration 1:
+  a     = 0101 (5)
+  b     = 0011 (3)
+  a ^ b = 0110 (6, sum without carry)
+  a & b = 0001 (1, bits that produce carry)
+  carry = 0010 (shifted left)
+  
+  → a = 0110 (6), b = 0010 (2)
+
+Iteration 2:
+  a     = 0110 (6)
+  b     = 0010 (2)
+  a ^ b = 0100 (4, sum without carry)
+  a & b = 0010 (2, bits that produce carry)
+  carry = 0100 (shifted left)
+  
+  → a = 0100 (4), b = 0100 (4)
+
+Iteration 3:
+  a     = 0100 (4)
+  b     = 0100 (4)
+  a ^ b = 0000 (0, sum without carry)
+  a & b = 0100 (4, bits that produce carry)
+  carry = 1000 (shifted left)
+  
+  → a = 0000 (0), b = 1000 (8)
+
+Iteration 4:
+  a     = 0000 (0)
+  b     = 1000 (8)
+  a ^ b = 1000 (8, sum without carry)
+  a & b = 0000 (0, no carry bits)
+  carry = 0000 (shifted left)
+  
+  → a = 1000 (8), b = 0000 (0)
+
+b = 0, loop ends
+Result: a = 1000 (8) ✓
+```
+
 ## Python Implementation
 
 ```python

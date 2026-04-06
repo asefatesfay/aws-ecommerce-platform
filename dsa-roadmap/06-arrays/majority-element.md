@@ -39,6 +39,38 @@ Given an array `nums` of size `n`, return the majority element. The majority ele
 
 Boyer-Moore Voting: maintain a candidate and a vote count. The majority element's votes can never be fully cancelled out by minority elements, so the final candidate is always the majority element.
 
+### Visual Example: Vote Cancellation
+
+```
+Input: [2, 2, 1, 1, 1, 2, 2]
+Majority: 2 (appears 4 times, > n/2=3.5)
+
+Evolution of (candidate, count):
+
+i=0, x=2:  count=0 → set candidate=2, count=1
+           (candidate, count) = (2, 1)
+
+i=1, x=2:  x==candidate → count++ → (2, 2)
+
+i=2, x=1:  x!=candidate → count-- → (2, 1)
+           (voting cancels out minority 1)
+
+i=3, x=1:  x!=candidate → count-- → (2, 0)
+
+i=4, x=1:  count=0 → set candidate=1, count=1
+           (restart with new candidate)
+
+i=5, x=2:  x!=candidate → count-- → (1, 0)
+
+i=6, x=2:  count=0 → set candidate=2, count=1
+           (2 is back as candidate)
+
+Final candidate: 2 ✓
+
+Note: Because 2 appears > n/2 times, its votes can never be fully depleted.
+The final candidate is guaranteed to be the majority element.
+```
+
 ## Python Implementation
 
 ```python

@@ -14,6 +14,31 @@ Divide the array into a sorted portion (left) and unsorted portion (right). On e
 - Pass k: find minimum in indices k..n-1, swap with index k
 - After n-1 passes, array is sorted
 
+### Visual Example
+
+```
+Input: [5, 2, 8, 1, 9]
+
+Pass 1 (Find global min: 1):
+  [5, 2, 8, 1, 9]  ← Unsorted [5,2,8,1,9], min=1 at index 3
+  [1, 2, 8, 5, 9]  ← Swap 5 and 1 → 1 in place ✓
+
+Pass 2 (Find min in [2,8,5,9]: 2):
+  [1, 2, 8, 5, 9]  ← Unsorted [2,8,5,9], min=2 at index 1
+  [1, 2, 8, 5, 9]  ← Already in place ✓
+
+Pass 3 (Find min in [8,5,9]: 5):
+  [1, 2, 8, 5, 9]  ← Unsorted [8,5,9], min=5 at index 3
+  [1, 2, 5, 8, 9]  ← Swap 8 and 5 → 5 in place ✓
+
+Pass 4 (Find min in [8,9]: 8):
+  [1, 2, 5, 8, 9]  ← Unsorted [8,9], min=8 at index 3
+  [1, 2, 5, 8, 9]  ← Already in place ✓
+
+Sorted: [1, 2, 5, 8, 9]
+Swaps: 2 (minimum required)
+```
+
 ## Complexity
 
 | Case | Time | Space |
@@ -40,6 +65,11 @@ def selection_sort(nums):
 			arr[i], arr[min_idx] = arr[min_idx], arr[i]
 
 	return arr
+
+# Example
+result = selection_sort([5, 2, 8, 1, 9])
+# Output: [1, 2, 5, 8, 9]
+# Swaps: 2 (minimum possible)
 ```
 
 ## When to Use

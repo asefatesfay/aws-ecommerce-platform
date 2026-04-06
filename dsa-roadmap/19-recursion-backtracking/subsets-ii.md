@@ -36,3 +36,57 @@ Given an integer array `nums` that may contain duplicates, return all possible s
 **Space Complexity:** O(n)
 
 Sort + backtracking. Skip duplicate values at the same recursion level to avoid duplicate subsets.
+
+## Python Implementation
+
+```python
+def subsets_with_dup(nums):
+	nums.sort()
+	result = []
+	path = []
+
+	def backtrack(start):
+		result.append(path[:])
+
+		for index in range(start, len(nums)):
+			if index > start and nums[index] == nums[index - 1]:
+				continue
+			path.append(nums[index])
+			backtrack(index + 1)
+			path.pop()
+
+	backtrack(0)
+	return result
+```
+
+## Step-by-Step Example
+
+**Input:** `nums = [1, 2, 2]`
+
+1. Sort first: `[1, 2, 2]`.
+2. Record `[]`.
+3. Choose `1`, then record `[1]`.
+4. Choose first `2`, record `[1, 2]`, then choose second `2`, record `[1, 2, 2]`.
+5. Backtrack. At the same level, skip the second `2` because it would create a duplicate branch.
+6. From top level choose first `2`, record `[2]`, then `[2, 2]`.
+
+**Output:** `[[], [1], [1, 2], [1, 2, 2], [2], [2, 2]]`
+
+## Flow Diagram
+
+```mermaid
+flowchart TD
+	A[sort nums] --> B[record current subset]
+	B --> C{next index is duplicate at same level?}
+	C -- Yes --> D[skip branch]
+	C -- No --> E[append value]
+	E --> F[recurse with next start]
+	F --> G[pop value]
+	G --> B
+```
+
+## Edge Cases
+
+- All elements same: `nums = [2, 2, 2]` should produce four subsets, not eight.
+- Already unique input behaves like Subsets I.
+- Sorting is required; skipping duplicates without sorting is unreliable.

@@ -17,6 +17,21 @@ The key insight: moving elements large distances in early passes makes the final
 4. Reduce the gap and repeat
 5. Final pass with gap=1 is a standard Insertion Sort on a nearly-sorted array
 
+### Visual Example (input: [5, 2, 8, 1, 9])
+
+```
+n=5, initial gap = 5 // 2 = 2
+
+Gap=2 (compare indices i and i-2):
+  [5, 2, 8, 1, 9]  → compare 5,8 (no swap)
+  [5, 2, 8, 1, 9]  → compare 2,1 (swap)
+  [5, 1, 8, 2, 9]  ← After gap=2
+
+Gap=1 (standard Insertion Sort on nearly-sorted array):
+  [5, 1, 8, 2, 9]  → Shifts with gap=1
+  → ... → [1, 2, 5, 8, 9] ✓
+```
+
 ## Gap Sequences
 
 The choice of gap sequence significantly affects performance:
@@ -55,6 +70,10 @@ def shell_sort(nums):
 		gap //= 2
 
 	return arr
+
+# Example
+result = shell_sort([5, 2, 8, 1, 9])
+# Output: [1, 2, 5, 8, 9]
 ```
 
 ## When to Use
