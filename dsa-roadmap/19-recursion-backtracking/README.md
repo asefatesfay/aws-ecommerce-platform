@@ -461,18 +461,24 @@ Each node is one function call. `fib(n)` creates roughly $2^n$ calls — extreme
 **Adding memoization to avoid recomputing:**
 
 ```python
-from functools import lru_cache
-
-@lru_cache(maxsize=None)
 def fib_memo(n: int) -> int:
-    if n <= 1:
-        return n
-    return fib_memo(n - 1) + fib_memo(n - 2)
+    memo = {}
+    
+    def helper(k: int) -> int:
+        if k in memo:
+            return memo[k]
+        if k <= 1:
+            return k
+        result = helper(k - 1) + helper(k - 2)
+        memo[k] = result
+        return result
+    
+    return helper(n)
 
 print(fib_memo(50))  # instant — each subproblem computed once
 ```
 
-`@lru_cache` stores the result of every call in a dictionary. The second time Python reaches `fib_memo(2)` it returns the cached answer instead of re-running the whole subtree.
+The `memo` dictionary stores the result of every call. The second time Python reaches `helper(2)` it returns the cached answer from the dictionary instead of re-running the whole subtree.
 
 ---
 
@@ -704,3 +710,262 @@ Build-time constraints are almost always faster. Learn to spot them in new probl
 | 8 | Generate Parentheses | Build-time constraint validation | $O(\frac{4^n}{\sqrt{n}})$ (Catalan) |
 
 Once Step 5 (Subsets) clicks, every harder problem is the same template with one or two additional rules bolted on. Keep that mental model and the rest of the section will feel like variations on a theme.
+
+## More Worked Examples (Simple to Complex)
+
+If the first 8 steps helped, these additional examples continue the same progression with fresh problem types.
+
+---
+
+### 9. Reverse a String (Pure Recursion)
+
+**Problem:** Given a string, return it reversed.
+
+**Example:** `"recursion" -> "noisrucer"`
+
+**Idea:** Reverse of a string is: reverse of the tail + first character.
+
+```python
+def reverse_string(s: str) -> str:
+  # Base case: empty or single char string is already reversed
+  if len(s) <= 1:
+    return s
+
+  # Reverse the rest, then place first char at the end
+  return reverse_string(s[1:]) + s[0]
+
+print(reverse_string("recursion"))  # noisrucer
+```
+
+**Why it works:**
+- Every call reduces the problem size by 1.
+- Base case stops at length 0 or 1.
+- On unwind, characters are appended in reverse order.
+
+**Complexity:**
+- Time: $O(n^2)$ in Python due to string slicing/concatenation
+- Space: $O(n)$ recursion depth
+
+---
+
+### 10. Climbing Stairs (Recursion + Memoization)
+
+**Problem:** You can climb 1 or 2 steps at a time. How many distinct ways to reach step `n`?
+
+**Example:** `n = 5` -> `8` ways
+
+**Idea:**
+- To reach step `n`, you came from `n-1` or `n-2`.
+- So `ways(n) = ways(n-1) + ways(n-2)`.
+- This is Fibonacci structure; memoization avoids repeated work.
+
+```python
+def climb_stairs(n: int) -> int:
+  memo = {}
+  
+  def dp(k: int) -> int:
+    if k in memo:
+      return memo[k]
+    if k <= 2:
+      return k
+    result = dp(k - 1) + dp(k - 2)
+    memo[k] = result
+    return result
+
+  return dp(n)
+
+print(climb_stairs(5))  # 8
+```
+
+**Why it works:**
+- Recurrence covers all valid last moves.
+- Subproblems overlap heavily, and cache stores each once.
+
+**Complexity:**
+- Time: $O(n)$
+- Space: $O(n)$ (cache + call stack)
+
+---
+
+### 11. Word Search (Grid Backtracking)
+
+**Problem:** Given a 2D board and a word, determine if the word exists in the grid by moving up/down/left/right, without reusing the same cell in one path.
+
+**Example:**
+- Board:
+  `[['A','B','C','E'], ['S','F','C','S'], ['A','D','E','E']]`
+- Word: `"ABCCED"`
+- Output: `True`
+
+**Idea:**
+- Start DFS from every cell that matches the first character.
+- At each step, try 4 directions.
+- Mark cell as visited during the path, then unmark on return.
+
+```python
+def exist(board: list[list[str]], word: str) -> bool:
+    rows, cols = len(board), len(board[0])
+
+    def backtrack(r: int, c: int, i: int) -> bool:
+        if i == len(word):
+            return True
+
+        if (
+            r < 0 or r >= rows or
+            c < 0 or c >= cols or
+            board[r][c] != word[i]
+        ):
+            return False
+
+        temp = board[r][c]
+        board[r][c] = "#"  # mark visited for current path
+
+        found = (
+            backtrack(r + 1, c, i + 1) or
+            backtrack(r - 1, c, i + 1) or
+            backtrack(r, c + 1, i + 1) or
+            backtrack(r, c - 1, i + 1)
+        )
+
+        board[r][c] = temp  # undo
+        return found
+
+    for r in range(rows):
+        for c in range(cols):
+            if backtrack(r, c, 0):
+                return True
+    return False
+```
+
+**Why it works:**
+- Recursive index `i` ensures we match characters in order.
+- Temporary marking prevents reusing a cell in the same path.
+- Undo allows cell reuse in different branches.
+
+**Complexity:**
+- Time: $O(R \cdot C \cdot 4^L)$ where $L$ is word length
+- Space: $O(L)$ recursion depth
+
+---
+
+### 12. Palindrome Partitioning (Backtracking with Validation)
+
+**Problem:** Partition a string so every piece is a palindrome. Return all valid partitions.
+
+**Example:** `"aab" -> [["a","a","b"], ["aa","b"]]`
+
+**Idea:**
+- At position `start`, try every possible end index.
+- If substring `s[start:end+1]` is palindrome, choose it and recurse.
+- Reaching `start == len(s)` means a full valid partition.
+
+```python
+def partition(s: str) -> list[list[str]]:
+    result = []
+
+    def is_palindrome(left: int, right: int) -> bool:
+        while left < right:
+            if s[left] != s[right]:
+                return False
+            left += 1
+            right -= 1
+        return True
+
+    def backtrack(start: int, path: list[str]) -> None:
+        if start == len(s):
+            result.append(path[:])
+            return
+
+        for end in range(start, len(s)):
+            if is_palindrome(start, end):
+                path.append(s[start:end + 1])
+                backtrack(end + 1, path)
+                path.pop()
+
+    backtrack(0, [])
+    return result
+
+print(partition("aab"))
+# [['a', 'a', 'b'], ['aa', 'b']]
+```
+
+**Why it works:**
+- We enumerate all cut positions.
+- Palindrome check prunes invalid branches early.
+- Undo keeps path clean for the next split choice.
+
+**Complexity:**
+- Time: Exponential in worst case (many valid cuts)
+- Space: $O(n)$ recursion depth, excluding output
+
+---
+
+### 13. N-Queens (Advanced Constraint Backtracking)
+
+**Problem:** Place `n` queens on an `n x n` board so that no two queens attack each other.
+
+**Example:** `n = 4` -> 2 valid board arrangements
+
+**Idea:**
+- Place exactly one queen per row.
+- A position `(row, col)` is invalid if:
+  - `col` already has a queen,
+  - diagonal `row - col` is occupied,
+  - anti-diagonal `row + col` is occupied.
+- Use sets for $O(1)$ conflict checks.
+
+```python
+def solve_n_queens(n: int) -> list[list[str]]:
+    result = []
+    cols = set()
+    diagonals = set()       # row - col
+    anti_diagonals = set()  # row + col
+    board = [["."] * n for _ in range(n)]
+
+    def backtrack(row: int) -> None:
+        if row == n:
+            result.append(["".join(r) for r in board])
+            return
+
+        for col in range(n):
+            d = row - col
+            ad = row + col
+            if col in cols or d in diagonals or ad in anti_diagonals:
+                continue
+
+            cols.add(col)
+            diagonals.add(d)
+            anti_diagonals.add(ad)
+            board[row][col] = "Q"
+
+            backtrack(row + 1)
+
+            board[row][col] = "."
+            cols.remove(col)
+            diagonals.remove(d)
+            anti_diagonals.remove(ad)
+
+    backtrack(0)
+    return result
+```
+
+**Why it works:**
+- One row at a time guarantees no row conflicts.
+- Sets enforce column/diagonal constraints before recursing.
+- Backtracking explores all valid placements while pruning invalid states early.
+
+**Complexity:**
+- Time: Roughly $O(n!)$ with pruning
+- Space: $O(n)$ recursion + sets/board bookkeeping
+
+---
+
+### Quick Practice Order (New Additions)
+
+1. Reverse String
+2. Climbing Stairs
+3. Word Search
+4. Palindrome Partitioning
+5. N-Queens
+
+If you can trace these by hand with a small input and explain the base case, choice, recurse, and undo steps, your recursion/backtracking foundation is strong.
