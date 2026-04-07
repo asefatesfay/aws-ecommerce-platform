@@ -85,6 +85,59 @@ flowchart TD
 	J --> K[record [2]]
 ```
 
+## Recursion Tree Visualization
+
+For **Input:** `nums = [1, 2, 3]`, here is the complete recursion tree showing all function calls:
+
+```mermaid
+flowchart TD
+    A["backtrack(0, [])<br/>record []"] --> B["backtrack(1, [1])<br/>record [1]"]
+    A --> C["backtrack(1, [])<br/>from index 1"]
+    
+    B --> D["backtrack(2, [1,2])<br/>record [1,2]"]
+    B --> E["backtrack(2, [1])"]
+    
+    D --> F["backtrack(3, [1,2,3])<br/>record [1,2,3]"]
+    D --> G["backtrack(3, [1,2])<br/>no more elements"]
+    
+    E --> H["backtrack(3, [1,3])<br/>record [1,3]"]
+    E --> I["backtrack(3, [1])"]
+    
+    C --> J["backtrack(2, [2])<br/>record [2]"]
+    C --> K["backtrack(2, [])"]
+    
+    J --> L["backtrack(3, [2,3])<br/>record [2,3]"]
+    J --> M["backtrack(3, [2])"]
+    
+    K --> N["backtrack(3, [3])<br/>record [3]"]
+    K --> O["backtrack(3, [])<br/>base case hit"]
+```
+
+**Key insight:** Each call to `backtrack(start)` records the current `path`, then loops from `start` to the end, choosing index by index.
+
+## Trace Table: Execution Order
+
+**Input:** `nums = [1, 2]`
+
+Here's a trace showing the exact variable states at each recorded subset:
+
+| Step | Call Stack | `start` | `path` | `result` |
+|------|-----------|---------|--------|----------|
+| 1 | `backtrack(0)` | 0 | `[]` | `[[]]` |
+| 2 | `backtrack(1)` | 1 | `[1]` | `[[], [1]]` |
+| 3 | `backtrack(2)` | 2 | `[1,2]` | `[[], [1], [1,2]]` |
+| 4 | pop `2`, return to step 2 | - | `[1]` | (no change) |
+| 5 | pop `1`, continue loop at step 1 | - | `[]` | (no change) |
+| 6 | `backtrack(2)` | 2 | `[2]` | `[[], [1], [1,2], [2]]` |
+
+**How to read this:**
+- **Step 1**: Base case — immediately record empty path.
+- **Step 2**: Loop iteration (index 0) — choose element at index 0 (value `1`), recurse.
+- **Step 3**: Nested loop iteration (index 1) — choose element at index 1 (value `2`), recurse.
+- **Step 4**: Backtrack (base case reached) — pop `2` from path.
+- **Step 5**: Return from recursion — pop `1` from path, process next index from step 1's loop.
+- **Step 6**: Loop iteration (index 1) — choose element at index 1 (value `2`), record result.
+
 ## Edge Cases
 
 - Single element: `nums = [0]` should return `[[], [0]]`.

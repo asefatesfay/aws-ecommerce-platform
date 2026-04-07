@@ -94,6 +94,67 @@ flowchart TD
 	H --> D
 ```
 
+## Recursion Tree Visualization
+
+For **Input:** `nums = [1, 2, 3]`, here is how the recursion tree unfolds with all function calls:
+
+```mermaid
+flowchart TD
+    A["backtrack() len=0<br/>try index 0,1,2"] --> B["mark[0]=T, path=[1]<br/>backtrack()"]
+    A --> C["mark[1]=T, path=[2]<br/>backtrack()"]
+    A --> D["mark[2]=T, path=[3]<br/>backtrack()"]
+    
+    B --> B1["try index 1,2 unused"]
+    B1 --> B2["mark[1]=T, path=[1,2]<br/>backtrack()"]
+    B1 --> B3["mark[2]=T, path=[1,3]<br/>backtrack()"]
+    
+    B2 --> B2A["only index 2 unused<br/>mark[2]=T, path=[1,2,3]<br/>len==3, record!"]
+    B3 --> B3A["only index 1 unused<br/>mark[1]=T, path=[1,3,2]<br/>len==3, record!"]
+    
+    C --> C1["try index 0,2 unused"]
+    C1 --> C2["mark[0]=T, path=[2,1]<br/>backtrack()"]
+    C1 --> C3["mark[2]=T, path=[2,3]<br/>backtrack()"]
+    
+    D --> D1["try index 0,1 unused"]
+    D1 --> D2["mark[0]=T, path=[3,1]<br/>backtrack()"]
+    D1 --> D3["mark[1]=T, path=[3,2]<br/>backtrack()"]
+```
+
+**Key insight:** Unlike subsets, at each recursion level all **unused** elements can be chosen. The `used` array prevents reuse.
+
+## Trace Table: State at Each Recording
+
+**Input:** `nums = [1, 2]`
+
+| Record # | `used` Array | `path` | Depth | Notes |
+|----------|--------------|--------|-------|-------|
+| 1 | `[T, F]` | `[1, 2]` | 2 | Chose index 0, then index 1 |
+| 2 | `[T, F]` | `[1]` | 1 | (backtrack, pop 2) |
+| 2 (continue) | `[F, F]` | `[]` | 0 | (backtrack, pop 1) |
+| 3 | `[F, T]` | `[2, 1]` | 2 | Chose index 1, then index 0 |
+
+**Detailed walkthrough for `[1, 2]`:**
+
+1. **Iteration 1**: index=0 (value 1)
+   - Mark `used[0] = True`, append `1` to path → `path = [1]`
+   - Recurse with `[T, F]`
+     - Iteration 1: index=1 (value 2)
+       - Mark `used[1] = True`, append `2` → `path = [1, 2]`
+       - Recurse, depth 2 == nums.length → **record `[1, 2]`**
+       - Backtrack: pop 2, mark `used[1] = False`
+   - Backtrack from recursion: pop 1, mark `used[0] = False`
+
+2. **Iteration 2**: index=1 (value 2)
+   - Mark `used[1] = True`, append `2` → `path = [2]`
+   - Recurse with `[F, T]`
+     - Iteration 1: index=0 (value 1)
+       - Mark `used[0] = True`, append `1` → `path = [2, 1]`
+       - Recurse, depth 2 == nums.length → **record `[2, 1]`**
+       - Backtrack: pop 1, mark `used[0] = False`
+   - Backtrack from recursion: pop 2, mark `used[1] = False`
+
+3. **Done**: Both indices exhausted at top level.
+
 ## Edge Cases
 
 - A single-element array returns one permutation.

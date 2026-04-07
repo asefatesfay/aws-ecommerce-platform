@@ -98,6 +98,59 @@ flowchart TD
 	H --> D
 ```
 
+## Recursion Tree Visualization
+
+For **Input:** `n = 4`, the recursion tree shows how constraints prune the search space:
+
+```mermaid
+flowchart TD
+    A["backtrack(row=0)<br/>try cols 0-3"] --> B["place Q at 0,0"]
+    A --> C["place Q at 0,1"]
+    A --> D["place Q at 0,2"]
+    A --> E["place Q at 0,3"]
+    
+    B --> B1["backtrack(row=1)<br/>cols 1,3 blocked<br/>try col 2"]
+    B1 --> B1A["place Q at 1,2<br/>backtrack(row=2)"]
+    B1A --> B1A1["no valid column<br/>backtrack"]
+    
+    D --> D1["backtrack(row=1)<br/>cols 1,2,3 blocked<br/>try col 0"]
+    D1 --> D1A["place Q at 1,0<br/>backtrack(row=2)"]
+    D1A --> D1A1["no valid column<br/>backtrack"]
+    
+    E --> E1["backtrack(row=1)<br/>cols 0,2,3 blocked<br/>try col 1"]
+    E1 --> E1A["place Q at 1,1<br/>backtrack(row=2)"]
+    E1A --> E1A1["cols 0,1,2,3,4 all blocked<br/>only try col 3"]
+    E1A1 --> E1A1A["place Q at 2,3<br/>backtrack(row=3)"]
+    E1A1A --> E1A1A1["place Q at 3,1<br/>all 4 rows filled<br/>FOUND SOLUTION"]
+```
+
+**Key pruning:** Notice how most branches terminate early because all columns become blocked by diagonal/column constraints.
+
+## Trace Table: Constraint State at Each Row
+
+**Input:** `n = 4`
+
+Assuming we're exploring the **first valid solution path** `[1, 3, 0, 2]` (queen positions in each row):
+
+| Row | Q Position | `cols` Set | `diagonals` Set | `anti_diag` Set | Valid? |
+|-----|-----------|-----------|-----------------|-----------------|--------|
+| 0 | (0, 1) | `{1}` | `{-1}` | `{1}` | ✓ Place |
+| 1 | Try (1,0) | {1,0}? | {-1,0}? | {1,1}? | ✗ diag -1 conflict |
+| 1 | Try (1,1) | {1}? | {-1}? | {1}? | ✗ col conflict |
+| 1 | Try (1,2) | {1,2}? | {-1,0}? | {1,3}? | ✓ Place |
+| 2 | (2,0) | {1,2,0}? | {-1,0,-2}? | {1,3,2}? | ✗ diag -2 conflict |
+| 2 | Try (2,3) | {1,2,3}? | {-1,0,1}? | {1,3,5}? | ✓ Place |
+| 3 | (3,0) | {1,2,3,0}? | {-1,0,1,-3}? | {1,3,5,3}? | ✓ Place |
+| 3 | row == n | - | - | - | **Return True** |
+
+**Diagonal math check at row 2, col 3:**
+- Diagonal key: `row - col = 2 - 3 = -1` (already in set from step 0) → **conflict!** Skip.
+- Diagonal key: `row + col = 2 + 3 = 5` (new) → **OK, add it**.
+
+## Call Stack Depth
+
+For `n = 4`, the recursion depth is exactly 4 (one level per row). Even for `n = 8`, depth is only 8, so stack overflow is not a concern. **The main challenge is the exponential branching**, but constraint pruning cuts 99% of bad branches.
+
 ## Edge Cases
 
 - `n = 1` returns `[["Q"]]`.

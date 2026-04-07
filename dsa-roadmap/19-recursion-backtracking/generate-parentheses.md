@@ -89,6 +89,62 @@ flowchart TD
 	J --> K[pop]
 ```
 
+## Recursion Tree Visualization
+
+For **Input:** `n = 2`, the recursion tree shows how parentheses validity is maintained:
+
+```mermaid
+flowchart TD
+    A["backtrack(open=0, close=0)<br/>len=0, path=''"] --> B["add opening<br/>backtrack(1, 0)<br/>len=1, path='('"]
+    
+    B --> B1["add opening?<br/>open < n? 1 < 2 YES<br/>backtrack(2, 0)<br/>len=2, path='(('"]
+    B --> B2["add closing?<br/>close < open? 0 < 1 YES<br/>backtrack(1, 1)<br/>len=2, path='()'"]
+    
+    B1 --> B1A["add opening?<br/>open < n? 2 < 2 NO<br/>skip"]
+    B1 --> B1B["add closing?<br/>close < open? 0 < 2 YES<br/>backtrack(2, 1)<br/>len=3, path='(()'"]
+    
+    B1B --> B1B1["add opening?<br/>open < n? NO<br/>skip"]
+    B1B --> B1B2["add closing?<br/>close < open? 1 < 2 YES<br/>backtrack(2, 2)<br/>len=4, path='(())'"]
+    B1B2 --> B1B2A["len == 2n<br/>RECORD '(())'"]
+    
+    B2 --> B2A["add opening?<br/>open < n? 1 < 2 YES<br/>backtrack(2, 1)<br/>len=3, path='()('"]
+    B2 --> B2B["add closing?<br/>close < open? 1 < 1 NO<br/>skip"]
+    
+    B2A --> B2A1["add opening?<br/>open < n? 2 < 2 NO<br/>skip"]
+    B2A --> B2A2["add closing?<br/>close < open? 1 < 2 YES<br/>backtrack(2, 2)<br/>len=4, path='()()'"]
+    B2A2 --> B2A2A["len == 2n<br/>RECORD '()()'"]
+```
+
+**Key constraint:** The condition `close < open` prevents invalid sequences like `))(`. A close bracket can only appear when there's an unmatched open bracket.
+
+## Trace Table: Valid Path Execution
+
+**Input:** `n = 2`, expected output: `["(())", "()()"]`
+
+| Step | `backtrack(open, close, path)` | `open` | `close` | Can Add `(`? | Can Add `)`? | `path` | Action |
+|------|--------------------------------|--------|--------|-------------|-------------|--------|--------|
+| 1 | `(0, 0, "")` | 0 | 0 | 0 < 2 ✓ | 0 < 0 ✗ | `""` | Add `(` only |
+| 2 | nested `(1, 0, "(")` | 1 | 0 | 1 < 2 ✓ | 0 < 1 ✓ | `"("` | Both possible, try `(` first |
+| 3 | nested `(2, 0, "((")` | 2 | 0 | 2 < 2 ✗ | 0 < 2 ✓ | `"(("` | Add `)` only |
+| 4 | nested `(2, 1, "(()")` | 2 | 1 | 2 < 2 ✗ | 1 < 2 ✓ | `"(()"` | Add `)` only |
+| 5 | nested `(2, 2, "(())")` | 2 | 2 | 2 < 2 ✗ | 2 < 2 ✗ | `"(())"` | len == 4 → **RECORD** |
+| (backtrack to step 2) | | | | | | | |
+| 6 | nested `(1, 1, "()")` | 1 | 1 | 1 < 2 ✓ | 1 < 1 ✗ | `"()"` | Add `(` only |
+| 7 | nested `(2, 1, "()(")` | 2 | 1 | 2 < 2 ✗ | 1 < 2 ✓ | `"()("` | Add `)` only |
+| 8 | nested `(2, 2, "()()")` | 2 | 2 | 2 < 2 ✗ | 2 < 2 ✗ | `"()()"` | len == 4 → **RECORD** |
+
+**Why the check `close < open` is crucial:**
+- At step 5 with `open=2, close=1`, we can add `)` because there's 1 unmatched `(`.
+- We cannot have `close > open` at any point, or the string becomes invalid (e.g., `")("` would have `close=1, open=0` temporarily).
+
+## Complexity Insights
+
+- **Catalan Number**: The output size is the `n`-th Catalan number: $C_n = \frac{1}{n+1}\binom{2n}{n}$
+  - For `n=1`: 1 string
+  - For `n=2`: 2 strings  
+  - For `n=3`: 5 strings
+  - For `n=4`: 14 strings
+
 ## Edge Cases
 
 - `n = 1` returns only `"()"`.

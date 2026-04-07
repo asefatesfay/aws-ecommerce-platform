@@ -87,6 +87,49 @@ flowchart TD
 	G --> D
 ```
 
+## Recursion Tree Visualization
+
+For **Input:** `n = 4, k = 2`, here is the recursion tree showing how the start index controls choice:
+
+```mermaid
+flowchart TD
+    A["combine(1)<br/>need 2 numbers"] --> B["choose 1<br/>combine(2, path=[1])"]
+    A --> C["choose 2<br/>combine(3, path=[2])"]
+    A --> D["choose 3<br/>combine(4, path=[3])"]
+    
+    B --> B1["choose 2<br/>combine(3, path=[1,2])<br/>len==2, record [1,2]"]
+    B --> B2["choose 3<br/>combine(4, path=[1,3])<br/>len==2, record [1,3]"]
+    B --> B3["choose 4<br/>combine(5, path=[1,4])<br/>len==2, record [1,4]"]
+    
+    C --> C1["choose 3<br/>combine(4, path=[2,3])<br/>len==2, record [2,3]"]
+    C --> C2["choose 4<br/>combine(5, path=[2,4])<br/>len==2, record [2,4]"]
+    
+    D --> D1["choose 4<br/>combine(5, path=[3,4])<br/>len==2, record [3,4]"]
+```
+
+**Key insight:** The `start` parameter strictly increases, so `[1,2]` and `[2,1]` are never both generated. Order is controlled by starting position.
+
+## Trace Table: Detailed Execution
+
+**Input:** `n = 4, k = 2`
+
+| Step | Call | `start` | `path` | Remaining Needed | Upper Bound | Action |
+|------|------|---------|--------|------------------|-------------|--------|
+| 1 | `combine(1)` | 1 | `[]` | 2 | 3 (`4-2+1`) | Loop value:1,2,3 |
+| 2 | (nested) choose 1 | 1 | `[1]` | 2 | - | Recurse to `combine(2)` |
+| 3 | (nested) `combine(2)` | 2 | `[1]` | 1 | 4 (`4-1+1`) | Loop value:2,3,4 |
+| 4 | (nested) choose 2 | 2 | `[1,2]` | 1 | - | Recurse to `combine(3)` |
+| 5 | (nested) `combine(3)` | 3 | `[1,2]` | 0 | - | `len==k` → **record `[1,2]`**, return |
+| 6 | Backtrack to step 3 | - | `[1]` | - | - | Pop 2, continue loop |
+| 7 | (nested) choose 3 | 3 | `[1,3]` | 1 | - | Recurse to `combine(4)` |
+| 8 | (nested) `combine(4)` | 4 | `[1,3]` | 0 | - | `len==k` → **record `[1,3]`**, return |
+| ... | ... | ... | ... | ... | ... | ... |
+
+**Pruning in action (step 3):**
+- `remaining_needed = k - len(path) = 2 - 1 = 1`
+- `upper_bound = n - remaining_needed + 1 = 4 - 1 + 1 = 4`
+- Loop only from 2 to 4 (inclusive), never consider 5+.
+
 ## Edge Cases
 
 - `k = 1` returns every number as a singleton combination.
