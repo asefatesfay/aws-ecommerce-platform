@@ -43,6 +43,36 @@ print(fib_naive(5))  # 5
 fib(1) fib(0)
 ```
 
+**Mermaid Visualization: Overlapping Subproblems (with highlights)**
+
+```mermaid
+graph TD
+    A["<b>fib(5)</b><br/>calls 2 subtree"] 
+    A --> B["fib(4)<br/>called 1 time"]
+    A --> C["fib(3) ❌<br/>called 1 time<br/>from fib(5)"]
+    
+    B --> D["fib(3) ❌<br/>OVERLAPPING!<br/>called again<br/>from fib(4)"]
+    B --> E["fib(2) ❌<br/>called 1 time<br/>from fib(4)"]
+    
+    C --> F["fib(2) ❌<br/>OVERLAPPING!<br/>called again<br/>from fib(3)"]
+    C --> G["fib(1)"]
+    
+    E --> H["fib(1)"]
+    E --> I["fib(0)"]
+    
+    F --> J["fib(1) ❌<br/>OVERLAPPING!<br/>computed 5 times total"]
+    F --> K["fib(0)"]
+    
+    D -.reused by memoization.-> D2["Stored in cache<br/>return instantly"]
+    F -.reused by memoization.-> F2["Stored in cache<br/>return instantly"]
+    
+    style D fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    style F fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    style J fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    style D2 fill:#ccffcc
+    style F2 fill:#ccffcc
+```
+
 **See the overlaps?**
 - `fib(3)` is computed **2 times**
 - `fib(2)` is computed **3 times**
@@ -127,6 +157,36 @@ print(climb_stairs(10))  # 89
 - You can express the solution in terms of smaller versions of the same problem
 - The choice you make now doesn't affect the optimality of choices in subproblems
 - Test: Can you write `dp[i]` as a function of `dp[i-1]`, `dp[i-2]`, etc.?
+
+**Mermaid: Building Optimal Solutions Bottom-Up**
+
+```mermaid
+graph LR
+    A["Step 1<br/>Ways = 1<br/>(only 1 way)"]
+    B["Step 2<br/>Ways = 2<br/>(1+1 or jump 2)"]
+    C["Step 3<br/>Ways = ways[2] + ways[1]<br/>= 2 + 1 = 3"]
+    D["Step 4<br/>Ways = ways[3] + ways[2]<br/>= 3 + 2 = 5"]
+    E["Step 5<br/>Ways = ways[4] + ways[3]<br/>= 5 + 3 = 8"]
+    
+    A --> C
+    B --> C
+    
+    B --> D
+    C --> D
+    
+    C --> E
+    D --> E
+    
+    style A fill:#e1f5ff
+    style B fill:#e1f5ff
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#f3e5f5,stroke:#6a0572,stroke-width:3px
+    
+    A2["Each step's answer<br/>depends ONLY on<br/>immediate predecessors"] -.-> C
+    A2 -.-> D
+    A2 -.-> E
+```
 
 ---
 
@@ -321,17 +381,33 @@ print(coin_change([10], 10))  # 1
 
 **Overlapping subproblems visualization:**
 
-```
-coin_change(5) with coins [1, 2, 5]
-├─ use coin 1 → coin_change(4)
-│   ├─ use coin 1 → coin_change(3)
-│   │   └─ use coin 1 → coin_change(2)
-│   │       └─ use coin 1 → coin_change(1) ← can reach from multiple paths
-│   └─ use coin 2 → coin_change(2) ← computed multiple times
-└─ use coin 2 → coin_change(3) ← already computed above
+```mermaid
+graph TD
+    A["coin_change(5)<br/>coins=[1,2,5]<br/>Best: 1 coin"]
+    
+    A --> B1["Use 1:<br/>coin_change(4)<br/>Best: 1 coin ✓"]
+    A --> B2["Use 2:<br/>coin_change(3)<br/>Best: 2 coins"]
+    A --> B3["Use 5:<br/>coin_change(0)<br/>= 0"]
+    
+    B1 --> C1["coin_change(3)<br/>OVERLAPPING!<br/>with B2"]
+    B1 --> C2["coin_change(4)<br/>seen before"]
+    
+    B2 --> C3["coin_change(2)<br/>Best: 1"]
+    B2 --> C4["coin_change(1)<br/>= 1"]
+    
+    C1 -.cached.-> C1_cache["Memo stores result<br/>return O(1)"]
+    C2 -.cached.-> C2_cache["Memo stores result<br/>return O(1)"]
+    C3 -.cached.-> C3_cache["Memo stores result<br/>return O(1)"]
+    
+    style C1 fill:#ffcccc,stroke:#cc0000
+    style B2 fill:#fff3e0
+    style A fill:#e1f5ff
+    style C1_cache fill:#ccffcc
 ```
 
 ---
+
+### Overlapping subproblems visualization:
 
 ### Example 3: House Robber (1D DP with State Transition)
 
@@ -351,6 +427,28 @@ coin_change(5) with coins [1, 2, 5]
 - Choose the maximum: `dp[i] = max(nums[i] + dp[i-2], dp[i-1])`
 
 **Base cases:** `dp[0] = nums[0]`, `dp[1] = max(nums[0], nums[1])`
+
+**Decision Tree: Rob or Skip**
+
+```mermaid
+graph TD
+    A["House 0: 1<br/>Rob or Skip?<br/>Start fresh"]
+    A --> B["House 1: 3<br/>Option 1: Rob + skip house 0 = 3<br/>Option 2: Skip = 1<br/>Max = 3"]
+    
+    B --> C["House 2: 1<br/>Option 1: Rob + max from house 0 = 1+1 = 2<br/>Option 2: Skip = 3<br/>Max = 3"]
+    
+    C --> D["House 3: 3<br/>Option 1: Rob + max from house 1 = 3+3 = 6<br/>Option 2: Skip house 3 = 3<br/>Max = 6"]
+    
+    D --> E["House 4: 100<br/>Option 1: Rob + max from house 2 = 100+3 = 103 ✓<br/>Option 2: Skip = 6<br/>Max = 103"]
+    
+    style A fill:#e1f5ff
+    style B fill:#e1f5ff
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#f3e5f5,stroke:#6a0572,stroke-width:3px
+```
+
+**Code:**
 
 ```python
 def rob(nums: list[int]) -> int:
@@ -478,6 +576,22 @@ print(longest_increasing_subsequence([0, 1, 0, 4, 4, 4, 3, 5, 9]))  # 5
 - Take item (if weight fits): `dp[i][c]` = `value[i-1] + dp[i-1][c - weight[i-1]]`
 - Choose the max: `dp[i][c] = max(skip, take)`
 
+**Mermaid: 2D DP Table Filling Pattern (0/1 Knapsack)**
+
+```mermaid
+graph TD
+    A["weights=[2,3,4], values=[3,4,5]<br/>capacity=5"]
+    A --> B["Build DP table:<br/>Rows = items (0 to n)<br/>Cols = capacities (0 to 5)"]
+    B --> C["Fill left-to-right, top-to-bottom<br/>Each cell depends on:<br/>top-left diagonal + above + left"]
+    C --> D["Final answer: dp[n][capacity]<br/>= dp[3][5] = 7"]
+    
+    E["dp[i][c] = max<br/>| dp[i-1][c] (skip item)<br/>| dp[i-1][c-w[i]] + v[i] (take item)<br/>"]
+    
+    style D fill:#f3e5f5,stroke:#6a0572,stroke-width:3px
+```
+
+**Code:**
+
 ```python
 def knapsack_0_1(weights: list[int], values: list[int], capacity: int) -> int:
     memo = {}
@@ -597,6 +711,443 @@ def edit_distance_tabulation(s: str, t: str) -> int:
 print(edit_distance("horse", "ros"))  # 3
 print(edit_distance("intention", "execution"))  # 5
 ```
+
+---
+
+## More Examples with Mermaid Diagrams
+
+### Example 7: Min Cost Climbing Stairs (Simple 1D with Choices)
+
+**Problem:** You can climb 1 or 2 steps. Each step has a cost. Find minimum cost to reach the top.
+
+**Example:** `cost = [10, 15, 20]` → Start at index 0 or 1, so minimum is 15 (start at 1) or 10 + 15 = 25 (start at 0) → Answer: 15
+
+**State:** `dp[i]` = minimum cost to reach step `i`
+
+**Transition:** You can arrive at step `i` from step `i-1` or `i-2`:
+$$dp[i] = \min(dp[i-1], dp[i-2]) + cost[i]$$
+
+**Mermaid: Overlapping Subproblems Visualization**
+
+```mermaid
+graph TD
+    A["cost = [10, 15, 20]<br/>Find min cost to step 3"] --> B["Step 3<br/>= min(Step 2, Step 1) + cost[3]"]
+    B --> C["Step 2<br/>cost[2] + min(Step 0, Step 1)"]
+    B --> D["Step 1<br/>cost[1] from start or cost[0]+cost[1]"]
+    C --> E["Step 1<br/>(computed again)<br/>Overlapping!"]
+    E -.reused.-> F["Memoization<br/>saves this<br/>recomputation"]
+```
+
+**Code:**
+
+```python
+def min_cost_climbing_stairs(cost: list[int]) -> int:
+    memo = {}
+    
+    def helper(i: int) -> int:
+        if i in memo:
+            return memo[i]
+        if i <= 1:
+            return cost[i]
+        
+        result = cost[i] + min(helper(i - 1), helper(i - 2))
+        memo[i] = result
+        return result
+    
+    # Can start at step 0 or 1
+    return min(helper(len(cost) - 1), helper(len(cost) - 2) + cost[-1]) if len(cost) > 1 else cost[0]
+
+# Better: start from either step 0 or 1
+def min_cost_climbing_stairs_v2(cost: list[int]) -> int:
+    if len(cost) <= 2:
+        return min(cost)
+    
+    dp = [0] * len(cost)
+    dp[0] = cost[0]
+    dp[1] = cost[1]
+    
+    for i in range(2, len(cost)):
+        dp[i] = cost[i] + min(dp[i - 1], dp[i - 2])
+    
+    # Last step or second-to-last step
+    return min(dp[-1], dp[-2] + cost[-1])
+
+print(min_cost_climbing_stairs([10, 15, 20]))  # 15
+print(min_cost_climbing_stairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]))  # 6
+```
+
+---
+
+### Example 8: Unique Paths (2D Grid DP)
+
+**Problem:** Robot at top-left, needs to reach bottom-right. Can only move right or down. How many paths?
+
+**Example:** 3×3 grid → 6 unique paths to bottom-right
+
+**State:** `dp[i][j]` = number of ways to reach cell `(i, j)`
+
+**Transition:** You can arrive at `(i, j)` from top `(i-1, j)` or left `(i, j-1)`:
+$$dp[i][j] = dp[i-1][j] + dp[i][j-1]$$
+
+**Base case:** `dp[0][0] = 1`, all cells in first row = 1, all cells in first column = 1
+
+**Mermaid: Optimal Substructure in 2D**
+
+```mermaid
+graph TD
+    A["(0,0) = 1"] --> B["(0,1) = 1<br/>only from left"]
+    A --> C["(1,0) = 1<br/>only from top"]
+    B --> D["(1,1) = dp[0][1] + dp[1][0]<br/>= 1 + 1 = 2"]
+    C --> D
+    D --> E["(2,2) = dp[1][2] + dp[2][1]<br/>= 3 + 3 = 6"]
+    
+    style A fill:#e1f5ff
+    style D fill:#fff3e0
+    style E fill:#f3e5f5
+```
+
+**Code:**
+
+```python
+def unique_paths(m: int, n: int) -> int:
+    memo = {}
+    
+    def helper(i: int, j: int) -> int:
+        if (i, j) in memo:
+            return memo[(i, j)]
+        if i == 0 or j == 0:
+            return 1
+        
+        result = helper(i - 1, j) + helper(i, j - 1)
+        memo[(i, j)] = result
+        return result
+    
+    return helper(m - 1, n - 1)
+
+# Bottom-up
+def unique_paths_tabulation(m: int, n: int) -> int:
+    dp = [[1] * n for _ in range(m)]
+    
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[i][j] = dp[i - 1][j] + dp[i][j - 1]
+    
+    return dp[m - 1][n - 1]
+
+print(unique_paths(3, 3))  # 6
+print(unique_paths(3, 7))  # 28
+print(unique_paths(1, 1))  # 1
+```
+
+---
+
+### Example 9: Paint House (State Decision DP)
+
+**Problem:** Paint `n` houses with 3 colors (0: red, 1: green, 2: blue). Adjacent houses can't have same color. Minimize total cost.
+
+**Example:** 
+```
+House 0 costs: [1, 0, 0] (color 0, 1, 2)
+House 1 costs: [0, 3, 1]
+House 2 costs: [1, 1, 1]
+```
+Best: House 0 → green (0), House 1 → red (0) or blue (1), House 2 → any → Answer: 2
+
+**State:** `dp[i][j]` = minimum cost to paint houses 0..i with house i painted in color j
+
+**Transition:** House `i` with color `j` costs `houses[i][j]` + best for house `i-1` with different color:
+$$dp[i][j] = houses[i][j] + \min(dp[i-1][k]) \text{ for all } k \neq j$$
+
+**Code:**
+
+```python
+def paint_house(costs: list[list[int]]) -> int:
+    memo = {}
+    
+    def helper(house: int, prev_color: int) -> int:
+        # Paint house 'house' where previous house used 'prev_color'
+        if house == len(costs):
+            return 0
+        
+        if (house, prev_color) in memo:
+            return memo[(house, prev_color)]
+        
+        min_cost = float('inf')
+        for color in range(3):
+            if color != prev_color:
+                cost = costs[house][color] + helper(house + 1, color)
+                min_cost = min(min_cost, cost)
+        
+        memo[(house, prev_color)] = min_cost
+        return min_cost
+    
+    return helper(0, -1)  # -1 means no previous house
+
+# Bottom-up
+def paint_house_tabulation(costs: list[list[int]]) -> int:
+    if not costs:
+        return 0
+    
+    n = len(costs)
+    dp = [[0] * 3 for _ in range(n)]
+    dp[0] = costs[0][:]
+    
+    for i in range(1, n):
+        for j in range(3):
+            # Paint house i with color j
+            # Minimum of painting house i-1 with any other color
+            dp[i][j] = costs[i][j] + min(dp[i - 1][k] for k in range(3) if k != j)
+    
+    return min(dp[n - 1])
+
+costs = [[1, 0, 0], [0, 3, 1], [1, 1, 1]]
+print(paint_house(costs))  # 2
+print(paint_house_tabulation(costs))  # 2
+```
+
+---
+
+### Example 10: Longest Common Subsequence (2D String DP)
+
+**Problem:** Find the longest sequence of characters that appear in both strings in the same order (not necessarily contiguous).
+
+**Example:** `s1 = "ABCDGH"`, `s2 = "AEDFHR"` → LCS is "ADH" with length 3
+
+**State:** `dp[i][j]` = length of LCS of `s1[0..i-1]` and `s2[0..j-1]`
+
+**Transition:**
+- If `s1[i-1] == s2[j-1]`: `dp[i][j] = dp[i-1][j-1] + 1` (extend LCS)
+- Else: `dp[i][j] = max(dp[i-1][j], dp[i][j-1])` (skip from s1 or s2)
+
+**Mermaid: Overlapping Subproblems and State Table**
+
+```mermaid
+graph LR
+    A["s1 = ABCDGH<br/>s2 = AEDFHR"] 
+    A --> B["Build DP table row by row"]
+    B --> C["dp[i][j] depends on:<br/>dp[i-1][j] and dp[i][j-1]<br/>and dp[i-1][j-1]"]
+    C --> D["When chars match:<br/>dp[i][j] = dp[i-1][j-1] + 1"]
+    C --> E["When chars differ:<br/>dp[i][j] = max neighbors"]
+```
+
+**Code:**
+
+```python
+def longest_common_subsequence(s1: str, s2: str) -> int:
+    memo = {}
+    
+    def helper(i: int, j: int) -> int:
+        # LCS length for s1[0..i-1] and s2[0..j-1]
+        if (i, j) in memo:
+            return memo[(i, j)]
+        if i == 0 or j == 0:
+            return 0
+        
+        if s1[i - 1] == s2[j - 1]:
+            result = 1 + helper(i - 1, j - 1)
+        else:
+            result = max(helper(i - 1, j), helper(i, j - 1))
+        
+        memo[(i, j)] = result
+        return result
+    
+    return helper(len(s1), len(s2))
+
+# Bottom-up with full DP table
+def lcs_tabulation(s1: str, s2: str) -> int:
+    m, n = len(s1), len(s2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if s1[i - 1] == s2[j - 1]:
+                dp[i][j] = 1 + dp[i - 1][j - 1]
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    
+    return dp[m][n]
+
+print(longest_common_subsequence("ABCDGH", "AEDFHR"))  # 3
+print(longest_common_subsequence("abc", "abc"))  # 3
+print(longest_common_subsequence("abc", "def"))  # 0
+```
+
+---
+
+### Example 11: Maximum Subarray Sum / Kadane's Algorithm variant of DP
+
+**Problem:** Also solvable with 1D DP! Find the maximum sum of a contiguous subarray.
+
+**Example:** `[-2, 1, -3, 4, -1, 2, 1, -5, 4]` → Subarray `[4, -1, 2, 1]` has max sum 6
+
+**State:** `dp[i]` = maximum sum of subarray ending at index `i`
+
+**Transition:** Either extend previous subarray or start fresh:
+$$dp[i] = \max(nums[i], dp[i-1] + nums[i])$$
+
+**Code:**
+
+```python
+def max_subarray_sum(nums: list[int]) -> int:
+    memo = {}
+    
+    def helper(i: int) -> int:
+        if i in memo:
+            return memo[i]
+        if i == 0:
+            return nums[0]
+        
+        result = max(nums[i], helper(i - 1) + nums[i])
+        memo[i] = result
+        return result
+    
+    return max(helper(i) for i in range(len(nums)))
+
+# Bottom-up (Kadane's algorithm)
+def max_subarray_sum_tabulation(nums: list[int]) -> int:
+    max_ending_here = nums[0]
+    max_so_far = nums[0]
+    
+    for i in range(1, len(nums)):
+        max_ending_here = max(nums[i], max_ending_here + nums[i])
+        max_so_far = max(max_so_far, max_ending_here)
+    
+    return max_so_far
+
+print(max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]))  # 6
+print(max_subarray_sum([-1]))  # -1
+```
+
+---
+
+### Example 12: Word Break (Unbounded DP with Memoization)
+
+**Problem:** Given a string and a word dictionary, determine if the string can be segmented into dictionary words.
+
+**Example:** `s = "leetcode"`, `wordDict = ["leet", "code"]` → "leet" + "code" = "leetcode" → True
+
+**State:** `dp[i]` = whether `s[0..i-1]` can be segmented
+
+**Transition:** For position `i`, check all previous positions `j < i`. If `s[j..i-1]` is in dictionary AND `dp[j]` is true:
+$$dp[i] = \text{true if} \exists j: dp[j] \text{ is true AND } s[j:i] \in dict$$
+
+**Mermaid: Overlapping Subproblems**
+
+```mermaid
+graph TD
+    A["String: 'leetcode'<br/>Dict: ['leet', 'code']"] 
+    A --> B["Can we segment from 0?"]
+    B --> C["Check if 'leet' at [0:4]<br/>is in dict? YES"]
+    C --> D["Now check from 4: 'code'<br/>This is a subproblem"]
+    D --> E["'code' in dict? YES<br/>Return True"]
+    
+    A --> F["Without memoization:<br/>similar checks happen<br/>multiple times"]
+    F -.reuse.-> G["Memoization stores:<br/>dp[4] = can_segment from 4"]
+```
+
+**Code:**
+
+```python
+def word_break(s: str, word_dict: list[str]) -> bool:
+    memo = {}
+    word_set = set(word_dict)
+    
+    def helper(start: int) -> bool:
+        if start in memo:
+            return memo[start]
+        if start == len(s):
+            return True  # Reached the end
+        
+        for end in range(start + 1, len(s) + 1):
+            word = s[start:end]
+            if word in word_set and helper(end):
+                memo[start] = True
+                return True
+        
+        memo[start] = False
+        return False
+    
+    return helper(0)
+
+# Bottom-up
+def word_break_tabulation(s: str, word_dict: list[str]) -> bool:
+    word_set = set(word_dict)
+    dp = [False] * (len(s) + 1)
+    dp[0] = True  # Empty string is always segmentable
+    
+    for i in range(1, len(s) + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in word_set:
+                dp[i] = True
+                break
+    
+    return dp[len(s)]
+
+print(word_break("leetcode", ["leet", "code"]))  # True
+print(word_break("applepenapple", ["apple", "pen"]))  # True
+print(word_break("catsanddogs", ["cat", "cats", "and", "sand", "dog"]))  # False
+```
+
+---
+
+### Example 13: Number of Distinct Subsequences (Pattern: Counting DP)
+
+**Problem:** Count total number of distinct subsequences of a string.
+
+**Example:** `s = "ab"` → Subsequences: `""`, `"a"`, `"b"`, `"ab"` → Count: 4
+
+**State:** `dp[i]` = number of distinct subsequences in `s[0..i-1]`
+
+**Transition:**
+- For each character `s[i-1]`, we can either include it or exclude it
+- Include it: double the count (add it to all previous subsequences): `2 * dp[i-1]`
+- But if `s[i-1]` appeared before at index `j`, we've already counted these: subtract `dp[j]`
+$$dp[i] = 2 \cdot dp[i-1] - (dp[lastSeen[char]-1] \text{ if char seen else } 0)$$
+
+**Code:**
+
+```python
+def num_distinct_subsequences(s: str) -> int:
+    n = len(s)
+    dp = [0] * (n + 1)
+    dp[0] = 1  # Empty subsequence
+    last_seen = {}
+    
+    for i in range(1, n + 1):
+        dp[i] = 2 * dp[i - 1]
+        
+        if s[i - 1] in last_seen:
+            # Subtract duplicates
+            dp[i] -= dp[last_seen[s[i - 1]]]
+        
+        last_seen[s[i - 1]] = i - 1
+    
+    return dp[n]
+
+print(num_distinct_subsequences("ab"))  # 4: "", "a", "b", "ab"
+print(num_distinct_subsequences("aab"))  # 6: "", "a", "aa", "b", "ab", "aab"
+print(num_distinct_subsequences("a"))  # 2: "", "a"
+```
+
+---
+
+## Comprehensive Comparison Table
+
+| Example | Pattern | State Def | Overlapping? | Optimal Substructure? | Complexity |
+|---------|---------|-----------|---|---|---|
+| Fibonacci | 1D Recurrence | `dp[i]` | Yes | Yes | O(n) memoized, O(2^n) naive |
+| Climbing Stairs | 1D Recurrence | `dp[i]` | Yes | Yes | O(n) |
+| Min Cost Stairs | 1D Choice | `dp[i]` = min cost | Yes | Yes | O(n) |
+| Coin Change | 1D Unbounded | `dp[i]` = min coins | Yes | Yes | O(n × m) |
+| House Robber | 1D Choice | `dp[i]` = max money | Yes | Yes | O(n) |
+| LIS | 1D Comparison | `dp[i]` = length at i | Yes | Yes | O(n²), O(n log n) binary search |
+| 0/1 Knapsack | 2D Items/Capacity | `dp[i][c]` | Yes | Yes | O(n × capacity) |
+| Unique Paths | 2D Grid | `dp[i][j]` = ways | Yes | Yes | O(m × n) |
+| Paint House | Multiple State | `dp[i][j]` = min cost | Yes | Yes | O(n × 3) |
+| LCS | 2D String | `dp[i][j]` = length | Yes | Yes | O(m × n) |
+| Edit Distance | 2D String | `dp[i][j]` = edits | Yes | Yes | O(m × n) |
+| Word Break | 1D String Segment | `dp[i]` = can segment | Yes | Yes | O(n²) |
+| Max Subarray | 1D Contiguous | `dp[i]` = max sum | Yes | Yes | O(n) |
 
 ---
 
