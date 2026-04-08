@@ -320,6 +320,19 @@ print(fibonacci(10))  # 55
 print(fibonacci_tabulation(10))  # 55
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def fibonacci_bruteforce(n: int) -> int:
+    if n <= 1:
+        return n
+    return fibonacci_bruteforce(n - 1) + fibonacci_bruteforce(n - 2)
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- DP (memo/tabulation): Time `O(n)`, Space `O(n)`
+
 ---
 
 ### Example 2: Coin Change (Unbounded Knapsack)
@@ -379,6 +392,21 @@ print(coin_change([2], 3))  # -1 (impossible)
 print(coin_change([10], 10))  # 1
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def coin_change_bruteforce(coins: list[int], amount: int) -> int:
+    if amount == 0:
+        return 0
+    if amount < 0:
+        return float("inf")
+    return min(1 + coin_change_bruteforce(coins, amount - c) for c in coins)
+```
+
+**Complexity:**
+- Brute force: Time `O(k^amount)` where `k = len(coins)`, Space `O(amount)`
+- DP (memo/tabulation): Time `O(k * amount)`, Space `O(amount)`
+
 **Overlapping subproblems visualization:**
 
 ```mermaid
@@ -406,8 +434,6 @@ graph TD
 ```
 
 ---
-
-### Overlapping subproblems visualization:
 
 ### Example 3: House Robber (1D DP with State Transition)
 
@@ -490,6 +516,19 @@ print(rob([1, 3, 1, 3, 100]))  # 103
 print(rob([2, 7, 9, 3, 1]))  # 12
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def rob_bruteforce(nums: list[int], i: int) -> int:
+    if i < 0:
+        return 0
+    return max(nums[i] + rob_bruteforce(nums, i - 2), rob_bruteforce(nums, i - 1))
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- DP (memo/tabulation): Time `O(n)`, Space `O(n)` (or `O(1)` optimized)
+
 ---
 
 ### Example 4: Longest Increasing Subsequence (LIS)
@@ -553,6 +592,21 @@ def lis_memo(nums: list[int]) -> int:
 print(longest_increasing_subsequence([10, 9, 2, 5, 3, 7, 101, 18]))  # 4
 print(longest_increasing_subsequence([0, 1, 0, 4, 4, 4, 3, 5, 9]))  # 5
 ```
+
+**Brute force (recursive baseline):**
+
+```python
+def lis_bruteforce(nums: list[int], i: int, prev: int) -> int:
+    if i == len(nums):
+        return 0
+    skip = lis_bruteforce(nums, i + 1, prev)
+    take = 1 + lis_bruteforce(nums, i + 1, nums[i]) if nums[i] > prev else 0
+    return max(skip, take)
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- DP: Time `O(n^2)` (or `O(n log n)` optimized), Space `O(n)`
 
 ---
 
@@ -640,6 +694,21 @@ print(knapsack_0_1(weights, values, capacity))  # 7
 print(knapsack_0_1_tabulation(weights, values, capacity))  # 7
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def knapsack_bruteforce(weights: list[int], values: list[int], i: int, cap: int) -> int:
+    if i == len(weights) or cap == 0:
+        return 0
+    skip = knapsack_bruteforce(weights, values, i + 1, cap)
+    take = values[i] + knapsack_bruteforce(weights, values, i + 1, cap - weights[i]) if weights[i] <= cap else 0
+    return max(skip, take)
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- DP (memo/tabulation): Time `O(n * capacity)`, Space `O(n * capacity)`
+
 ---
 
 ### Example 6: Edit Distance (String DP)
@@ -712,6 +781,27 @@ print(edit_distance("horse", "ros"))  # 3
 print(edit_distance("intention", "execution"))  # 5
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def edit_distance_bruteforce(s: str, t: str, i: int, j: int) -> int:
+    if i == 0:
+        return j
+    if j == 0:
+        return i
+    if s[i - 1] == t[j - 1]:
+        return edit_distance_bruteforce(s, t, i - 1, j - 1)
+    return 1 + min(
+        edit_distance_bruteforce(s, t, i - 1, j - 1),
+        edit_distance_bruteforce(s, t, i - 1, j),
+        edit_distance_bruteforce(s, t, i, j - 1),
+    )
+```
+
+**Complexity:**
+- Brute force: Time approximately `O(3^(m+n))`, Space `O(m+n)`
+- DP: Time `O(m * n)`, Space `O(m * n)`
+
 ---
 
 ## More Examples with Mermaid Diagrams
@@ -776,6 +866,19 @@ print(min_cost_climbing_stairs([10, 15, 20]))  # 15
 print(min_cost_climbing_stairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]))  # 6
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def min_cost_bruteforce(cost: list[int], i: int) -> int:
+    if i <= 1:
+        return cost[i]
+    return cost[i] + min(min_cost_bruteforce(cost, i - 1), min_cost_bruteforce(cost, i - 2))
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- DP: Time `O(n)`, Space `O(n)` (or `O(1)` optimized)
+
 ---
 
 ### Example 8: Unique Paths (2D Grid DP)
@@ -838,6 +941,19 @@ print(unique_paths(3, 3))  # 6
 print(unique_paths(3, 7))  # 28
 print(unique_paths(1, 1))  # 1
 ```
+
+**Brute force (recursive baseline):**
+
+```python
+def unique_paths_bruteforce(i: int, j: int) -> int:
+    if i == 0 or j == 0:
+        return 1
+    return unique_paths_bruteforce(i - 1, j) + unique_paths_bruteforce(i, j - 1)
+```
+
+**Complexity:**
+- Brute force: Time approximately `O(2^(m+n))`, Space `O(m+n)`
+- DP: Time `O(m * n)`, Space `O(m * n)` (or `O(n)` optimized)
 
 ---
 
@@ -904,6 +1020,23 @@ costs = [[1, 0, 0], [0, 3, 1], [1, 1, 1]]
 print(paint_house(costs))  # 2
 print(paint_house_tabulation(costs))  # 2
 ```
+
+**Brute force (recursive baseline):**
+
+```python
+def paint_house_bruteforce(costs: list[list[int]], house: int, prev_color: int) -> int:
+    if house == len(costs):
+        return 0
+    ans = float("inf")
+    for color in range(3):
+        if color != prev_color:
+            ans = min(ans, costs[house][color] + paint_house_bruteforce(costs, house + 1, color))
+    return ans
+```
+
+**Complexity:**
+- Brute force: Time `O(3^n)`, Space `O(n)`
+- DP: Time `O(n)` (for fixed 3 colors), Space `O(n)`
 
 ---
 
@@ -972,6 +1105,21 @@ print(longest_common_subsequence("abc", "abc"))  # 3
 print(longest_common_subsequence("abc", "def"))  # 0
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def lcs_bruteforce(s1: str, s2: str, i: int, j: int) -> int:
+    if i == 0 or j == 0:
+        return 0
+    if s1[i - 1] == s2[j - 1]:
+        return 1 + lcs_bruteforce(s1, s2, i - 1, j - 1)
+    return max(lcs_bruteforce(s1, s2, i - 1, j), lcs_bruteforce(s1, s2, i, j - 1))
+```
+
+**Complexity:**
+- Brute force: Time `O(2^(m+n))`, Space `O(m+n)`
+- DP: Time `O(m * n)`, Space `O(m * n)`
+
 ---
 
 ### Example 11: Maximum Subarray Sum / Kadane's Algorithm variant of DP
@@ -1017,6 +1165,23 @@ def max_subarray_sum_tabulation(nums: list[int]) -> int:
 print(max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]))  # 6
 print(max_subarray_sum([-1]))  # -1
 ```
+
+**Brute force (baseline):**
+
+```python
+def max_subarray_bruteforce(nums: list[int]) -> int:
+    best = -float("inf")
+    for i in range(len(nums)):
+        curr = 0
+        for j in range(i, len(nums)):
+            curr += nums[j]
+            best = max(best, curr)
+    return best
+```
+
+**Complexity:**
+- Brute force: Time `O(n^2)`, Space `O(1)`
+- DP/Kadane: Time `O(n)`, Space `O(1)`
 
 ---
 
@@ -1088,6 +1253,22 @@ print(word_break("applepenapple", ["apple", "pen"]))  # True
 print(word_break("catsanddogs", ["cat", "cats", "and", "sand", "dog"]))  # False
 ```
 
+**Brute force (recursive baseline):**
+
+```python
+def word_break_bruteforce(s: str, words: set[str], start: int) -> bool:
+    if start == len(s):
+        return True
+    for end in range(start + 1, len(s) + 1):
+        if s[start:end] in words and word_break_bruteforce(s, words, end):
+            return True
+    return False
+```
+
+**Complexity:**
+- Brute force: Time approximately `O(2^n)`, Space `O(n)`
+- DP: Time `O(n^2)`, Space `O(n)`
+
 ---
 
 ### Example 13: Number of Distinct Subsequences (Pattern: Counting DP)
@@ -1128,6 +1309,20 @@ print(num_distinct_subsequences("ab"))  # 4: "", "a", "b", "ab"
 print(num_distinct_subsequences("aab"))  # 6: "", "a", "aa", "b", "ab", "aab"
 print(num_distinct_subsequences("a"))  # 2: "", "a"
 ```
+
+**Brute force (baseline):**
+
+```python
+def count_all_subseq_bruteforce(s: str, i: int) -> int:
+    if i == len(s):
+        return 1
+    # Include s[i] or exclude s[i]
+    return count_all_subseq_bruteforce(s, i + 1) + count_all_subseq_bruteforce(s, i + 1)
+```
+
+**Complexity:**
+- Brute force enumeration: Time `O(2^n)`, Space `O(n)` (plus dedup storage if required)
+- DP with last-seen map: Time `O(n)`, Space `O(n)`
 
 ---
 

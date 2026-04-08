@@ -5,43 +5,85 @@
 **LeetCode:** #312
 
 ## Problem Statement
-You are given `n` balloons, indexed from `0` to `n - 1`. Each balloon has a number `nums[i]`.
+Given `nums`, burst all balloons to maximize coins.
+Bursting index `k` gives `left_value * nums[k] * right_value` where neighbors are the nearest unburst balloons.
 
-If you burst balloon `i`, you gain `nums[left] * nums[i] * nums[right]` coins, where `left` and `right` are adjacent balloons still not burst. After bursting, `left` and `right` become adjacent.
+## Input/Output Examples
+1. Input: `nums = [3,1,5,8]` -> Output: `167`
+2. Input: `nums = [1,5]` -> Output: `10`
 
-Return the maximum coins you can collect.
+## Why This Is DP (overlapping + optimal substructure)
+- Overlapping: same interval `(l, r)` is solved repeatedly.
+- Optimal substructure: if `k` is last balloon in interval, left and right subintervals are independent.
 
-## Examples
+## Mermaid Visual
+```mermaid
+flowchart TD
+    A[(l,r)] --> B[(l,k)]
+    A --> C[(k,r)]
+    A --> D[last burst = k]
+```
 
-### Example 1
-**Input:** `nums = [3,1,5,8]`
-**Output:** `167`
+## Brute Force (Python)
+```python
+def max_coins_bruteforce(nums):
+    arr = [1] + nums + [1]
+    n = len(arr)
+    def dfs(l, r):
+        if l + 1 >= r:
+            return 0
+        best = 0
+        for k in range(l + 1, r):
+            gain = arr[l] * arr[k] * arr[r]
+            best = max(best, gain + dfs(l, k) + dfs(k, r))
+        return best
 
-### Example 2
-**Input:** `nums = [1,5]`
-**Output:** `10`
+    return dfs(0, n - 1)
+```
 
-## Constraints
-- `1 <= nums.length <= 300`
-- `0 <= nums[i] <= 100`
+## Optimal DP (Python)
+```python
+def max_coins_dp(nums):
+    arr = [1] + nums + [1]
+    n = len(arr)
+    dp = [[0] * n for _ in range(n)]
 
-## DP Breakdown
-Classic interval DP idea: choose the **last** balloon to burst in each interval.
+    for length in range(2, n):
+        for l in range(0, n - length):
+            r = l + length
+            for k in range(l + 1, r):
+                gain = arr[l] * arr[k] * arr[r]
+                dp[l][r] = max(dp[l][r], gain + dp[l][k] + dp[k][r])
 
-- Add virtual boundaries: `arr = [1] + nums + [1]`
-- **State:** `dp[l][r]` = max coins from bursting balloons in open interval `(l, r)`
-- **Transition:**
-  `dp[l][r] = max(dp[l][k] + arr[l] * arr[k] * arr[r] + dp[k][r])`
-  for every `k` in `(l, r)`
-- **Base case:** intervals of length `<= 1` have zero coins
+    return dp[0][n - 1]
+```
 
-## Hints
-- Bursting order forward is hard; choosing last burst makes neighbors fixed.
-- Compute by increasing interval length.
-- Virtual `1`s at both ends simplify edge handling.
+## DP Checklist
+- Define the DP state clearly before coding.
+- Identify base cases that stop recursion/iteration.
+- Write recurrence from smaller subproblems.
+- Ensure transitions are valid for problem constraints.
+- Decide top-down memo vs bottom-up table.
+- Check if state compression is possible.
+- Verify behavior on empty or minimal inputs.
+- Confirm impossible states are handled safely.
+- Test with monotonic, random, and duplicate-heavy data.
+- Re-check off-by-one around boundaries.
 
-## Approach
-**Time Complexity:** O(N^3)
-**Space Complexity:** O(N^2)
+## Minimal Test Harness (Python)
+```python
+def run_small_cases(cases, solver):
+    """Simple harness to quickly smoke-test a DP implementation."""
+    results = []
+    for args, expected in cases:
+        if isinstance(args, tuple):
+            got = solver(*args)
+        else:
+            got = solver(args)
+        results.append((got, expected, got == expected))
+    return results
+```
 
-Use interval length expansion and try each split point as the last burst balloon.
+## Complexity (brute force + optimal)
+- Brute force recursion: super-exponential growth (Catalan-like split choices).
+- Optimal interval DP: `O(n^3)` time, `O(n^2)` space.

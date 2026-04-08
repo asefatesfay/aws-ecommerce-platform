@@ -5,41 +5,80 @@
 **LeetCode:** #518
 
 ## Problem Statement
-Given an integer `amount` and an array `coins`, return the number of combinations that make up that amount.
+Given `amount` and `coins`, return the number of combinations to make up `amount`.
+Each coin can be used unlimited times. Order does not matter.
 
-You have infinite copies of each coin. Two combinations are considered the same if they use the same counts of coins (order does not matter).
+## Input/Output Examples
+1. Input: `amount = 5, coins = [1,2,5]` -> Output: `4`
+2. Input: `amount = 3, coins = [2]` -> Output: `0`
+3. Input: `amount = 10, coins = [10]` -> Output: `1`
 
-## Examples
+## Why This Is DP (overlapping + optimal substructure)
+- Overlapping: same remaining amount after choosing some prefix of coins appears repeatedly.
+- Optimal substructure: combinations for amount `a` include combinations for `a - coin`.
 
-### Example 1
-**Input:** `amount = 5`, `coins = [1,2,5]`
-**Output:** `4`
-**Explanation:** `5`, `2+2+1`, `2+1+1+1`, `1+1+1+1+1`
+## Mermaid Visual
+```mermaid
+flowchart LR
+    A[dp[a]] --> B[dp[a-coin1]]
+    A --> C[dp[a-coin2]]
+```
 
-### Example 2
-**Input:** `amount = 3`, `coins = [2]`
-**Output:** `0`
+## Brute Force (Python)
+```python
+def change_bruteforce(amount, coins):
+    n = len(coins)
+    def dfs(i, rem):
+        if rem == 0:
+            return 1
+        if i == n or rem < 0:
+            return 0
+        use = dfs(i, rem - coins[i])
+        skip = dfs(i + 1, rem)
+        return use + skip
 
-## Constraints
-- `1 <= coins.length <= 300`
-- `1 <= coins[i] <= 5000`
-- `0 <= amount <= 5000`
+    return dfs(0, amount)
+```
 
-## DP Breakdown
-- **State:** `dp[a]` = number of ways to make amount `a`
-- **Base case:** `dp[0] = 1`
-- **Transition:** for each `coin`, for `a` from `coin` to `amount`:
-  `dp[a] += dp[a - coin]`
+## Optimal DP (Python)
+```python
+def change_dp(amount, coins):
+    dp = [0] * (amount + 1)
+    dp[0] = 1
 
-Coin-first iteration prevents counting permutations multiple times.
+    for coin in coins:
+        for a in range(coin, amount + 1):
+            dp[a] += dp[a - coin]
 
-## Hints
-- This is counting combinations, not minimum coins.
-- Iterate coins in outer loop.
-- `dp[0] = 1` means one way to make zero amount: choose nothing.
+    return dp[amount]
+```
 
-## Approach
-**Time Complexity:** O(amount * coins.length)
-**Space Complexity:** O(amount)
+## DP Checklist
+- Define the DP state clearly before coding.
+- Identify base cases that stop recursion/iteration.
+- Write recurrence from smaller subproblems.
+- Ensure transitions are valid for problem constraints.
+- Decide top-down memo vs bottom-up table.
+- Check if state compression is possible.
+- Verify behavior on empty or minimal inputs.
+- Confirm impossible states are handled safely.
+- Test with monotonic, random, and duplicate-heavy data.
+- Re-check off-by-one around boundaries.
 
-1D unbounded knapsack counting DP.
+## Minimal Test Harness (Python)
+```python
+def run_small_cases(cases, solver):
+    """Simple harness to quickly smoke-test a DP implementation."""
+    results = []
+    for args, expected in cases:
+        if isinstance(args, tuple):
+            got = solver(*args)
+        else:
+            got = solver(args)
+        results.append((got, expected, got == expected))
+    return results
+```
+
+## Complexity (brute force + optimal)
+- Brute force recursion: exponential in amount and branching choices.
+- Optimal DP: `O(len(coins) * amount)` time, `O(amount)` space.

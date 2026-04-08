@@ -5,33 +5,94 @@
 **LeetCode:** #72
 
 ## Problem Statement
-Given two strings `word1` and `word2`, return the minimum number of operations (insert, delete, replace) to convert `word1` to `word2`.
+Given `word1` and `word2`, return the minimum operations to convert `word1` to `word2`.
+Allowed operations: insert, delete, replace.
 
-## Examples
+## Input/Output Examples
+1. Input: `word1 = "horse", word2 = "ros"` -> Output: `3`
+2. Input: `word1 = "intention", word2 = "execution"` -> Output: `5`
 
-### Example 1
-**Input:** `word1 = "horse"`, `word2 = "ros"`
-**Output:** `3`
-**Explanation:** horse → rorse (replace h→r) → rose (delete r) → ros (delete e)
+## Why This Is DP (overlapping + optimal substructure)
+- Overlapping: many choices lead to same suffix pair `(i, j)`.
+- Optimal substructure: best edit count for `(i, j)` uses best of neighboring states.
 
-### Example 2
-**Input:** `word1 = "intention"`, `word2 = "execution"`
-**Output:** `5`
+## Mermaid Visual
+```mermaid
+flowchart TD
+    A[dp i,j] --> B[delete: dp i+1,j]
+    A --> C[insert: dp i,j+1]
+    A --> D[replace/match: dp i+1,j+1]
+```
 
-## Constraints
-- `0 <= word1.length, word2.length <= 500`
-- Only lowercase English letters
+## Brute Force (Python)
+```python
+def min_distance_bruteforce(word1, word2):
+    n1, n2 = len(word1), len(word2)
+    def dfs(i, j):
+        if i == n1:
+            return n2 - j
+        if j == n2:
+            return n1 - i
 
-## Hints
+        if word1[i] == word2[j]:
+            return dfs(i + 1, j + 1)
 
-> 💡 **Hint 1:** `dp[i][j]` = min operations to convert `word1[:i]` to `word2[:j]`.
+        return 1 + min(
+            dfs(i + 1, j),
+            dfs(i, j + 1),
+            dfs(i + 1, j + 1),
+        )
 
-> 💡 **Hint 2:** If `word1[i-1] == word2[j-1]`: `dp[i][j] = dp[i-1][j-1]` (no operation needed). Otherwise: `dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])` (delete, insert, replace).
+    return dfs(0, 0)
+```
 
-> 💡 **Hint 3:** Base cases: `dp[i][0] = i` (delete all), `dp[0][j] = j` (insert all).
+## Optimal DP (Python)
+```python
+def min_distance_dp(word1, word2):
+    n1, n2 = len(word1), len(word2)
+    dp = [[0] * (n2 + 1) for _ in range(n1 + 1)]
 
-## Approach
-**Time Complexity:** O(M × N)
-**Space Complexity:** O(M × N)
+    for i in range(n1 + 1):
+        dp[i][n2] = n1 - i
+    for j in range(n2 + 1):
+        dp[n1][j] = n2 - j
 
-Classic 2D DP. Three choices at each mismatch: insert, delete, or replace — take the minimum.
+    for i in range(n1 - 1, -1, -1):
+        for j in range(n2 - 1, -1, -1):
+            if word1[i] == word2[j]:
+                dp[i][j] = dp[i + 1][j + 1]
+            else:
+                dp[i][j] = 1 + min(dp[i + 1][j], dp[i][j + 1], dp[i + 1][j + 1])
+
+    return dp[0][0]
+```
+
+## DP Checklist
+- Define the DP state clearly before coding.
+- Identify base cases that stop recursion/iteration.
+- Write recurrence from smaller subproblems.
+- Ensure transitions are valid for problem constraints.
+- Decide top-down memo vs bottom-up table.
+- Check if state compression is possible.
+- Verify behavior on empty or minimal inputs.
+- Confirm impossible states are handled safely.
+- Test with monotonic, random, and duplicate-heavy data.
+- Re-check off-by-one around boundaries.
+
+## Minimal Test Harness (Python)
+```python
+def run_small_cases(cases, solver):
+    """Simple harness to quickly smoke-test a DP implementation."""
+    results = []
+    for args, expected in cases:
+        if isinstance(args, tuple):
+            got = solver(*args)
+        else:
+            got = solver(args)
+        results.append((got, expected, got == expected))
+    return results
+```
+
+## Complexity (brute force + optimal)
+- Brute force recursion: `O(3^(n1+n2))` time, `O(n1+n2)` stack.
+- Optimal DP: `O(n1 * n2)` time, `O(n1 * n2)` space.

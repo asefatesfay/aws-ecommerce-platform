@@ -5,39 +5,89 @@
 **LeetCode:** #63
 
 ## Problem Statement
-A robot moves on an `m x n` grid from top-left to bottom-right, moving only down or right.
+In `obstacleGrid`, `1` means blocked and `0` means free.
+A robot starts at top-left and moves only right or down.
+Return number of unique paths to bottom-right.
 
-Some cells are obstacles (`1`) that cannot be visited. Return the number of unique paths.
+## Input/Output Examples
+1. Input: `obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]` -> Output: `2`
+2. Input: `obstacleGrid = [[0,1],[0,0]]` -> Output: `1`
 
-## Examples
+## Why This Is DP (overlapping + optimal substructure)
+- Overlapping: path counts for each cell are reused by cells to the right/below.
+- Optimal substructure: paths to cell = top paths + left paths, unless obstacle.
 
-### Example 1
-**Input:** `obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]`
-**Output:** `2`
+## Mermaid Visual
+```mermaid
+flowchart LR
+    A[cell r,c] --> B[from top]
+    A --> C[from left]
+    D[obstacle] --> E[0 paths]
+```
 
-### Example 2
-**Input:** `obstacleGrid = [[0,1],[0,0]]`
-**Output:** `1`
+## Brute Force (Python)
+```python
+def unique_paths2_bruteforce(obstacle_grid):
+    rows, cols = len(obstacle_grid), len(obstacle_grid[0])
+    def dfs(r, c):
+        if r >= rows or c >= cols or obstacle_grid[r][c] == 1:
+            return 0
+        if r == rows - 1 and c == cols - 1:
+            return 1
+        return dfs(r + 1, c) + dfs(r, c + 1)
 
-## Constraints
-- `m == obstacleGrid.length`
-- `n == obstacleGrid[i].length`
-- `1 <= m, n <= 100`
-- `obstacleGrid[i][j]` is `0` or `1`
+    return dfs(0, 0)
+```
 
-## DP Breakdown
-- **State:** `dp[r][c]` = number of ways to reach `(r, c)`
-- If cell is obstacle, `dp[r][c] = 0`
-- Else, `dp[r][c] = dp[r - 1][c] + dp[r][c - 1]`
-- **Base case:** `dp[0][0] = 1` only if start is not blocked
+## Optimal DP (Python)
+```python
+def unique_paths2_dp(obstacle_grid):
+    rows, cols = len(obstacle_grid), len(obstacle_grid[0])
+    dp = [[0] * cols for _ in range(rows)]
 
-## Hints
-- Handle blocked start or blocked destination early.
-- First row/column require careful obstacle propagation.
-- 1D rolling DP works well here.
+    if obstacle_grid[0][0] == 1:
+        return 0
+    dp[0][0] = 1
 
-## Approach
-**Time Complexity:** O(m * n)
-**Space Complexity:** O(n)
+    for r in range(rows):
+        for c in range(cols):
+            if obstacle_grid[r][c] == 1:
+                dp[r][c] = 0
+            else:
+                if r > 0:
+                    dp[r][c] += dp[r - 1][c]
+                if c > 0:
+                    dp[r][c] += dp[r][c - 1]
 
-Traverse row by row and set `dp[c] = 0` when obstacle is found.
+    return dp[rows - 1][cols - 1]
+```
+
+## DP Checklist
+- Define the DP state clearly before coding.
+- Identify base cases that stop recursion/iteration.
+- Write recurrence from smaller subproblems.
+- Ensure transitions are valid for problem constraints.
+- Decide top-down memo vs bottom-up table.
+- Check if state compression is possible.
+- Verify behavior on empty or minimal inputs.
+- Confirm impossible states are handled safely.
+- Test with monotonic, random, and duplicate-heavy data.
+- Re-check off-by-one around boundaries.
+
+## Minimal Test Harness (Python)
+```python
+def run_small_cases(cases, solver):
+    """Simple harness to quickly smoke-test a DP implementation."""
+    results = []
+    for args, expected in cases:
+        if isinstance(args, tuple):
+            got = solver(*args)
+        else:
+            got = solver(args)
+        results.append((got, expected, got == expected))
+    return results
+```
+
+## Complexity (brute force + optimal)
+- Brute force recursion: approximately `O(2^(rows+cols))` time, `O(rows+cols)` stack.
+- Optimal DP: `O(rows * cols)` time, `O(rows * cols)` space.

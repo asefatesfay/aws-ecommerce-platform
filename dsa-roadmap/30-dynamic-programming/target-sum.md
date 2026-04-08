@@ -5,46 +5,80 @@
 **LeetCode:** #494
 
 ## Problem Statement
-You are given an integer array `nums` and an integer `target`.
+Given `nums` and `target`, assign `+` or `-` before each number.
+Return the number of expressions that evaluate to `target`.
 
-You can assign a `+` or `-` sign before each number and then sum all values. Return the number of different expressions that evaluate to `target`.
+## Input/Output Examples
+1. Input: `nums = [1,1,1,1,1], target = 3` -> Output: `5`
+2. Input: `nums = [1], target = 1` -> Output: `1`
+3. Input: `nums = [2,1], target = 1` -> Output: `1`
 
-## Examples
+## Why This Is DP (overlapping + optimal substructure)
+- Overlapping: same `(index, current_sum)` repeats across branches.
+- Optimal substructure: ways from state are sum of adding and subtracting current value.
 
-### Example 1
-**Input:** `nums = [1,1,1,1,1]`, `target = 3`
-**Output:** `5`
+## Mermaid Visual
+```mermaid
+flowchart TD
+    A[i,sum] --> B[i+1,sum+nums i]
+    A --> C[i+1,sum-nums i]
+```
 
-### Example 2
-**Input:** `nums = [1]`, `target = 1`
-**Output:** `1`
+## Brute Force (Python)
+```python
+def find_target_sum_ways_bruteforce(nums, target):
+    def dfs(i, cur):
+        if i == len(nums):
+            return 1 if cur == target else 0
+        return dfs(i + 1, cur + nums[i]) + dfs(i + 1, cur - nums[i])
 
-## Constraints
-- `1 <= nums.length <= 20`
-- `0 <= nums[i] <= 1000`
-- `sum(nums) <= 1000`
-- `-1000 <= target <= 1000`
+    return dfs(0, 0)
+```
 
-## DP Breakdown
-Convert sign assignment to subset counting:
-- Let subset `P` be numbers with `+`, subset `N` with `-`.
-- `sum(P) - sum(N) = target`
-- `sum(P) + sum(N) = total`
-- So `sum(P) = (total + target) / 2`
+## Optimal DP (Python)
+```python
+def find_target_sum_ways_dp(nums, target):
+    total = sum(nums)
+    if abs(target) > total or (total + target) % 2:
+        return 0
 
-Now count subsets with sum `S = (total + target) / 2`.
+    subset = (total + target) // 2
+    dp = [0] * (subset + 1)
+    dp[0] = 1
 
-- **State:** `dp[s]` = number of ways to make sum `s`
-- **Transition:** for each `num`, iterate `s` from `S` down to `num`:
-  `dp[s] += dp[s - num]`
+    for x in nums:
+        for s in range(subset, x - 1, -1):
+            dp[s] += dp[s - x]
 
-## Hints
-- If `total + target` is odd or negative, answer is `0`.
-- Use reverse iteration for 0/1 knapsack counting.
-- Initialize `dp[0] = 1`.
+    return dp[subset]
+```
 
-## Approach
-**Time Complexity:** O(N * S)
-**Space Complexity:** O(S)
+## DP Checklist
+- Define the DP state clearly before coding.
+- Identify base cases that stop recursion/iteration.
+- Write recurrence from smaller subproblems.
+- Ensure transitions are valid for problem constraints.
+- Decide top-down memo vs bottom-up table.
+- Check if state compression is possible.
+- Verify behavior on empty or minimal inputs.
+- Confirm impossible states are handled safely.
+- Test with monotonic, random, and duplicate-heavy data.
+- Re-check off-by-one around boundaries.
 
-Compute subset count with 1D knapsack DP.
+## Minimal Test Harness (Python)
+```python
+def run_small_cases(cases, solver):
+    """Simple harness to quickly smoke-test a DP implementation."""
+    results = []
+    for args, expected in cases:
+        if isinstance(args, tuple):
+            got = solver(*args)
+        else:
+            got = solver(args)
+        results.append((got, expected, got == expected))
+    return results
+```
+
+## Complexity (brute force + optimal)
+- Brute force recursion: `O(2^n)` time, `O(n)` stack.
+- Optimal DP (subset transform): `O(n * subset)` time, `O(subset)` space.
