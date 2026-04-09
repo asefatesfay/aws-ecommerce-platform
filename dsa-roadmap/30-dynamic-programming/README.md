@@ -1326,6 +1326,1299 @@ def count_all_subseq_bruteforce(s: str, i: int) -> int:
 
 ---
 
+## Additional Intuition Builder Problems (Brute Force -> Memo -> Tabulation)
+
+These are extra problems to strengthen your DP instincts across different patterns.
+
+### Problem A: Partition Equal Subset Sum (0/1 Decision DP)
+
+**Problem (plain English):**
+You are given an integer array `nums`. Decide whether you can split it into **two groups** so that both groups have the **same sum**.
+
+**Input/Output:**
+- Input: `nums = [1, 5, 11, 5]`
+- Output: `True`
+- Why: Total sum is 22, so each subset must sum to 11. One valid subset is `[11]`, and the other is `[1, 5, 5]`.
+
+If the total sum is odd, answer is always `False`.
+
+**Brute force (try include/exclude each number):**
+
+```python
+def can_partition_bruteforce(nums: list[int]) -> bool:
+    total = sum(nums)
+    if total % 2 != 0:
+        return False
+
+    target = total // 2
+
+    def dfs(i: int, curr_sum: int) -> bool:
+        if curr_sum == target:
+            return True
+        if i == len(nums) or curr_sum > target:
+            return False
+
+        # Include nums[i] or skip nums[i]
+        return dfs(i + 1, curr_sum + nums[i]) or dfs(i + 1, curr_sum)
+
+    return dfs(0, 0)
+```
+
+**Memoization (cache repeated states):**
+
+```python
+def can_partition_memo(nums: list[int]) -> bool:
+    total = sum(nums)
+    if total % 2 != 0:
+        return False
+
+    target = total // 2
+    memo = {}
+
+    def dfs(i: int, curr_sum: int) -> bool:
+        if curr_sum == target:
+            return True
+        if i == len(nums) or curr_sum > target:
+            return False
+
+        state = (i, curr_sum)
+        if state in memo:
+            return memo[state]
+
+        memo[state] = dfs(i + 1, curr_sum + nums[i]) or dfs(i + 1, curr_sum)
+        return memo[state]
+
+    return dfs(0, 0)
+```
+
+**Tabulation (subset-sum bottom-up):**
+
+```python
+def can_partition_tabulation(nums: list[int]) -> bool:
+    total = sum(nums)
+    if total % 2 != 0:
+        return False
+
+    target = total // 2
+    dp = [False] * (target + 1)
+    dp[0] = True
+
+    # Reverse loop means each number is used at most once (0/1 knapsack style).
+    for num in nums:
+        for s in range(target, num - 1, -1):
+            dp[s] = dp[s] or dp[s - num]
+
+    return dp[target]
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- Memoization: Time `O(n * target)`, Space `O(n * target)`
+- Tabulation: Time `O(n * target)`, Space `O(target)`
+
+---
+
+### Problem B: Jump Game II (Min Steps DP)
+
+**Problem (plain English):**
+Array `nums` tells you maximum jump length at each index. You start at index 0. Find the **minimum number of jumps** needed to reach the last index.
+
+**Input/Output:**
+- Input: `nums = [2, 3, 1, 1, 4]`
+- Output: `2`
+- Why: Jump from index 0 to index 1 (or 2), then to index 4.
+
+You may assume the last index is reachable.
+
+**Brute force (try all possible jumps):**
+
+```python
+def jump_game_ii_bruteforce(nums: list[int]) -> int:
+    n = len(nums)
+
+    def dfs(i: int) -> int:
+        if i >= n - 1:
+            return 0
+
+        best = float("inf")
+        furthest = min(n - 1, i + nums[i])
+        for nxt in range(i + 1, furthest + 1):
+            best = min(best, 1 + dfs(nxt))
+        return best
+
+    return dfs(0)
+```
+
+**Memoization:**
+
+```python
+def jump_game_ii_memo(nums: list[int]) -> int:
+    n = len(nums)
+    memo = {}
+
+    def dfs(i: int) -> int:
+        if i >= n - 1:
+            return 0
+        if i in memo:
+            return memo[i]
+
+        best = float("inf")
+        furthest = min(n - 1, i + nums[i])
+        for nxt in range(i + 1, furthest + 1):
+            best = min(best, 1 + dfs(nxt))
+
+        memo[i] = best
+        return best
+
+    return dfs(0)
+```
+
+**Tabulation (bottom-up minimum jumps):**
+
+```python
+def jump_game_ii_tabulation(nums: list[int]) -> int:
+    n = len(nums)
+    dp = [float("inf")] * n
+    dp[0] = 0
+
+    for i in range(n):
+        furthest = min(n - 1, i + nums[i])
+        for nxt in range(i + 1, furthest + 1):
+            dp[nxt] = min(dp[nxt], dp[i] + 1)
+
+    return dp[-1]
+```
+
+**Complexity:**
+- Brute force: Exponential in worst case
+- Memoization: Time `O(n^2)`, Space `O(n)`
+- Tabulation: Time `O(n^2)`, Space `O(n)`
+
+---
+
+### Problem C: Count Palindromic Substrings (String DP)
+
+**Problem (plain English):**
+Given a string `s`, count how many substrings are palindromes. A palindrome reads the same forward and backward.
+
+**Input/Output:**
+- Input: `s = "aaa"`
+- Output: `6`
+- Why: Palindromic substrings are `"a"`, `"a"`, `"a"`, `"aa"`, `"aa"`, `"aaa"`.
+
+**Brute force (check every substring directly):**
+
+```python
+def count_palindromic_substrings_bruteforce(s: str) -> int:
+    n = len(s)
+
+    def is_pal(l: int, r: int) -> bool:
+        while l < r:
+            if s[l] != s[r]:
+                return False
+            l += 1
+            r -= 1
+        return True
+
+    count = 0
+    for l in range(n):
+        for r in range(l, n):
+            if is_pal(l, r):
+                count += 1
+    return count
+```
+
+**Memoization (cache palindrome checks):**
+
+```python
+def count_palindromic_substrings_memo(s: str) -> int:
+    n = len(s)
+    memo = {}
+
+    def is_pal(l: int, r: int) -> bool:
+        if l >= r:
+            return True
+        if (l, r) in memo:
+            return memo[(l, r)]
+        memo[(l, r)] = s[l] == s[r] and is_pal(l + 1, r - 1)
+        return memo[(l, r)]
+
+    count = 0
+    for l in range(n):
+        for r in range(l, n):
+            if is_pal(l, r):
+                count += 1
+    return count
+```
+
+**Tabulation (build palindrome table by length):**
+
+```python
+def count_palindromic_substrings_tabulation(s: str) -> int:
+    n = len(s)
+    dp = [[False] * n for _ in range(n)]
+    count = 0
+
+    for length in range(1, n + 1):
+        for l in range(0, n - length + 1):
+            r = l + length - 1
+
+            if s[l] == s[r]:
+                if length <= 2:
+                    dp[l][r] = True
+                else:
+                    dp[l][r] = dp[l + 1][r - 1]
+
+            if dp[l][r]:
+                count += 1
+
+    return count
+```
+
+**Complexity:**
+- Brute force: Time `O(n^3)`, Space `O(1)`
+- Memoization: Time `O(n^2)`, Space `O(n^2)`
+- Tabulation: Time `O(n^2)`, Space `O(n^2)`
+
+---
+
+### Problem D: Longest Palindromic Subsequence (LPS)
+
+**Problem (plain English):**
+Given string `s`, find the length of the longest subsequence that is a palindrome. Subsequence means you can delete characters without changing order of remaining characters.
+
+**Input/Output:**
+- Input: `s = "bbbab"`
+- Output: `4`
+- Why: One longest palindromic subsequence is `"bbbb"`.
+
+**Brute force (recursive choices on ends):**
+
+```python
+def lps_bruteforce(s: str) -> int:
+    def dfs(l: int, r: int) -> int:
+        if l > r:
+            return 0
+        if l == r:
+            return 1
+
+        if s[l] == s[r]:
+            return 2 + dfs(l + 1, r - 1)
+
+        return max(dfs(l + 1, r), dfs(l, r - 1))
+
+    return dfs(0, len(s) - 1)
+```
+
+**Memoization:**
+
+```python
+def lps_memo(s: str) -> int:
+    memo = {}
+
+    def dfs(l: int, r: int) -> int:
+        if l > r:
+            return 0
+        if l == r:
+            return 1
+        if (l, r) in memo:
+            return memo[(l, r)]
+
+        if s[l] == s[r]:
+            memo[(l, r)] = 2 + dfs(l + 1, r - 1)
+        else:
+            memo[(l, r)] = max(dfs(l + 1, r), dfs(l, r - 1))
+
+        return memo[(l, r)]
+
+    return dfs(0, len(s) - 1)
+```
+
+**Tabulation (fill by substring length):**
+
+```python
+def lps_tabulation(s: str) -> int:
+    n = len(s)
+    dp = [[0] * n for _ in range(n)]
+
+    for i in range(n):
+        dp[i][i] = 1
+
+    for length in range(2, n + 1):
+        for l in range(0, n - length + 1):
+            r = l + length - 1
+
+            if s[l] == s[r]:
+                if length == 2:
+                    dp[l][r] = 2
+                else:
+                    dp[l][r] = 2 + dp[l + 1][r - 1]
+            else:
+                dp[l][r] = max(dp[l + 1][r], dp[l][r - 1])
+
+    return dp[0][n - 1]
+```
+
+**Complexity:**
+- Brute force: Exponential
+- Memoization: Time `O(n^2)`, Space `O(n^2)`
+- Tabulation: Time `O(n^2)`, Space `O(n^2)`
+
+---
+
+## What Else Helps Build DP Intuition?
+
+Beyond solving problems, these habits make DP click faster:
+
+1. Build a "state first" routine.
+   - Before coding, write exactly one line: "dp[state] means ..."
+   - If this sentence is fuzzy, your code will be fuzzy.
+
+2. Always dry-run tiny input by hand.
+   - Use input size 3 to 5 and fill the DP table manually.
+   - This reveals wrong transitions and bad base cases early.
+
+3. Convert one solution three ways.
+   - Recursion (brute force) -> memoization -> tabulation.
+   - This is the fastest way to understand why DP works, not just memorize it.
+
+4. Group problems by pattern, not by platform order.
+   - Solve 3 to 5 in a row from one pattern (1D, knapsack, string 2D, interval).
+   - Pattern repetition creates intuition.
+
+5. Practice "why does this transition make sense?"
+   - For each term in the transition, explain the real-world choice it represents.
+   - If you can explain it in plain English, you own the problem.
+
+6. Keep an error log.
+   - Track mistakes like wrong base case, off-by-one, wrong loop direction, reused item by accident.
+   - Reviewing this log is high ROI and quickly removes repeated bugs.
+
+---
+
+## No-Code Walkthroughs (Start Small, Then Generalize)
+
+If coding feels too early, do this first: pick tiny input, predict output, and walk state transitions manually.
+
+### Walkthrough 1: Climbing Stairs
+
+**Problem in one sentence:** Number of ways to reach stair `n` if each move is 1 step or 2 steps.
+
+**Tiny inputs -> outputs:**
+
+| n | output | reasoning |
+|---|---|---|
+| 1 | 1 | only `[1]` |
+| 2 | 2 | `[1+1]`, `[2]` |
+| 3 | 3 | `[1+1+1]`, `[1+2]`, `[2+1]` |
+| 4 | 5 | from step 3 ways + step 2 ways |
+
+**Manual state growth:**
+- `dp[1] = 1`
+- `dp[2] = 2`
+- `dp[3] = dp[2] + dp[1] = 3`
+- `dp[4] = dp[3] + dp[2] = 5`
+
+```mermaid
+graph LR
+    A[dp1 = 1] --> C[dp3 = dp2 + dp1 = 3]
+    B[dp2 = 2] --> C
+    B --> D[dp4 = dp3 + dp2 = 5]
+    C --> D
+```
+
+---
+
+### Walkthrough 2: Coin Change (Minimum Coins)
+
+**Problem in one sentence:** Minimum number of coins needed to make a target amount.
+
+**Tiny input:**
+- `coins = [1, 3, 4]`
+- `amount = 6`
+- Expected output: `2` (`3 + 3`)
+
+**Manual table (amount from 0 to 6):**
+
+| amount i | best dp[i] | why |
+|---|---|---|
+| 0 | 0 | base case |
+| 1 | 1 | `1` |
+| 2 | 2 | `1+1` |
+| 3 | 1 | `3` |
+| 4 | 1 | `4` |
+| 5 | 2 | `4+1` |
+| 6 | 2 | `3+3` |
+
+**Transition intuition:**
+For each `i`, test every coin and pick best:
+`dp[i] = min(dp[i - coin] + 1)`.
+
+```mermaid
+graph TD
+    A[dp6 ?] --> B[use coin 1 -> dp5 + 1 = 3]
+    A --> C[use coin 3 -> dp3 + 1 = 2]
+    A --> D[use coin 4 -> dp2 + 1 = 3]
+    C --> E[answer dp6 = 2]
+```
+
+---
+
+### Walkthrough 3: Unique Paths (Grid DP)
+
+**Problem in one sentence:** Count paths from top-left to bottom-right using only right/down moves.
+
+**Tiny input:**
+- Grid `3 x 3`
+- Expected output: `6`
+
+**Manual fill:**
+First row and first column are all `1` (only one straight way).
+
+|   | c0 | c1 | c2 |
+|---|---:|---:|---:|
+| r0 | 1 | 1 | 1 |
+| r1 | 1 | 2 | 3 |
+| r2 | 1 | 3 | 6 |
+
+Each inner cell = top + left.
+
+```mermaid
+graph TD
+    A[r1c1 = r0c1 + r1c0 = 2]
+    B[r1c2 = r0c2 + r1c1 = 3]
+    C[r2c1 = r1c1 + r2c0 = 3]
+    D[r2c2 = r1c2 + r2c1 = 6]
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+```
+
+---
+
+### Walkthrough 4: Longest Common Subsequence (LCS)
+
+**Problem in one sentence:** Find longest sequence appearing in both strings in same order (not necessarily contiguous).
+
+**Tiny input:**
+- `s1 = "abc"`
+- `s2 = "ac"`
+- Expected output: `2` (subsequence `"ac"`)
+
+**Manual grid idea:**
+- Rows = prefix of `s1`
+- Cols = prefix of `s2`
+- Match -> diagonal + 1
+- Mismatch -> max(top, left)
+
+|      | "" | a | c |
+|------|---:|---:|---:|
+| ""   | 0 | 0 | 0 |
+| a    | 0 | 1 | 1 |
+| b    | 0 | 1 | 1 |
+| c    | 0 | 1 | 2 |
+
+```mermaid
+graph LR
+    A[match a-a -> dp1,1 = 1] --> B[mismatch b-c -> max(top,left) = 1]
+    B --> C[match c-c -> diagonal + 1 = 2]
+```
+
+---
+
+### Walkthrough 5: House Robber
+
+**Problem in one sentence:** Max money with no two adjacent houses robbed.
+
+**Tiny input:**
+- `nums = [2, 7, 9, 3, 1]`
+- Expected output: `12` (rob houses with 2, 9, 1)
+
+**Manual decision table:**
+
+| i | nums[i] | rob i (`nums[i] + dp[i-2]`) | skip i (`dp[i-1]`) | dp[i] |
+|---|---:|---:|---:|---:|
+| 0 | 2 | 2 | - | 2 |
+| 1 | 7 | 7 | 2 | 7 |
+| 2 | 9 | 11 | 7 | 11 |
+| 3 | 3 | 10 | 11 | 11 |
+| 4 | 1 | 12 | 11 | 12 |
+
+```mermaid
+graph TD
+    A[i=2: max(9+2, 7)=11] --> B[i=3: max(3+7, 11)=11]
+    B --> C[i=4: max(1+11, 11)=12]
+```
+
+---
+
+### How to Use These Walkthroughs Every Time
+
+1. Start with smallest valid input and write expected output.
+2. Build state table by hand for 3 to 6 states only.
+3. Say transition out loud in plain English.
+4. Verify base case and first transition before writing code.
+5. Only then implement brute force -> memo -> tabulation.
+
+This method is often faster than jumping straight to code because it prevents wrong-state and wrong-loop-direction bugs.
+
+---
+
+## No-Code Walkthroughs for Remaining Older Core Problems
+
+These continue the same style for the older core examples in this section.
+
+### Fibonacci Number
+
+**Tiny input -> output:**
+- Input: `n = 6`
+- Output: `8`
+
+**No-code state trace:**
+- `dp[0]=0`, `dp[1]=1`
+- `dp[2]=1`, `dp[3]=2`, `dp[4]=3`, `dp[5]=5`, `dp[6]=8`
+
+```mermaid
+graph LR
+        A[dp0=0] --> C[dp2=1]
+        B[dp1=1] --> C
+        C --> D[dp3=2] --> E[dp4=3] --> F[dp5=5] --> G[dp6=8]
+```
+
+---
+
+### Min Cost Climbing Stairs
+
+**Tiny input -> output:**
+- Input: `cost = [10, 15, 20]`
+- Output: `15`
+
+**No-code state trace:**
+- `dp[0]=10`, `dp[1]=15`
+- `dp[2]=20 + min(10,15)=30`
+- Top is after last step, so answer `min(dp[1], dp[2]) = min(15,30)=15`
+
+---
+
+### Longest Increasing Subsequence (LIS)
+
+**Tiny input -> output:**
+- Input: `nums = [0, 1, 0, 3, 2, 3]`
+- Output: `4` (for example subsequence `[0, 1, 2, 3]`)
+
+**No-code state trace (`dp[i] = LIS ending at i`):**
+- Start all ones: `[1,1,1,1,1,1]`
+- At index 1 (value 1), extend from 0 -> `dp[1]=2`
+- At index 3 (value 3), can extend best earlier -> `dp[3]=3`
+- At index 4 (value 2), best is `3` from `[0,1,2]`
+- At index 5 (value 3), extend from index 4 -> `dp[5]=4`
+- Final answer is `max(dp)=4`
+
+---
+
+### 0/1 Knapsack
+
+**Tiny input -> output:**
+- Input: `weights=[2,3,4]`, `values=[3,4,5]`, `capacity=5`
+- Output: `7`
+
+**No-code reasoning:**
+- Capacity 5 can hold either item (2+3) or item (4) alone.
+- Value for (2+3) is `3+4=7`.
+- Value for (4) alone is `5`.
+- Best is `7`.
+
+**Mini DP table intuition:**
+- Rows = items considered
+- Cols = capacity 0..5
+- Each cell = max(skip item, take item if fits)
+
+---
+
+### Edit Distance
+
+**Tiny input -> output:**
+- Input: `s = "horse"`, `t = "ros"`
+- Output: `3`
+
+**No-code reasoning path:**
+- Replace `h` with `r`: `horse -> rorse`
+- Delete extra `r`: `rorse -> rose`
+- Delete `e`: `rose -> ros`
+- Minimum edits = 3
+
+**DP intuition:**
+- Match char: move diagonal
+- Mismatch: 1 + min(replace diagonal, delete top, insert left)
+
+---
+
+### Paint House
+
+**Tiny input -> output:**
+- Input:
+
+```text
+costs = [
+    [17, 2, 17],
+    [16, 16, 5],
+    [14, 3, 19]
+]
+```
+
+- Output: `10`
+
+**No-code reasoning:**
+- House0 best is color1 (cost 2)
+- House1 cannot use color1, best allowed is color2 (cost 5), subtotal 7
+- House2 cannot use color2, best allowed is color1 (cost 3), subtotal 10
+
+---
+
+### Maximum Subarray Sum
+
+**Tiny input -> output:**
+- Input: `nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]`
+- Output: `6`
+
+**No-code state trace (`best_end_here`):**
+- At 4, start new subarray at 4
+- Extend with `-1, +2, +1` -> running best becomes 6
+- Final max is 6 from `[4, -1, 2, 1]`
+
+```mermaid
+graph LR
+        A[4] --> B[4 + (-1) = 3]
+        B --> C[3 + 2 = 5]
+        C --> D[5 + 1 = 6]
+```
+
+---
+
+### Word Break
+
+**Tiny input -> output:**
+- Input: `s = "leetcode"`, `dict = ["leet", "code"]`
+- Output: `True`
+
+**No-code state trace (`dp[i] = can segment s[:i]`):**
+- `dp[0]=True` (empty string)
+- Check `dp[4]`: `s[:4]="leet"` in dict and `dp[0]=True` -> `dp[4]=True`
+- Check `dp[8]`: `s[4:8]="code"` in dict and `dp[4]=True` -> `dp[8]=True`
+- Answer `dp[8]=True`
+
+---
+
+### Number of Distinct Subsequences (single-string counting version in this README)
+
+**Tiny input -> output:**
+- Input: `s = "ab"`
+- Output: `4`
+
+**No-code reasoning:**
+- Subsequences are: `""`, `"a"`, `"b"`, `"ab"`
+- Each new character doubles existing subsequences (include it or not)
+- If character repeats, subtract duplicates from earlier occurrence
+
+**Short trace:**
+- Start: count = 1 (`""`)
+- After `a`: count = 2
+- After `b`: count = 4
+
+---
+
+### Partition Equal Subset Sum
+
+**Tiny input -> output:**
+- Input: `nums = [1, 5, 11, 5]`
+- Output: `True`
+
+**No-code reasoning:**
+- Total = 22, target per subset = 11
+- Check if subset sum 11 exists: yes (`[11]` or `[5,5,1]`)
+- Therefore partition possible
+
+---
+
+### Jump Game II
+
+**Tiny input -> output:**
+- Input: `nums = [2, 3, 1, 1, 4]`
+- Output: `2`
+
+**No-code reasoning:**
+- From index 0 you can reach indices 1 or 2
+- Choosing index 1 gives farther next reach
+- Path: `0 -> 1 -> 4` uses 2 jumps
+
+---
+
+### Count Palindromic Substrings
+
+**Tiny input -> output:**
+- Input: `s = "aaa"`
+- Output: `6`
+
+**No-code reasoning:**
+- Length 1 palindromes: 3
+- Length 2 palindromes (`aa` at positions 0-1 and 1-2): 2
+- Length 3 palindrome (`aaa`): 1
+- Total = 3 + 2 + 1 = 6
+
+---
+
+### Longest Palindromic Subsequence
+
+**Tiny input -> output:**
+- Input: `s = "bbbab"`
+- Output: `4`
+
+**No-code interval reasoning:**
+- Compare ends; if equal, add 2 and move inward
+- If not equal, try dropping left or dropping right end
+- Best found subsequence length is 4 (`"bbbb"`)
+
+---
+
+### Simple 5-Step Template (Apply to Any Older Problem)
+
+1. Choose smallest useful input (size 3 to 6).
+2. Write exact expected output first.
+3. Define state in one sentence: `dp[...] means ...`.
+4. Fill only first few states manually.
+5. Explain each transition as a real choice, then code.
+
+---
+
+## Two-Week DP Practice Schedule (Day-by-Day)
+
+Use this to build intuition deliberately instead of randomly solving problems.
+
+### Week 1: Core Patterns
+
+1. Day 1: 1D recurrence basics
+   - Solve: Fibonacci, Climbing Stairs
+   - Goal: Write state and transition before coding
+
+2. Day 2: 1D choice DP
+   - Solve: House Robber, Min Cost Climbing Stairs
+   - Goal: Explain each transition term in plain English
+
+3. Day 3: Knapsack foundation
+   - Solve: Partition Equal Subset Sum
+   - Goal: Understand reverse loop in 0/1 tabulation
+
+4. Day 4: Unbounded choices
+   - Solve: Coin Change, Coin Change II
+   - Goal: Compare loop order with 0/1 knapsack
+
+5. Day 5: Grid DP
+   - Solve: Unique Paths, Minimum Path Sum
+   - Goal: Fill 2D table by hand for a 3x3 case
+
+6. Day 6: String 2D DP
+   - Solve: LCS, Edit Distance
+   - Goal: Know exactly when to use diagonal/top/left
+
+7. Day 7: Review day
+   - Re-solve 3 earlier problems without notes
+   - Build a one-page cheat sheet: state, transition, base cases, loop order
+
+### Week 2: Advanced Patterns
+
+1. Day 8: Interval DP
+   - Solve: Burst Balloons or Min Cost to Cut a Stick
+   - Goal: Practice interval boundaries and split point `k`
+
+2. Day 9: Subsequence and palindrome DP
+   - Solve: Longest Palindromic Subsequence, Palindromic Substrings
+   - Goal: Distinguish substring vs subsequence states
+
+3. Day 10: State-machine DP
+   - Solve: Stock with Cooldown or Transaction Fee
+   - Goal: Model each state (hold/sold/rest)
+
+4. Day 11: Bitmask DP
+   - Solve: small TSP-style problem
+   - Goal: Treat `mask` as visited set and practice transitions
+
+5. Day 12: Tree DP
+   - Solve: House Robber III
+   - Goal: Return multi-state info from each node
+
+6. Day 13: Probability or expected-value DP
+   - Solve: Knight Probability in Chessboard
+   - Goal: Track probabilities over steps cleanly
+
+7. Day 14: Mock interview + reflection
+   - Pick 2 medium + 1 hard DP problem
+   - Do timed run, then write mistakes and fixes
+
+---
+
+## Advanced DP Intuition Problems (Bitmask, Digit, Tree, Interval, Probability)
+
+### Problem E: Bitmask DP - Minimum Cost to Visit All Cities
+
+**Problem (plain English):**
+You have `n` cities and a cost matrix where `cost[i][j]` is travel cost from city `i` to city `j`. Start at city `0` and visit every city exactly once. Find minimum total cost.
+
+**Input/Output:**
+- Input:
+
+```text
+cost = [
+  [0, 10, 15, 20],
+  [10, 0, 35, 25],
+  [15, 35, 0, 30],
+  [20, 25, 30, 0]
+]
+```
+
+- Output: `65` (one optimal path: `0 -> 1 -> 3 -> 2`)
+
+**Brute force (try all permutations):**
+
+```python
+from itertools import permutations
+
+
+def min_cost_visit_all_bruteforce(cost: list[list[int]]) -> int:
+    n = len(cost)
+    best = float("inf")
+
+    for order in permutations(range(1, n)):
+        total = 0
+        prev = 0
+        for city in order:
+            total += cost[prev][city]
+            prev = city
+        best = min(best, total)
+
+    return best
+```
+
+**Memoization (state = visited mask + current city):**
+
+```python
+def min_cost_visit_all_memo(cost: list[list[int]]) -> int:
+    n = len(cost)
+    all_visited = (1 << n) - 1
+    memo = {}
+
+    def dfs(mask: int, pos: int) -> int:
+        if mask == all_visited:
+            return 0
+
+        state = (mask, pos)
+        if state in memo:
+            return memo[state]
+
+        best = float("inf")
+        for nxt in range(n):
+            if (mask & (1 << nxt)) == 0:
+                best = min(best, cost[pos][nxt] + dfs(mask | (1 << nxt), nxt))
+
+        memo[state] = best
+        return best
+
+    return dfs(1 << 0, 0)
+```
+
+**Tabulation (bottom-up over masks):**
+
+```python
+def min_cost_visit_all_tabulation(cost: list[list[int]]) -> int:
+    n = len(cost)
+    size = 1 << n
+    dp = [[float("inf")] * n for _ in range(size)]
+    dp[1 << 0][0] = 0
+
+    for mask in range(size):
+        for pos in range(n):
+            if dp[mask][pos] == float("inf"):
+                continue
+            for nxt in range(n):
+                if (mask & (1 << nxt)) == 0:
+                    new_mask = mask | (1 << nxt)
+                    dp[new_mask][nxt] = min(dp[new_mask][nxt], dp[mask][pos] + cost[pos][nxt])
+
+    return min(dp[(1 << n) - 1])
+```
+
+**Complexity:**
+- Brute force: Time `O((n-1)!)`, Space `O(n)`
+- Memoization: Time `O(n^2 * 2^n)`, Space `O(n * 2^n)`
+- Tabulation: Time `O(n^2 * 2^n)`, Space `O(n * 2^n)`
+
+---
+
+### Problem F: Digit DP - Count Numbers <= n With Unique Digits
+
+**Problem (plain English):**
+Count how many integers in range `[0, n]` have no repeated digit (for example, 121 has repeated 1, so not allowed).
+
+**Input/Output:**
+- Input: `n = 20`
+- Output: `20`
+- Why: Every number from 0 to 20 is unique-digit except none in this range have repeats.
+
+**Brute force (check each number):**
+
+```python
+def count_unique_digits_bruteforce(n: int) -> int:
+    def is_unique(x: int) -> bool:
+        s = str(x)
+        return len(set(s)) == len(s)
+
+    return sum(1 for x in range(n + 1) if is_unique(x))
+```
+
+**Memoization (digit DP):**
+
+```python
+def count_unique_digits_memo(n: int) -> int:
+    digits = list(map(int, str(n)))
+    memo = {}
+
+    def dfs(i: int, tight: bool, started: bool, used_mask: int) -> int:
+        if i == len(digits):
+            return 1
+
+        state = (i, tight, started, used_mask)
+        if state in memo:
+            return memo[state]
+
+        limit = digits[i] if tight else 9
+        total = 0
+
+        for d in range(limit + 1):
+            next_tight = tight and (d == limit)
+
+            if not started and d == 0:
+                total += dfs(i + 1, next_tight, False, used_mask)
+            else:
+                if (used_mask & (1 << d)) != 0:
+                    continue
+                total += dfs(i + 1, next_tight, True, used_mask | (1 << d))
+
+        memo[state] = total
+        return total
+
+    return dfs(0, True, False, 0)
+```
+
+**Tabulation (iterative digit-state transitions):**
+
+```python
+def count_unique_digits_tabulation(n: int) -> int:
+    digits = list(map(int, str(n)))
+    # key: (tight, started, used_mask) -> count
+    states = {(1, 0, 0): 1}
+
+    for i in range(len(digits)):
+        next_states = {}
+        for (tight, started, used_mask), cnt in states.items():
+            limit = digits[i] if tight else 9
+
+            for d in range(limit + 1):
+                next_tight = 1 if (tight and d == limit) else 0
+
+                if not started and d == 0:
+                    key = (next_tight, 0, used_mask)
+                    next_states[key] = next_states.get(key, 0) + cnt
+                else:
+                    if (used_mask & (1 << d)) != 0:
+                        continue
+                    new_mask = used_mask | (1 << d)
+                    key = (next_tight, 1, new_mask)
+                    next_states[key] = next_states.get(key, 0) + cnt
+
+        states = next_states
+
+    return sum(states.values())
+```
+
+**Complexity:**
+- Brute force: Time `O(n * digits)`, Space `O(digits)`
+- Memoization: Time `O(len(n) * 2 * 2 * 2^10 * 10)`, Space `O(len(n) * 2 * 2 * 2^10)`
+- Tabulation: Same state complexity as memoization
+
+---
+
+### Problem G: Tree DP - House Robber III
+
+**Problem (plain English):**
+You are given a binary tree where each node is a house amount. If you rob a node, you cannot rob its direct children. Return maximum money.
+
+**Input/Output:**
+- Input (level order): `[3, 2, 3, null, 3, null, 1]`
+- Output: `7`
+- Why: Rob root `3`, then grandchildren `3` and `1`.
+
+**Brute force (recompute many subtrees):**
+
+```python
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def rob_tree_bruteforce(root: TreeNode | None) -> int:
+    if not root:
+        return 0
+
+    rob_this = root.val
+    if root.left:
+        rob_this += rob_tree_bruteforce(root.left.left) + rob_tree_bruteforce(root.left.right)
+    if root.right:
+        rob_this += rob_tree_bruteforce(root.right.left) + rob_tree_bruteforce(root.right.right)
+
+    skip_this = rob_tree_bruteforce(root.left) + rob_tree_bruteforce(root.right)
+    return max(rob_this, skip_this)
+```
+
+**Memoization (cache by node identity):**
+
+```python
+def rob_tree_memo(root: TreeNode | None) -> int:
+    memo = {}
+
+    def dfs(node: TreeNode | None) -> int:
+        if not node:
+            return 0
+        if node in memo:
+            return memo[node]
+
+        rob_this = node.val
+        if node.left:
+            rob_this += dfs(node.left.left) + dfs(node.left.right)
+        if node.right:
+            rob_this += dfs(node.right.left) + dfs(node.right.right)
+
+        skip_this = dfs(node.left) + dfs(node.right)
+        memo[node] = max(rob_this, skip_this)
+        return memo[node]
+
+    return dfs(root)
+```
+
+**Tabulation style (iterative postorder, pair state):**
+
+```python
+def rob_tree_tabulation(root: TreeNode | None) -> int:
+    if not root:
+        return 0
+
+    # dp[node] = (rob_node, skip_node)
+    dp = {}
+    stack = [(root, False)]
+
+    while stack:
+        node, visited = stack.pop()
+        if not node:
+            continue
+
+        if not visited:
+            stack.append((node, True))
+            stack.append((node.right, False))
+            stack.append((node.left, False))
+        else:
+            left_rob, left_skip = dp.get(node.left, (0, 0))
+            right_rob, right_skip = dp.get(node.right, (0, 0))
+
+            rob_node = node.val + left_skip + right_skip
+            skip_node = max(left_rob, left_skip) + max(right_rob, right_skip)
+            dp[node] = (rob_node, skip_node)
+
+    return max(dp[root])
+```
+
+**Complexity:**
+- Brute force: Exponential in worst case
+- Memoization: Time `O(n)`, Space `O(n)`
+- Iterative postorder DP: Time `O(n)`, Space `O(n)`
+
+---
+
+### Problem H: Interval DP - Minimum Cost to Cut a Stick
+
+**Problem (plain English):**
+A stick of length `n` must be cut at positions in array `cuts`. Each cut costs current stick length being cut. Choose cut order to minimize total cost.
+
+**Input/Output:**
+- Input: `n = 7`, `cuts = [1, 3, 4, 5]`
+- Output: `16`
+
+**Brute force (try each cut as first cut in interval):**
+
+```python
+def min_cut_cost_bruteforce(n: int, cuts: list[int]) -> int:
+    points = [0] + sorted(cuts) + [n]
+
+    def dfs(l: int, r: int) -> int:
+        if r - l <= 1:
+            return 0
+
+        best = float("inf")
+        for k in range(l + 1, r):
+            best = min(best, (points[r] - points[l]) + dfs(l, k) + dfs(k, r))
+        return best
+
+    return dfs(0, len(points) - 1)
+```
+
+**Memoization:**
+
+```python
+def min_cut_cost_memo(n: int, cuts: list[int]) -> int:
+    points = [0] + sorted(cuts) + [n]
+    memo = {}
+
+    def dfs(l: int, r: int) -> int:
+        if r - l <= 1:
+            return 0
+        if (l, r) in memo:
+            return memo[(l, r)]
+
+        best = float("inf")
+        for k in range(l + 1, r):
+            best = min(best, (points[r] - points[l]) + dfs(l, k) + dfs(k, r))
+
+        memo[(l, r)] = best
+        return best
+
+    return dfs(0, len(points) - 1)
+```
+
+**Tabulation (interval length grows):**
+
+```python
+def min_cut_cost_tabulation(n: int, cuts: list[int]) -> int:
+    points = [0] + sorted(cuts) + [n]
+    m = len(points)
+    dp = [[0] * m for _ in range(m)]
+
+    for length in range(2, m):
+        for l in range(0, m - length):
+            r = l + length
+            if r - l <= 1:
+                continue
+
+            dp[l][r] = float("inf")
+            for k in range(l + 1, r):
+                dp[l][r] = min(dp[l][r], points[r] - points[l] + dp[l][k] + dp[k][r])
+
+    return dp[0][m - 1]
+```
+
+**Complexity:**
+- Brute force: Exponential
+- Memoization: Time `O(m^3)`, Space `O(m^2)` where `m = len(cuts) + 2`
+- Tabulation: Time `O(m^3)`, Space `O(m^2)`
+
+---
+
+### Problem I: Probability DP - Knight Probability in Chessboard
+
+**Problem (plain English):**
+On an `n x n` chessboard, a knight starts at `(row, col)`. It makes exactly `k` moves, each uniformly among 8 knight moves. Return probability it remains on the board after `k` moves.
+
+**Input/Output:**
+- Input: `n = 3`, `k = 2`, `row = 0`, `col = 0`
+- Output: `0.0625`
+
+**Brute force (enumerate all move paths):**
+
+```python
+def knight_probability_bruteforce(n: int, k: int, row: int, col: int) -> float:
+    moves = [
+        (2, 1), (2, -1), (-2, 1), (-2, -1),
+        (1, 2), (1, -2), (-1, 2), (-1, -2),
+    ]
+
+    def dfs(steps: int, r: int, c: int) -> float:
+        if r < 0 or r >= n or c < 0 or c >= n:
+            return 0.0
+        if steps == 0:
+            return 1.0
+
+        prob = 0.0
+        for dr, dc in moves:
+            prob += dfs(steps - 1, r + dr, c + dc) / 8.0
+        return prob
+
+    return dfs(k, row, col)
+```
+
+**Memoization:**
+
+```python
+def knight_probability_memo(n: int, k: int, row: int, col: int) -> float:
+    moves = [
+        (2, 1), (2, -1), (-2, 1), (-2, -1),
+        (1, 2), (1, -2), (-1, 2), (-1, -2),
+    ]
+    memo = {}
+
+    def dfs(steps: int, r: int, c: int) -> float:
+        if r < 0 or r >= n or c < 0 or c >= n:
+            return 0.0
+        if steps == 0:
+            return 1.0
+
+        state = (steps, r, c)
+        if state in memo:
+            return memo[state]
+
+        prob = 0.0
+        for dr, dc in moves:
+            prob += dfs(steps - 1, r + dr, c + dc) / 8.0
+
+        memo[state] = prob
+        return prob
+
+    return dfs(k, row, col)
+```
+
+**Tabulation (step-by-step probability distribution):**
+
+```python
+def knight_probability_tabulation(n: int, k: int, row: int, col: int) -> float:
+    moves = [
+        (2, 1), (2, -1), (-2, 1), (-2, -1),
+        (1, 2), (1, -2), (-1, 2), (-1, -2),
+    ]
+
+    curr = [[0.0] * n for _ in range(n)]
+    curr[row][col] = 1.0
+
+    for _ in range(k):
+        nxt = [[0.0] * n for _ in range(n)]
+        for r in range(n):
+            for c in range(n):
+                if curr[r][c] == 0.0:
+                    continue
+                p = curr[r][c] / 8.0
+                for dr, dc in moves:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < n and 0 <= nc < n:
+                        nxt[nr][nc] += p
+        curr = nxt
+
+    return sum(sum(row_probs) for row_probs in curr)
+```
+
+**Complexity:**
+- Brute force: Time `O(8^k)`, Space `O(k)`
+- Memoization: Time `O(k * n^2 * 8)`, Space `O(k * n^2)`
+- Tabulation: Time `O(k * n^2 * 8)`, Space `O(n^2)`
+
+---
+
 ## Comprehensive Comparison Table
 
 | Example | Pattern | State Def | Overlapping? | Optimal Substructure? | Complexity |
