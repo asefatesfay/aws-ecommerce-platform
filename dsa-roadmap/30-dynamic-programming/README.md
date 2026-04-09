@@ -21,7 +21,7 @@ A problem has **overlapping subproblems** if the same subproblem is solved multi
 **Without memoization (naive recursion):**
 
 ```python
-def fib_naive(n: int) -> int:
+def fib_naive(n):
     if n <= 1:
         return n
     return fib_naive(n - 1) + fib_naive(n - 2)
@@ -84,10 +84,10 @@ For `fib(50)`, the same subproblems repeat thousands of times! This is **exponen
 **With memoization:**
 
 ```python
-def fib_memo(n: int) -> int:
+def fib_memo(n):
     memo = {}
     
-    def helper(k: int) -> int:
+    def helper(k):
         if k in memo:
             return memo[k]  # Return cached result
         if k <= 1:
@@ -129,10 +129,10 @@ $$\text{ways}(5) = \text{ways}(4) + \text{ways}(3)$$
 This is **optimal substructure**: the best solution for `ways(5)` is built from the best solutions for `ways(4)` and `ways(3)`.
 
 ```python
-def climb_stairs(n: int) -> int:
+def climb_stairs(n):
     memo = {}
     
-    def dp(k: int) -> int:
+    def dp(k):
         if k in memo:
             return memo[k]
         if k <= 2:
@@ -289,11 +289,30 @@ This is a pure combination, not a competition.
 
 **Base cases:** `dp[0] = 0`, `dp[1] = 1`
 
+**Small Input/Output:**
+- Input: `n = 5`
+- Output: `5`
+
+**No-code walkthrough:**
+- `dp[0]=0`, `dp[1]=1`
+- `dp[2]=1`, `dp[3]=2`, `dp[4]=3`, `dp[5]=5`
+
+**Brute force first (recursive baseline):**
+
 ```python
-def fibonacci(n: int) -> int:
+def fibonacci_bruteforce(n):
+    if n <= 1:
+        return n
+    return fibonacci_bruteforce(n - 1) + fibonacci_bruteforce(n - 2)
+```
+
+**Memoization + tabulation:**
+
+```python
+def fibonacci(n):
     memo = {}
     
-    def helper(k: int) -> int:
+    def helper(k):
         if k in memo:
             return memo[k]
         if k == 0:
@@ -307,7 +326,7 @@ def fibonacci(n: int) -> int:
     return helper(n)
 
 # Bottom-up (tabulation) version
-def fibonacci_tabulation(n: int) -> int:
+def fibonacci_tabulation(n):
     if n <= 1:
         return n
     dp = [0] * (n + 1)
@@ -318,15 +337,6 @@ def fibonacci_tabulation(n: int) -> int:
 
 print(fibonacci(10))  # 55
 print(fibonacci_tabulation(10))  # 55
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def fibonacci_bruteforce(n: int) -> int:
-    if n <= 1:
-        return n
-    return fibonacci_bruteforce(n - 1) + fibonacci_bruteforce(n - 2)
 ```
 
 **Complexity:**
@@ -351,11 +361,33 @@ def fibonacci_bruteforce(n: int) -> int:
 
 **Base case:** `dp[0] = 0` (zero coins needed for amount 0)
 
+**Small Input/Output:**
+- Input: `coins = [1, 3, 4]`, `amount = 6`
+- Output: `2`
+
+**No-code walkthrough:**
+- `dp[0]=0`
+- `dp[3]=1` using coin 3
+- `dp[6]=2` from `dp[3] + 1` (3 + 3)
+
+**Brute force first (recursive baseline):**
+
 ```python
-def coin_change(coins: list[int], amount: int) -> int:
+def coin_change_bruteforce(coins, amount):
+    if amount == 0:
+        return 0
+    if amount < 0:
+        return float("inf")
+    return min(1 + coin_change_bruteforce(coins, amount - c) for c in coins)
+```
+
+**Memoization + tabulation:**
+
+```python
+def coin_change(coins, amount):
     memo = {}
     
-    def helper(remaining: int) -> int:
+    def helper(remaining):
         if remaining in memo:
             return memo[remaining]
         if remaining == 0:
@@ -376,7 +408,7 @@ def coin_change(coins: list[int], amount: int) -> int:
     return result if result != float('inf') else -1
 
 # Bottom-up version
-def coin_change_tabulation(coins: list[int], amount: int) -> int:
+def coin_change_tabulation(coins, amount):
     dp = [float('inf')] * (amount + 1)
     dp[0] = 0
     
@@ -390,17 +422,6 @@ def coin_change_tabulation(coins: list[int], amount: int) -> int:
 print(coin_change([1, 2, 5], 5))  # 1
 print(coin_change([2], 3))  # -1 (impossible)
 print(coin_change([10], 10))  # 1
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def coin_change_bruteforce(coins: list[int], amount: int) -> int:
-    if amount == 0:
-        return 0
-    if amount < 0:
-        return float("inf")
-    return min(1 + coin_change_bruteforce(coins, amount - c) for c in coins)
 ```
 
 **Complexity:**
@@ -454,6 +475,26 @@ graph TD
 
 **Base cases:** `dp[0] = nums[0]`, `dp[1] = max(nums[0], nums[1])`
 
+**Small Input/Output:**
+- Input: `nums = [2, 7, 9, 3, 1]`
+- Output: `12`
+
+**No-code walkthrough:**
+- House 0: best is 2
+- House 1: best is 7
+- House 2: best is `max(9+2, 7)=11`
+- House 3: best is `max(3+7, 11)=11`
+- House 4: best is `max(1+11, 11)=12`
+
+**Brute force first (recursive baseline):**
+
+```python
+def rob_bruteforce(nums, i):
+    if i < 0:
+        return 0
+    return max(nums[i] + rob_bruteforce(nums, i - 2), rob_bruteforce(nums, i - 1))
+```
+
 **Decision Tree: Rob or Skip**
 
 ```mermaid
@@ -474,13 +515,13 @@ graph TD
     style E fill:#f3e5f5,stroke:#6a0572,stroke-width:3px
 ```
 
-**Code:**
+**Memoization + tabulation:**
 
 ```python
-def rob(nums: list[int]) -> int:
+def rob(nums):
     memo = {}
     
-    def helper(index: int) -> int:
+    def helper(index):
         if index in memo:
             return memo[index]
         if index < 0:
@@ -497,7 +538,7 @@ def rob(nums: list[int]) -> int:
     return helper(len(nums) - 1)
 
 # Bottom-up version
-def rob_tabulation(nums: list[int]) -> int:
+def rob_tabulation(nums):
     if len(nums) == 0:
         return 0
     if len(nums) == 1:
@@ -514,15 +555,6 @@ def rob_tabulation(nums: list[int]) -> int:
 
 print(rob([1, 3, 1, 3, 100]))  # 103
 print(rob([2, 7, 9, 3, 1]))  # 12
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def rob_bruteforce(nums: list[int], i: int) -> int:
-    if i < 0:
-        return 0
-    return max(nums[i] + rob_bruteforce(nums, i - 2), rob_bruteforce(nums, i - 1))
 ```
 
 **Complexity:**
@@ -548,8 +580,31 @@ $$dp[i] = \max(dp[j] + 1) \text{ for all } j < i \text{ where } nums[j] < nums[i
 
 **Base case:** `dp[i] = 1` (any single element is an LIS of length 1)
 
+**Small Input/Output:**
+- Input: `nums = [0, 1, 0, 3, 2, 3]`
+- Output: `4`
+
+**No-code walkthrough:**
+- Start `dp = [1,1,1,1,1,1]`
+- At value 1, extend from 0 -> length 2
+- At value 3 (index 3), best length becomes 3
+- At last value 3, extend from previous 2 -> length 4
+
+**Brute force first (recursive baseline):**
+
 ```python
-def longest_increasing_subsequence(nums: list[int]) -> int:
+def lis_bruteforce(nums, i, prev):
+    if i == len(nums):
+        return 0
+    skip = lis_bruteforce(nums, i + 1, prev)
+    take = 1 + lis_bruteforce(nums, i + 1, nums[i]) if nums[i] > prev else 0
+    return max(skip, take)
+```
+
+**Memoization + tabulation:**
+
+```python
+def longest_increasing_subsequence(nums):
     if len(nums) == 0:
         return 0
     
@@ -564,10 +619,10 @@ def longest_increasing_subsequence(nums: list[int]) -> int:
     return max(dp)
 
 # Memoization version (less common for this problem, but possible)
-def lis_memo(nums: list[int]) -> int:
+def lis_memo(nums):
     memo = {}
     
-    def helper(index: int, prev: int) -> int:
+    def helper(index, prev):
         # index: current position
         # prev: the value of the previous element in LIS
         if (index, prev) in memo:
@@ -591,17 +646,6 @@ def lis_memo(nums: list[int]) -> int:
 
 print(longest_increasing_subsequence([10, 9, 2, 5, 3, 7, 101, 18]))  # 4
 print(longest_increasing_subsequence([0, 1, 0, 4, 4, 4, 3, 5, 9]))  # 5
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def lis_bruteforce(nums: list[int], i: int, prev: int) -> int:
-    if i == len(nums):
-        return 0
-    skip = lis_bruteforce(nums, i + 1, prev)
-    take = 1 + lis_bruteforce(nums, i + 1, nums[i]) if nums[i] > prev else 0
-    return max(skip, take)
 ```
 
 **Complexity:**
@@ -630,6 +674,26 @@ def lis_bruteforce(nums: list[int], i: int, prev: int) -> int:
 - Take item (if weight fits): `dp[i][c]` = `value[i-1] + dp[i-1][c - weight[i-1]]`
 - Choose the max: `dp[i][c] = max(skip, take)`
 
+**Small Input/Output:**
+- Input: `weights=[2,3,4]`, `values=[3,4,5]`, `capacity=5`
+- Output: `7`
+
+**No-code walkthrough:**
+- Capacity 5 can take item 3 only (value 5)
+- Or item 2 + item 3? Not possible because 3+4 > 5
+- Best valid combo is weight 2 + 3 with value `3 + 4 = 7`
+
+**Brute force first (recursive baseline):**
+
+```python
+def knapsack_bruteforce(weights, values, i, cap):
+    if i == len(weights) or cap == 0:
+        return 0
+    skip = knapsack_bruteforce(weights, values, i + 1, cap)
+    take = values[i] + knapsack_bruteforce(weights, values, i + 1, cap - weights[i]) if weights[i] <= cap else 0
+    return max(skip, take)
+```
+
 **Mermaid: 2D DP Table Filling Pattern (0/1 Knapsack)**
 
 ```mermaid
@@ -644,13 +708,13 @@ graph TD
     style D fill:#f3e5f5,stroke:#6a0572,stroke-width:3px
 ```
 
-**Code:**
+**Memoization + tabulation:**
 
 ```python
-def knapsack_0_1(weights: list[int], values: list[int], capacity: int) -> int:
+def knapsack_0_1(weights, values, capacity):
     memo = {}
     
-    def helper(index: int, remaining: int) -> int:
+    def helper(index, remaining):
         # index: which item to consider next
         # remaining: remaining capacity
         if (index, remaining) in memo:
@@ -673,7 +737,7 @@ def knapsack_0_1(weights: list[int], values: list[int], capacity: int) -> int:
     return helper(0, capacity)
 
 # Bottom-up version
-def knapsack_0_1_tabulation(weights: list[int], values: list[int], capacity: int) -> int:
+def knapsack_0_1_tabulation(weights, values, capacity):
     n = len(weights)
     dp = [[0] * (capacity + 1) for _ in range(n + 1)]
     
@@ -692,17 +756,6 @@ values = [3, 4, 5]
 capacity = 5
 print(knapsack_0_1(weights, values, capacity))  # 7
 print(knapsack_0_1_tabulation(weights, values, capacity))  # 7
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def knapsack_bruteforce(weights: list[int], values: list[int], i: int, cap: int) -> int:
-    if i == len(weights) or cap == 0:
-        return 0
-    skip = knapsack_bruteforce(weights, values, i + 1, cap)
-    take = values[i] + knapsack_bruteforce(weights, values, i + 1, cap - weights[i]) if weights[i] <= cap else 0
-    return max(skip, take)
 ```
 
 **Complexity:**
@@ -731,11 +784,39 @@ def knapsack_bruteforce(weights: list[int], values: list[int], i: int, cap: int)
   - Insert: `dp[i][j] = 1 + dp[i][j-1]`
   - Take the minimum
 
+**Small Input/Output:**
+- Input: `s = "horse"`, `t = "ros"`
+- Output: `3`
+
+**No-code walkthrough:**
+- Replace `h` with `r`: `horse -> rorse`
+- Delete extra `r`: `rorse -> rose`
+- Delete `e`: `rose -> ros`
+
+**Brute force first (recursive baseline):**
+
 ```python
-def edit_distance(s: str, t: str) -> int:
+def edit_distance_bruteforce(s, t, i, j):
+    if i == 0:
+        return j
+    if j == 0:
+        return i
+    if s[i - 1] == t[j - 1]:
+        return edit_distance_bruteforce(s, t, i - 1, j - 1)
+    return 1 + min(
+        edit_distance_bruteforce(s, t, i - 1, j - 1),
+        edit_distance_bruteforce(s, t, i - 1, j),
+        edit_distance_bruteforce(s, t, i, j - 1),
+    )
+```
+
+**Memoization + tabulation:**
+
+```python
+def edit_distance(s, t):
     memo = {}
     
-    def helper(i: int, j: int) -> int:
+    def helper(i, j):
         # Convert s[0..i-1] to t[0..j-1]
         if (i, j) in memo:
             return memo[(i, j)]
@@ -759,7 +840,7 @@ def edit_distance(s: str, t: str) -> int:
     return helper(len(s), len(t))
 
 # Bottom-up version
-def edit_distance_tabulation(s: str, t: str) -> int:
+def edit_distance_tabulation(s, t):
     m, n = len(s), len(t)
     dp = [[0] * (n + 1) for _ in range(m + 1)]
     
@@ -779,23 +860,6 @@ def edit_distance_tabulation(s: str, t: str) -> int:
 
 print(edit_distance("horse", "ros"))  # 3
 print(edit_distance("intention", "execution"))  # 5
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def edit_distance_bruteforce(s: str, t: str, i: int, j: int) -> int:
-    if i == 0:
-        return j
-    if j == 0:
-        return i
-    if s[i - 1] == t[j - 1]:
-        return edit_distance_bruteforce(s, t, i - 1, j - 1)
-    return 1 + min(
-        edit_distance_bruteforce(s, t, i - 1, j - 1),
-        edit_distance_bruteforce(s, t, i - 1, j),
-        edit_distance_bruteforce(s, t, i, j - 1),
-    )
 ```
 
 **Complexity:**
@@ -828,13 +892,31 @@ graph TD
     E -.reused.-> F["Memoization<br/>saves this<br/>recomputation"]
 ```
 
-**Code:**
+**Small Input/Output:**
+- Input: `cost = [10, 15, 20]`
+- Output: `15`
+
+**No-code walkthrough:**
+- `dp[0]=10`, `dp[1]=15`
+- `dp[2]=20 + min(10,15)=30`
+- answer is `min(dp[1], dp[2]) = 15`
+
+**Brute force first (recursive baseline):**
 
 ```python
-def min_cost_climbing_stairs(cost: list[int]) -> int:
+def min_cost_bruteforce(cost, i):
+    if i <= 1:
+        return cost[i]
+    return cost[i] + min(min_cost_bruteforce(cost, i - 1), min_cost_bruteforce(cost, i - 2))
+```
+
+**Memoization + tabulation:**
+
+```python
+def min_cost_climbing_stairs(cost):
     memo = {}
     
-    def helper(i: int) -> int:
+    def helper(i):
         if i in memo:
             return memo[i]
         if i <= 1:
@@ -848,7 +930,7 @@ def min_cost_climbing_stairs(cost: list[int]) -> int:
     return min(helper(len(cost) - 1), helper(len(cost) - 2) + cost[-1]) if len(cost) > 1 else cost[0]
 
 # Better: start from either step 0 or 1
-def min_cost_climbing_stairs_v2(cost: list[int]) -> int:
+def min_cost_climbing_stairs_v2(cost):
     if len(cost) <= 2:
         return min(cost)
     
@@ -864,15 +946,6 @@ def min_cost_climbing_stairs_v2(cost: list[int]) -> int:
 
 print(min_cost_climbing_stairs([10, 15, 20]))  # 15
 print(min_cost_climbing_stairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]))  # 6
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def min_cost_bruteforce(cost: list[int], i: int) -> int:
-    if i <= 1:
-        return cost[i]
-    return cost[i] + min(min_cost_bruteforce(cost, i - 1), min_cost_bruteforce(cost, i - 2))
 ```
 
 **Complexity:**
@@ -909,13 +982,31 @@ graph TD
     style E fill:#f3e5f5
 ```
 
-**Code:**
+**Small Input/Output:**
+- Input: `m = 3`, `n = 3`
+- Output: `6`
+
+**No-code walkthrough:**
+- First row and first column are all 1
+- Each inner cell is top + left
+- Final bottom-right cell becomes 6
+
+**Brute force first (recursive baseline):**
 
 ```python
-def unique_paths(m: int, n: int) -> int:
+def unique_paths_bruteforce(i, j):
+    if i == 0 or j == 0:
+        return 1
+    return unique_paths_bruteforce(i - 1, j) + unique_paths_bruteforce(i, j - 1)
+```
+
+**Memoization + tabulation:**
+
+```python
+def unique_paths(m, n):
     memo = {}
     
-    def helper(i: int, j: int) -> int:
+    def helper(i, j):
         if (i, j) in memo:
             return memo[(i, j)]
         if i == 0 or j == 0:
@@ -928,7 +1019,7 @@ def unique_paths(m: int, n: int) -> int:
     return helper(m - 1, n - 1)
 
 # Bottom-up
-def unique_paths_tabulation(m: int, n: int) -> int:
+def unique_paths_tabulation(m, n):
     dp = [[1] * n for _ in range(m)]
     
     for i in range(1, m):
@@ -940,15 +1031,6 @@ def unique_paths_tabulation(m: int, n: int) -> int:
 print(unique_paths(3, 3))  # 6
 print(unique_paths(3, 7))  # 28
 print(unique_paths(1, 1))  # 1
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def unique_paths_bruteforce(i: int, j: int) -> int:
-    if i == 0 or j == 0:
-        return 1
-    return unique_paths_bruteforce(i - 1, j) + unique_paths_bruteforce(i, j - 1)
 ```
 
 **Complexity:**
@@ -974,13 +1056,35 @@ Best: House 0 → green (0), House 1 → red (0) or blue (1), House 2 → any �
 **Transition:** House `i` with color `j` costs `houses[i][j]` + best for house `i-1` with different color:
 $$dp[i][j] = houses[i][j] + \min(dp[i-1][k]) \text{ for all } k \neq j$$
 
-**Code:**
+**Small Input/Output:**
+- Input: `costs = [[17,2,17],[16,16,5],[14,3,19]]`
+- Output: `10`
+
+**No-code walkthrough:**
+- Pick green for house 0 (2)
+- Then blue for house 1 (5), subtotal 7
+- Then green for house 2 (3), total 10
+
+**Brute force first (recursive baseline):**
 
 ```python
-def paint_house(costs: list[list[int]]) -> int:
+def paint_house_bruteforce(costs, house, prev_color):
+    if house == len(costs):
+        return 0
+    ans = float("inf")
+    for color in range(3):
+        if color != prev_color:
+            ans = min(ans, costs[house][color] + paint_house_bruteforce(costs, house + 1, color))
+    return ans
+```
+
+**Memoization + tabulation:**
+
+```python
+def paint_house(costs):
     memo = {}
     
-    def helper(house: int, prev_color: int) -> int:
+    def helper(house, prev_color):
         # Paint house 'house' where previous house used 'prev_color'
         if house == len(costs):
             return 0
@@ -1000,7 +1104,7 @@ def paint_house(costs: list[list[int]]) -> int:
     return helper(0, -1)  # -1 means no previous house
 
 # Bottom-up
-def paint_house_tabulation(costs: list[list[int]]) -> int:
+def paint_house_tabulation(costs):
     if not costs:
         return 0
     
@@ -1019,19 +1123,6 @@ def paint_house_tabulation(costs: list[list[int]]) -> int:
 costs = [[1, 0, 0], [0, 3, 1], [1, 1, 1]]
 print(paint_house(costs))  # 2
 print(paint_house_tabulation(costs))  # 2
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def paint_house_bruteforce(costs: list[list[int]], house: int, prev_color: int) -> int:
-    if house == len(costs):
-        return 0
-    ans = float("inf")
-    for color in range(3):
-        if color != prev_color:
-            ans = min(ans, costs[house][color] + paint_house_bruteforce(costs, house + 1, color))
-    return ans
 ```
 
 **Complexity:**
@@ -1063,13 +1154,33 @@ graph LR
     C --> E["When chars differ:<br/>dp[i][j] = max neighbors"]
 ```
 
-**Code:**
+**Small Input/Output:**
+- Input: `s1 = "abc"`, `s2 = "ac"`
+- Output: `2`
+
+**No-code walkthrough:**
+- `a` matches `a` -> start with length 1
+- skip `b` in first string
+- `c` matches `c` -> length becomes 2
+
+**Brute force first (recursive baseline):**
 
 ```python
-def longest_common_subsequence(s1: str, s2: str) -> int:
+def lcs_bruteforce(s1, s2, i, j):
+    if i == 0 or j == 0:
+        return 0
+    if s1[i - 1] == s2[j - 1]:
+        return 1 + lcs_bruteforce(s1, s2, i - 1, j - 1)
+    return max(lcs_bruteforce(s1, s2, i - 1, j), lcs_bruteforce(s1, s2, i, j - 1))
+```
+
+**Memoization + tabulation:**
+
+```python
+def longest_common_subsequence(s1, s2):
     memo = {}
     
-    def helper(i: int, j: int) -> int:
+    def helper(i, j):
         # LCS length for s1[0..i-1] and s2[0..j-1]
         if (i, j) in memo:
             return memo[(i, j)]
@@ -1087,7 +1198,7 @@ def longest_common_subsequence(s1: str, s2: str) -> int:
     return helper(len(s1), len(s2))
 
 # Bottom-up with full DP table
-def lcs_tabulation(s1: str, s2: str) -> int:
+def lcs_tabulation(s1, s2):
     m, n = len(s1), len(s2)
     dp = [[0] * (n + 1) for _ in range(m + 1)]
     
@@ -1103,17 +1214,6 @@ def lcs_tabulation(s1: str, s2: str) -> int:
 print(longest_common_subsequence("ABCDGH", "AEDFHR"))  # 3
 print(longest_common_subsequence("abc", "abc"))  # 3
 print(longest_common_subsequence("abc", "def"))  # 0
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def lcs_bruteforce(s1: str, s2: str, i: int, j: int) -> int:
-    if i == 0 or j == 0:
-        return 0
-    if s1[i - 1] == s2[j - 1]:
-        return 1 + lcs_bruteforce(s1, s2, i - 1, j - 1)
-    return max(lcs_bruteforce(s1, s2, i - 1, j), lcs_bruteforce(s1, s2, i, j - 1))
 ```
 
 **Complexity:**
@@ -1133,13 +1233,35 @@ def lcs_bruteforce(s1: str, s2: str, i: int, j: int) -> int:
 **Transition:** Either extend previous subarray or start fresh:
 $$dp[i] = \max(nums[i], dp[i-1] + nums[i])$$
 
-**Code:**
+**Small Input/Output:**
+- Input: `[-2, 1, -3, 4, -1, 2, 1, -5, 4]`
+- Output: `6`
+
+**No-code walkthrough:**
+- Start fresh at 4
+- Extend with `-1, +2, +1`
+- Best contiguous sum reaches 6
+
+**Brute force first (baseline):**
 
 ```python
-def max_subarray_sum(nums: list[int]) -> int:
+def max_subarray_bruteforce(nums):
+    best = -float("inf")
+    for i in range(len(nums)):
+        curr = 0
+        for j in range(i, len(nums)):
+            curr += nums[j]
+            best = max(best, curr)
+    return best
+```
+
+**Memoization + tabulation:**
+
+```python
+def max_subarray_sum(nums):
     memo = {}
     
-    def helper(i: int) -> int:
+    def helper(i):
         if i in memo:
             return memo[i]
         if i == 0:
@@ -1152,7 +1274,7 @@ def max_subarray_sum(nums: list[int]) -> int:
     return max(helper(i) for i in range(len(nums)))
 
 # Bottom-up (Kadane's algorithm)
-def max_subarray_sum_tabulation(nums: list[int]) -> int:
+def max_subarray_sum_tabulation(nums):
     max_ending_here = nums[0]
     max_so_far = nums[0]
     
@@ -1164,19 +1286,6 @@ def max_subarray_sum_tabulation(nums: list[int]) -> int:
 
 print(max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]))  # 6
 print(max_subarray_sum([-1]))  # -1
-```
-
-**Brute force (baseline):**
-
-```python
-def max_subarray_bruteforce(nums: list[int]) -> int:
-    best = -float("inf")
-    for i in range(len(nums)):
-        curr = 0
-        for j in range(i, len(nums)):
-            curr += nums[j]
-            best = max(best, curr)
-    return best
 ```
 
 **Complexity:**
@@ -1210,14 +1319,35 @@ graph TD
     F -.reuse.-> G["Memoization stores:<br/>dp[4] = can_segment from 4"]
 ```
 
-**Code:**
+**Small Input/Output:**
+- Input: `s = "leetcode"`, `wordDict = ["leet", "code"]`
+- Output: `True`
+
+**No-code walkthrough:**
+- `dp[0] = True`
+- `dp[4] = True` because `"leet"` exists and `dp[0]` is true
+- `dp[8] = True` because `"code"` exists and `dp[4]` is true
+
+**Brute force first (recursive baseline):**
 
 ```python
-def word_break(s: str, word_dict: list[str]) -> bool:
+def word_break_bruteforce(s, words, start):
+    if start == len(s):
+        return True
+    for end in range(start + 1, len(s) + 1):
+        if s[start:end] in words and word_break_bruteforce(s, words, end):
+            return True
+    return False
+```
+
+**Memoization + tabulation:**
+
+```python
+def word_break(s, word_dict):
     memo = {}
     word_set = set(word_dict)
     
-    def helper(start: int) -> bool:
+    def helper(start):
         if start in memo:
             return memo[start]
         if start == len(s):
@@ -1235,7 +1365,7 @@ def word_break(s: str, word_dict: list[str]) -> bool:
     return helper(0)
 
 # Bottom-up
-def word_break_tabulation(s: str, word_dict: list[str]) -> bool:
+def word_break_tabulation(s, word_dict):
     word_set = set(word_dict)
     dp = [False] * (len(s) + 1)
     dp[0] = True  # Empty string is always segmentable
@@ -1251,18 +1381,6 @@ def word_break_tabulation(s: str, word_dict: list[str]) -> bool:
 print(word_break("leetcode", ["leet", "code"]))  # True
 print(word_break("applepenapple", ["apple", "pen"]))  # True
 print(word_break("catsanddogs", ["cat", "cats", "and", "sand", "dog"]))  # False
-```
-
-**Brute force (recursive baseline):**
-
-```python
-def word_break_bruteforce(s: str, words: set[str], start: int) -> bool:
-    if start == len(s):
-        return True
-    for end in range(start + 1, len(s) + 1):
-        if s[start:end] in words and word_break_bruteforce(s, words, end):
-            return True
-    return False
 ```
 
 **Complexity:**
@@ -1285,10 +1403,29 @@ def word_break_bruteforce(s: str, words: set[str], start: int) -> bool:
 - But if `s[i-1]` appeared before at index `j`, we've already counted these: subtract `dp[j]`
 $$dp[i] = 2 \cdot dp[i-1] - (dp[lastSeen[char]-1] \text{ if char seen else } 0)$$
 
-**Code:**
+**Small Input/Output:**
+- Input: `s = "ab"`
+- Output: `4`
+
+**No-code walkthrough:**
+- Start with empty subsequence count 1
+- After `a`, count doubles to 2
+- After `b`, count doubles to 4
+
+**Brute force first (baseline):**
 
 ```python
-def num_distinct_subsequences(s: str) -> int:
+def count_all_subseq_bruteforce(s, i):
+    if i == len(s):
+        return 1
+    # Include s[i] or exclude s[i]
+    return count_all_subseq_bruteforce(s, i + 1) + count_all_subseq_bruteforce(s, i + 1)
+```
+
+**Tabulation (optimized counting DP):**
+
+```python
+def num_distinct_subsequences(s):
     n = len(s)
     dp = [0] * (n + 1)
     dp[0] = 1  # Empty subsequence
@@ -1308,16 +1445,6 @@ def num_distinct_subsequences(s: str) -> int:
 print(num_distinct_subsequences("ab"))  # 4: "", "a", "b", "ab"
 print(num_distinct_subsequences("aab"))  # 6: "", "a", "aa", "b", "ab", "aab"
 print(num_distinct_subsequences("a"))  # 2: "", "a"
-```
-
-**Brute force (baseline):**
-
-```python
-def count_all_subseq_bruteforce(s: str, i: int) -> int:
-    if i == len(s):
-        return 1
-    # Include s[i] or exclude s[i]
-    return count_all_subseq_bruteforce(s, i + 1) + count_all_subseq_bruteforce(s, i + 1)
 ```
 
 **Complexity:**
@@ -1345,14 +1472,14 @@ If the total sum is odd, answer is always `False`.
 **Brute force (try include/exclude each number):**
 
 ```python
-def can_partition_bruteforce(nums: list[int]) -> bool:
+def can_partition_bruteforce(nums):
     total = sum(nums)
     if total % 2 != 0:
         return False
 
     target = total // 2
 
-    def dfs(i: int, curr_sum: int) -> bool:
+    def dfs(i, curr_sum):
         if curr_sum == target:
             return True
         if i == len(nums) or curr_sum > target:
@@ -1367,7 +1494,7 @@ def can_partition_bruteforce(nums: list[int]) -> bool:
 **Memoization (cache repeated states):**
 
 ```python
-def can_partition_memo(nums: list[int]) -> bool:
+def can_partition_memo(nums):
     total = sum(nums)
     if total % 2 != 0:
         return False
@@ -1375,7 +1502,7 @@ def can_partition_memo(nums: list[int]) -> bool:
     target = total // 2
     memo = {}
 
-    def dfs(i: int, curr_sum: int) -> bool:
+    def dfs(i, curr_sum):
         if curr_sum == target:
             return True
         if i == len(nums) or curr_sum > target:
@@ -1394,7 +1521,7 @@ def can_partition_memo(nums: list[int]) -> bool:
 **Tabulation (subset-sum bottom-up):**
 
 ```python
-def can_partition_tabulation(nums: list[int]) -> bool:
+def can_partition_tabulation(nums):
     total = sum(nums)
     if total % 2 != 0:
         return False
@@ -1433,10 +1560,10 @@ You may assume the last index is reachable.
 **Brute force (try all possible jumps):**
 
 ```python
-def jump_game_ii_bruteforce(nums: list[int]) -> int:
+def jump_game_ii_bruteforce(nums):
     n = len(nums)
 
-    def dfs(i: int) -> int:
+    def dfs(i):
         if i >= n - 1:
             return 0
 
@@ -1452,11 +1579,11 @@ def jump_game_ii_bruteforce(nums: list[int]) -> int:
 **Memoization:**
 
 ```python
-def jump_game_ii_memo(nums: list[int]) -> int:
+def jump_game_ii_memo(nums):
     n = len(nums)
     memo = {}
 
-    def dfs(i: int) -> int:
+    def dfs(i):
         if i >= n - 1:
             return 0
         if i in memo:
@@ -1476,7 +1603,7 @@ def jump_game_ii_memo(nums: list[int]) -> int:
 **Tabulation (bottom-up minimum jumps):**
 
 ```python
-def jump_game_ii_tabulation(nums: list[int]) -> int:
+def jump_game_ii_tabulation(nums):
     n = len(nums)
     dp = [float("inf")] * n
     dp[0] = 0
@@ -1509,10 +1636,10 @@ Given a string `s`, count how many substrings are palindromes. A palindrome read
 **Brute force (check every substring directly):**
 
 ```python
-def count_palindromic_substrings_bruteforce(s: str) -> int:
+def count_palindromic_substrings_bruteforce(s):
     n = len(s)
 
-    def is_pal(l: int, r: int) -> bool:
+    def is_pal(l, r):
         while l < r:
             if s[l] != s[r]:
                 return False
@@ -1531,11 +1658,11 @@ def count_palindromic_substrings_bruteforce(s: str) -> int:
 **Memoization (cache palindrome checks):**
 
 ```python
-def count_palindromic_substrings_memo(s: str) -> int:
+def count_palindromic_substrings_memo(s):
     n = len(s)
     memo = {}
 
-    def is_pal(l: int, r: int) -> bool:
+    def is_pal(l, r):
         if l >= r:
             return True
         if (l, r) in memo:
@@ -1554,7 +1681,7 @@ def count_palindromic_substrings_memo(s: str) -> int:
 **Tabulation (build palindrome table by length):**
 
 ```python
-def count_palindromic_substrings_tabulation(s: str) -> int:
+def count_palindromic_substrings_tabulation(s):
     n = len(s)
     dp = [[False] * n for _ in range(n)]
     count = 0
@@ -1595,8 +1722,8 @@ Given string `s`, find the length of the longest subsequence that is a palindrom
 **Brute force (recursive choices on ends):**
 
 ```python
-def lps_bruteforce(s: str) -> int:
-    def dfs(l: int, r: int) -> int:
+def lps_bruteforce(s):
+    def dfs(l, r):
         if l > r:
             return 0
         if l == r:
@@ -1613,10 +1740,10 @@ def lps_bruteforce(s: str) -> int:
 **Memoization:**
 
 ```python
-def lps_memo(s: str) -> int:
+def lps_memo(s):
     memo = {}
 
-    def dfs(l: int, r: int) -> int:
+    def dfs(l, r):
         if l > r:
             return 0
         if l == r:
@@ -1637,7 +1764,7 @@ def lps_memo(s: str) -> int:
 **Tabulation (fill by substring length):**
 
 ```python
-def lps_tabulation(s: str) -> int:
+def lps_tabulation(s):
     n = len(s)
     dp = [[0] * n for _ in range(n)]
 
@@ -2184,7 +2311,7 @@ cost = [
 from itertools import permutations
 
 
-def min_cost_visit_all_bruteforce(cost: list[list[int]]) -> int:
+def min_cost_visit_all_bruteforce(cost):
     n = len(cost)
     best = float("inf")
 
@@ -2202,12 +2329,12 @@ def min_cost_visit_all_bruteforce(cost: list[list[int]]) -> int:
 **Memoization (state = visited mask + current city):**
 
 ```python
-def min_cost_visit_all_memo(cost: list[list[int]]) -> int:
+def min_cost_visit_all_memo(cost):
     n = len(cost)
     all_visited = (1 << n) - 1
     memo = {}
 
-    def dfs(mask: int, pos: int) -> int:
+    def dfs(mask, pos):
         if mask == all_visited:
             return 0
 
@@ -2229,7 +2356,7 @@ def min_cost_visit_all_memo(cost: list[list[int]]) -> int:
 **Tabulation (bottom-up over masks):**
 
 ```python
-def min_cost_visit_all_tabulation(cost: list[list[int]]) -> int:
+def min_cost_visit_all_tabulation(cost):
     n = len(cost)
     size = 1 << n
     dp = [[float("inf")] * n for _ in range(size)]
@@ -2267,8 +2394,8 @@ Count how many integers in range `[0, n]` have no repeated digit (for example, 1
 **Brute force (check each number):**
 
 ```python
-def count_unique_digits_bruteforce(n: int) -> int:
-    def is_unique(x: int) -> bool:
+def count_unique_digits_bruteforce(n):
+    def is_unique(x):
         s = str(x)
         return len(set(s)) == len(s)
 
@@ -2278,11 +2405,11 @@ def count_unique_digits_bruteforce(n: int) -> int:
 **Memoization (digit DP):**
 
 ```python
-def count_unique_digits_memo(n: int) -> int:
+def count_unique_digits_memo(n):
     digits = list(map(int, str(n)))
     memo = {}
 
-    def dfs(i: int, tight: bool, started: bool, used_mask: int) -> int:
+    def dfs(i, tight, started, used_mask):
         if i == len(digits):
             return 1
 
@@ -2312,7 +2439,7 @@ def count_unique_digits_memo(n: int) -> int:
 **Tabulation (iterative digit-state transitions):**
 
 ```python
-def count_unique_digits_tabulation(n: int) -> int:
+def count_unique_digits_tabulation(n):
     digits = list(map(int, str(n)))
     # key: (tight, started, used_mask) -> count
     states = {(1, 0, 0): 1}
@@ -2367,7 +2494,7 @@ class TreeNode:
         self.right = right
 
 
-def rob_tree_bruteforce(root: TreeNode | None) -> int:
+def rob_tree_bruteforce(root):
     if not root:
         return 0
 
@@ -2384,10 +2511,10 @@ def rob_tree_bruteforce(root: TreeNode | None) -> int:
 **Memoization (cache by node identity):**
 
 ```python
-def rob_tree_memo(root: TreeNode | None) -> int:
+def rob_tree_memo(root):
     memo = {}
 
-    def dfs(node: TreeNode | None) -> int:
+    def dfs(node):
         if not node:
             return 0
         if node in memo:
@@ -2409,7 +2536,7 @@ def rob_tree_memo(root: TreeNode | None) -> int:
 **Tabulation style (iterative postorder, pair state):**
 
 ```python
-def rob_tree_tabulation(root: TreeNode | None) -> int:
+def rob_tree_tabulation(root):
     if not root:
         return 0
 
@@ -2456,10 +2583,10 @@ A stick of length `n` must be cut at positions in array `cuts`. Each cut costs c
 **Brute force (try each cut as first cut in interval):**
 
 ```python
-def min_cut_cost_bruteforce(n: int, cuts: list[int]) -> int:
+def min_cut_cost_bruteforce(n, cuts):
     points = [0] + sorted(cuts) + [n]
 
-    def dfs(l: int, r: int) -> int:
+    def dfs(l, r):
         if r - l <= 1:
             return 0
 
@@ -2474,11 +2601,11 @@ def min_cut_cost_bruteforce(n: int, cuts: list[int]) -> int:
 **Memoization:**
 
 ```python
-def min_cut_cost_memo(n: int, cuts: list[int]) -> int:
+def min_cut_cost_memo(n, cuts):
     points = [0] + sorted(cuts) + [n]
     memo = {}
 
-    def dfs(l: int, r: int) -> int:
+    def dfs(l, r):
         if r - l <= 1:
             return 0
         if (l, r) in memo:
@@ -2497,7 +2624,7 @@ def min_cut_cost_memo(n: int, cuts: list[int]) -> int:
 **Tabulation (interval length grows):**
 
 ```python
-def min_cut_cost_tabulation(n: int, cuts: list[int]) -> int:
+def min_cut_cost_tabulation(n, cuts):
     points = [0] + sorted(cuts) + [n]
     m = len(points)
     dp = [[0] * m for _ in range(m)]
@@ -2534,13 +2661,13 @@ On an `n x n` chessboard, a knight starts at `(row, col)`. It makes exactly `k` 
 **Brute force (enumerate all move paths):**
 
 ```python
-def knight_probability_bruteforce(n: int, k: int, row: int, col: int) -> float:
+def knight_probability_bruteforce(n, k, row, col):
     moves = [
         (2, 1), (2, -1), (-2, 1), (-2, -1),
         (1, 2), (1, -2), (-1, 2), (-1, -2),
     ]
 
-    def dfs(steps: int, r: int, c: int) -> float:
+    def dfs(steps, r, c):
         if r < 0 or r >= n or c < 0 or c >= n:
             return 0.0
         if steps == 0:
@@ -2557,14 +2684,14 @@ def knight_probability_bruteforce(n: int, k: int, row: int, col: int) -> float:
 **Memoization:**
 
 ```python
-def knight_probability_memo(n: int, k: int, row: int, col: int) -> float:
+def knight_probability_memo(n, k, row, col):
     moves = [
         (2, 1), (2, -1), (-2, 1), (-2, -1),
         (1, 2), (1, -2), (-1, 2), (-1, -2),
     ]
     memo = {}
 
-    def dfs(steps: int, r: int, c: int) -> float:
+    def dfs(steps, r, c):
         if r < 0 or r >= n or c < 0 or c >= n:
             return 0.0
         if steps == 0:
@@ -2587,7 +2714,7 @@ def knight_probability_memo(n: int, k: int, row: int, col: int) -> float:
 **Tabulation (step-by-step probability distribution):**
 
 ```python
-def knight_probability_tabulation(n: int, k: int, row: int, col: int) -> float:
+def knight_probability_tabulation(n, k, row, col):
     moves = [
         (2, 1), (2, -1), (-2, 1), (-2, -1),
         (1, 2), (1, -2), (-1, 2), (-1, -2),
