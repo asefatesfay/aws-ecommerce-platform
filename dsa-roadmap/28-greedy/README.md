@@ -436,6 +436,39 @@ print(lemonade_change_bruteforce([5, 5, 10, 10, 20]))  # False
 
 **Why it works:** We only need to track the frontier (farthest reachable), not the exact path. If at any point we gap the frontier, we cannot reach beyond.
 
+**Why does `current index > farthest` mean we are stuck?**
+
+- `farthest` means: using all positions we were actually able to reach so far, this is the furthest index any of them can send us to.
+- So if we are currently checking index `i` and find `i > farthest`, then index `i` itself is unreachable.
+- If index `i` is unreachable, we are not allowed to use `nums[i]` to extend the frontier, because we can only jump from places we can stand on.
+- Also, every later index `i + 1`, `i + 2`, ... is even farther away, so those are unreachable too unless we could already reach `i`.
+- That means there is no future move left that can repair the situation. We are permanently stuck.
+
+**Mini intuition with an example:**
+
+- Suppose `nums = [3, 2, 1, 0, 4]`
+- At index 0, farthest becomes 3
+- At index 1, farthest stays 3
+- At index 2, farthest stays 3
+- At index 3, farthest stays 3 because `nums[3] = 0`
+- Now we move to index 4
+- But `4 > farthest = 3`, which means we never found any reachable position that could land on 4
+- Since we cannot even stand on index 4, we cannot use its value, and the game is over
+
+```mermaid
+flowchart LR
+    I0["index 0\nreach up to 3"] --> I1["index 1"]
+    I1 --> I2["index 2"]
+    I2 --> I3["index 3\nnums[3]=0"]
+    I3 -. cannot cross gap .-> I4["index 4\nunreachable"]
+    F["farthest = 3"] --> I3
+```
+
+Visual reading:
+- Solid arrows show indices inside the reachable frontier.
+- The dashed arrow shows the jump we would need, but cannot make.
+- Since index 4 is outside the frontier, nothing to its right can be reached either.
+
 **Visual mental model (frontier grows):**
 
 ```mermaid
