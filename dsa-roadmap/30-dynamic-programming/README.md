@@ -425,6 +425,9 @@ def fibonacci_tabulation(n):
 
 print(fibonacci(10))  # 55
 print(fibonacci_tabulation(10))  # 55
+print(fibonacci(0))   # 0  — base case: fib(0) is defined as 0
+print(fibonacci(1))   # 1  — base case: fib(1) is defined as 1
+print(fibonacci(20))  # 6765 — larger n; memoization makes this instant
 ```
 
 **Complexity:**
@@ -510,6 +513,10 @@ def coin_change_tabulation(coins, amount):
 print(coin_change([1, 2, 5], 5))  # 1
 print(coin_change([2], 3))  # -1 (impossible)
 print(coin_change([10], 10))  # 1
+# Greedy trap: greedy picks 9 first → 9+1+1 = 3 coins, but DP finds 5+6 = 2 coins
+print(coin_change([1, 5, 6, 9], 11))  # 2  — optimal is 5+6, not greedy 9+1+1
+# No combination of 3 or 7 can sum to 5
+print(coin_change([3, 7], 5))  # -1  — impossible; 3+3=6>5, 7>5
 ```
 
 **Complexity:**
@@ -548,7 +555,7 @@ graph TD
 
 **Problem:** You can't rob adjacent houses. Maximize money stolen from `n` houses.
 
-**Example:** `[1, 3, 1, 3, 100]` → Rob house 3 (100) and house 1 (3) or house 2 (3) → Answer: 103
+**Example:** `[1, 3, 1, 3, 100]` (indices 0–4) → Rob index 4 (value 100) + index 1 (value 3) = 103. You can't rob index 3 and 4 together because they're adjacent. → Answer: 103
 
 **Properties:**
 - Overlapping subproblems: Yes (same subarray considered multiple times)
@@ -644,6 +651,11 @@ def rob_tabulation(nums):
 print(rob([1, 3, 1, 3, 100]))  # 103
 print(rob([2, 7, 9, 3, 1]))  # 12
 
+# Edge case: only one house — must rob it
+print(rob([42]))  # 42
+# Non-obvious: rob indices 0 and 3 → 5+5=10; indices 1 and 3 → 1+5=6
+print(rob([5, 1, 1, 5]))  # 10  — dp trace: [5,5,6,10]
+
 # O(1) space using the take/skip mental model
 def rob_take_skip(nums):
     take, skip = 0, 0
@@ -657,6 +669,8 @@ def rob_take_skip(nums):
 
 print(rob_take_skip([1, 3, 1, 3, 100]))  # 103
 print(rob_take_skip([2, 7, 9, 3, 1]))  # 12
+print(rob_take_skip([42]))              # 42  — single house
+print(rob_take_skip([5, 1, 1, 5]))      # 10
 ```
 
 **Complexity:**
@@ -690,7 +704,7 @@ $$dp[i] = \max(dp[j] + 1) \text{ for all } j < i \text{ where } nums[j] < nums[i
 - Start `dp = [1,1,1,1,1,1]`
 - At value 1, extend from 0 -> length 2
 - At value 3 (index 3), best length becomes 3
-- At last value 3, extend from previous 2 -> length 4
+- At last value 3 (index 5), extend from value 2 (index 4, dp=3) -> dp[5]=4
 
 **Brute force first (recursive baseline):**
 
@@ -748,6 +762,10 @@ def lis_memo(nums):
 
 print(longest_increasing_subsequence([10, 9, 2, 5, 3, 7, 101, 18]))  # 4
 print(longest_increasing_subsequence([0, 1, 0, 4, 4, 4, 3, 5, 9]))  # 5
+# Already sorted ascending — every element extends the LIS, length = n
+print(longest_increasing_subsequence([1, 2, 3, 4, 5]))  # 5
+# Strictly decreasing — no element can follow another, every dp[i]=1
+print(longest_increasing_subsequence([5, 4, 3, 2, 1]))  # 1
 ```
 
 **Complexity:**
@@ -858,6 +876,11 @@ values = [3, 4, 5]
 capacity = 5
 print(knapsack_0_1(weights, values, capacity))  # 7
 print(knapsack_0_1_tabulation(weights, values, capacity))  # 7
+
+# More items, larger capacity — best combo is w=3+w=4 → value 4+5=9
+print(knapsack_0_1([1, 3, 4, 5], [1, 4, 5, 7], 7))  # 9
+# All items too heavy — nothing fits the capacity
+print(knapsack_0_1([10, 20], [100, 200], 5))  # 0  — capacity 5 cannot hold w=10 or w=20
 ```
 
 **Complexity:**
@@ -962,6 +985,11 @@ def edit_distance_tabulation(s, t):
 
 print(edit_distance("horse", "ros"))  # 3
 print(edit_distance("intention", "execution"))  # 5
+# Identical strings — zero edits needed, dp follows the diagonal every step
+print(edit_distance("abc", "abc"))  # 0
+# One string empty — must delete (or insert) every character one by one
+print(edit_distance("abc", ""))    # 3  — delete a, b, c
+print(edit_distance("", "xyz"))    # 3  — insert x, y, z
 ```
 
 **Complexity:**
@@ -1028,8 +1056,8 @@ def min_cost_climbing_stairs(cost):
         memo[i] = result
         return result
     
-    # Can start at step 0 or 1
-    return min(helper(len(cost) - 1), helper(len(cost) - 2) + cost[-1]) if len(cost) > 1 else cost[0]
+    # Can start at step 0 or 1 (no extra cost to jump past the last step)
+    return min(helper(len(cost) - 1), helper(len(cost) - 2)) if len(cost) > 1 else cost[0]
 
 # Better: start from either step 0 or 1
 def min_cost_climbing_stairs_v2(cost):
@@ -1043,11 +1071,16 @@ def min_cost_climbing_stairs_v2(cost):
     for i in range(2, len(cost)):
         dp[i] = cost[i] + min(dp[i - 1], dp[i - 2])
     
-    # Last step or second-to-last step
-    return min(dp[-1], dp[-2] + cost[-1])
+    # Last step or second-to-last step (no extra cost to jump past the array)
+    return min(dp[-1], dp[-2])
 
 print(min_cost_climbing_stairs([10, 15, 20]))  # 15
 print(min_cost_climbing_stairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]))  # 6
+# All costs zero — the top is free regardless of path taken
+print(min_cost_climbing_stairs([0, 0, 0]))  # 0
+# Ascending costs — optimal path skips the expensive steps using 2-step jumps
+# dp trace: [1,2,4,6,9], answer = min(dp[4], dp[3]) = min(9, 6) = 6
+print(min_cost_climbing_stairs([1, 2, 3, 4, 5]))  # 6
 ```
 
 **Complexity:**
@@ -1133,6 +1166,10 @@ def unique_paths_tabulation(m, n):
 print(unique_paths(3, 3))  # 6
 print(unique_paths(3, 7))  # 28
 print(unique_paths(1, 1))  # 1
+# Single-row grid: robot can only go right, exactly 1 path always
+print(unique_paths(1, 5))  # 1  — forced rightward the whole way
+# 2-row, 3-col grid: fills as [[1,1,1],[1,2,3]], bottom-right = 3
+print(unique_paths(2, 3))  # 3
 ```
 
 **Complexity:**
@@ -1151,7 +1188,7 @@ House 0 costs: [1, 0, 0] (color 0, 1, 2)
 House 1 costs: [0, 3, 1]
 House 2 costs: [1, 1, 1]
 ```
-Best: House 0 → green (0), House 1 → red (0) or blue (1), House 2 → any → Answer: 2
+Best: House 0 → green (cost 0), House 1 → red (cost 0, can't reuse green), House 2 → green or blue (can't reuse red, cost 1) → Total: 0 + 0 + 1 = Answer: 1
 
 **State:** `dp[i][j]` = minimum cost to paint houses 0..i with house i painted in color j
 
@@ -1223,8 +1260,12 @@ def paint_house_tabulation(costs):
     return min(dp[n - 1])
 
 costs = [[1, 0, 0], [0, 3, 1], [1, 1, 1]]
-print(paint_house(costs))  # 2
-print(paint_house_tabulation(costs))  # 2
+print(paint_house(costs))  # 1
+print(paint_house_tabulation(costs))  # 1
+# Single house — no adjacency constraint, just pick the cheapest color
+print(paint_house([[5, 2, 8]]))  # 2  — minimum of [5, 2, 8]
+# Two houses: H0=red(1)+H1=blue(1)=2 is the cheapest valid pair
+print(paint_house([[1, 2, 3], [3, 2, 1]]))  # 2  — H0 red(1), H1 blue(1)
 ```
 
 **Complexity:**
@@ -1316,6 +1357,10 @@ def lcs_tabulation(s1, s2):
 print(longest_common_subsequence("ABCDGH", "AEDFHR"))  # 3
 print(longest_common_subsequence("abc", "abc"))  # 3
 print(longest_common_subsequence("abc", "def"))  # 0
+# Classic case: LCS of "abcde" and "ace" is "ace", skipping b and d
+print(longest_common_subsequence("abcde", "ace"))  # 3
+# One empty string — no characters to match at all
+print(longest_common_subsequence("", "xyz"))  # 0
 ```
 
 **Complexity:**
@@ -1388,6 +1433,10 @@ def max_subarray_sum_tabulation(nums):
 
 print(max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]))  # 6
 print(max_subarray_sum([-1]))  # -1
+# All positive — best subarray is the entire array: 5+4-1+7+8=23
+print(max_subarray_sum([5, 4, -1, 7, 8]))  # 23
+# All negative — must pick the single least negative element
+print(max_subarray_sum([-3, -1, -4, -2]))  # -1  — best single element
 ```
 
 **Complexity:**
@@ -1483,6 +1532,10 @@ def word_break_tabulation(s, word_dict):
 print(word_break("leetcode", ["leet", "code"]))  # True
 print(word_break("applepenapple", ["apple", "pen"]))  # True
 print(word_break("catsanddogs", ["cat", "cats", "and", "sand", "dog"]))  # False
+# Two-word segmentation: "ca" + "rs" covers the full string
+print(word_break("cars", ["car", "ca", "rs"]))  # True
+# "hell" matches the prefix but "o" alone is not in the dictionary
+print(word_break("hello", ["hell", "world"]))  # False
 ```
 
 **Complexity:**
@@ -1547,6 +1600,11 @@ def num_distinct_subsequences(s):
 print(num_distinct_subsequences("ab"))  # 4: "", "a", "b", "ab"
 print(num_distinct_subsequences("aab"))  # 6: "", "a", "aa", "b", "ab", "aab"
 print(num_distinct_subsequences("a"))  # 2: "", "a"
+# All distinct chars, no repeats — count = 2^n = 8
+print(num_distinct_subsequences("abc"))  # 8: "", "a", "b", "c", "ab", "ac", "bc", "abc"
+# Repeated char: dp doubles then subtracts the duplicate from before the first 'a'
+# after first 'a': count=2; after second 'a': 2*2 - dp[before first 'a']=4-1=3
+print(num_distinct_subsequences("aa"))   # 3: "", "a", "aa"  (two 'a' positions = one distinct "a")
 ```
 
 **Complexity:**
@@ -2408,6 +2466,11 @@ def rob_ii(nums):
 print(rob_ii([2, 3, 2]))   # 3
 print(rob_ii([1, 2, 3, 1]))  # 4
 print(rob_ii([1, 2, 3]))   # 3
+# Single house — circular or not, just take it
+print(rob_ii([7]))  # 7
+# [3,1,3,1]: rob indices 0+2=6; indices 1+3=2 → best is 6
+# In circle: 0 and 2 are not adjacent (circle: 0-1-2-3-0, so 0 and 2 share no edge)
+print(rob_ii([3, 1, 3, 1]))  # 6
 ```
 
 **Complexity:** Time `O(n)`, Space `O(1)`
@@ -2501,6 +2564,10 @@ def delete_and_earn(nums):
 print(delete_and_earn([3, 4, 2]))   # 6
 print(delete_and_earn([2, 2, 3, 3, 3, 4]))  # 9
 print(delete_and_earn([1]))  # 1
+# bucket=[0,1,2,3]; House Robber on [0,1,2,3] → skip 2, take 1+3=4
+print(delete_and_earn([1, 2, 3]))  # 4  — earn(1)+earn(3), deleting 2 is a forced side effect
+# All same value — no adjacent bucket values exist, take everything
+print(delete_and_earn([5, 5, 5]))  # 15  — bucket[5]=15, no conflicts
 ```
 
 **Complexity:** Time `O(n + max_val)`, Space `O(max_val)`
@@ -2597,6 +2664,10 @@ print(num_decodings("12"))   # 2
 print(num_decodings("226"))  # 3
 print(num_decodings("06"))   # 0
 print(num_decodings("10"))   # 1
+# Standalone "0" — cannot decode alone (A=1, Z=26, so 0 is invalid)
+print(num_decodings("0"))     # 0
+# Valid decodings: [1,1,10,6] and [11,10,6]; "06" segment is rejected
+print(num_decodings("11106"))  # 2
 ```
 
 **Complexity:** Time `O(n)`, Space `O(n)` (reducible to `O(1)`)
@@ -2684,6 +2755,10 @@ def find_target_sum_ways(nums, target):
 print(find_target_sum_ways([1, 1, 1, 1, 1], 3))  # 5
 print(find_target_sum_ways([1], 1))              # 1
 print(find_target_sum_ways([1, 0], 1))           # 2
+# P=(6+2)/2=4; only subset {4} sums to 4, so one assignment: +4-2=2
+print(find_target_sum_ways([2, 4], 2))  # 1
+# 0 contributes nothing either way, so +0 and -0 both reach target 0
+print(find_target_sum_ways([0], 0))     # 2  — both +0 and -0 are valid
 ```
 
 **Complexity:**
