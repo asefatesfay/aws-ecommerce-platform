@@ -275,6 +275,94 @@ This is a pure combination, not a competition.
 
 ---
 
+## A Different Way to Think About Hard DP Problems
+
+If formulas feel abstract, switch to a "story of choices" approach.
+
+### The 4-Question DP Lens
+
+1. **What is the decision at position `i`?**
+    - Usually binary: take/skip, buy/sell, cut/not-cut, match/skip.
+
+2. **What history do I actually need?**
+    - Many problems only need one or two previous states.
+    - If only the previous two states matter, you can often do `O(1)` space.
+
+3. **Write one sentence before any formula.**
+    - Example (House Robber):
+      "At house `i`, either rob it and add best up to `i-2`, or skip it and keep best up to `i-1`."
+
+4. **Run a tiny decision table (size 4 to 6).**
+    - Fill columns: index, choice A, choice B, winner.
+    - If the table is clear, the code is usually straightforward.
+
+### House Robber Mental Model: "Take" vs "Skip"
+
+Instead of memorizing `dp[i]`, track two running meanings:
+
+- `take`: best money if current house **is robbed**
+- `skip`: best money if current house **is not robbed**
+
+When you see value `x`:
+
+- New `take` = old `skip + x` (must skip previous)
+- New `skip` = `max(old_take, old_skip)` (choose best previous)
+
+This is the same DP, but often easier to reason about than an array.
+
+---
+
+## Practice by Pattern (Especially for House Robber-Type Questions)
+
+If House Robber feels tricky, practice in this exact order.
+
+### Pattern 1: Adjacent Constraint / Take-Skip DP
+
+Core idea: if you take `i`, you must skip something nearby.
+
+1. House Robber
+2. House Robber II (circular houses)
+3. House Robber III (tree version)
+4. Delete and Earn
+5. Maximum Sum of Non-Adjacent Elements
+6. Pizza With 3n Slices
+
+### Pattern 2: Same Skeleton, Different Story
+
+These are not "rob houses" but the recurrence feels similar.
+
+1. Min Cost Climbing Stairs
+2. Paint House
+3. Paint Fence
+4. Best Time to Buy and Sell Stock with Cooldown
+5. Best Time to Buy and Sell Stock with Transaction Fee
+
+### Pattern 3: Include/Exclude Item Decisions (Knapsack Family)
+
+1. Partition Equal Subset Sum
+2. Target Sum
+3. 0/1 Knapsack
+4. Last Stone Weight II
+5. Ones and Zeroes
+
+### Pattern 4: Prefix Cut Decisions (Word/String)
+
+1. Word Break
+2. Decode Ways
+3. Palindrome Partitioning II
+4. Extra Characters in a String
+
+### Fast Pattern Check During Interviews
+
+Ask:
+
+1. "Is this take/skip over a sequence?" -> think House Robber style.
+2. "Do I choose include/exclude for each item?" -> think Knapsack.
+3. "Do I split by prefix or cut position?" -> think Word Break / partition DP.
+4. "Do I compare two strings or intervals?" -> think 2D DP.
+
+---
+
 ## Examples: Simple to Complex
 
 ### Example 1: Fibonacci (Simplest DP)
@@ -555,6 +643,20 @@ def rob_tabulation(nums):
 
 print(rob([1, 3, 1, 3, 100]))  # 103
 print(rob([2, 7, 9, 3, 1]))  # 12
+
+# O(1) space using the take/skip mental model
+def rob_take_skip(nums):
+    take, skip = 0, 0
+
+    for money in nums:
+        new_take = skip + money
+        new_skip = max(take, skip)
+        take, skip = new_take, new_skip
+
+    return max(take, skip)
+
+print(rob_take_skip([1, 3, 1, 3, 100]))  # 103
+print(rob_take_skip([2, 7, 9, 3, 1]))  # 12
 ```
 
 **Complexity:**
@@ -2215,6 +2317,378 @@ graph LR
 3. Define state in one sentence: `dp[...] means ...`.
 4. Fill only first few states manually.
 5. Explain each transition as a real choice, then code.
+
+---
+
+## Worked Examples for the Pattern Ladder
+
+These go deeper on the harder variants from the practice ladder above, specifically the ones that look like House Robber but trip people up.
+
+---
+
+### Problem: House Robber II (Circular Houses)
+
+**Why it's harder than House Robber I:**
+The houses are in a circle, so house 0 and house `n-1` are adjacent. You cannot rob both.
+
+**The trick:** Run House Robber I twice.
+- Once on `nums[0 .. n-2]` (exclude last house)
+- Once on `nums[1 .. n-1]` (exclude first house)
+- Take the maximum.
+
+**One-sentence state:** Same as House Robber, but the problem reduces to two linear subproblems.
+
+**Decision table for `nums = [2, 3, 2]`:**
+
+| Run | Array | dp results | Best |
+|-----|-------|-----------|------|
+| Exclude last | `[2, 3]` | [2, 3] | 3 |
+| Exclude first | `[3, 2]` | [3, 3] | 3 |
+
+Answer: `max(3, 3) = 3`
+
+**Brute force:**
+
+```python
+def rob_ii_bruteforce(nums, i, excluded):
+    if i < 0:
+        return 0
+    if i == excluded:
+        return rob_ii_bruteforce(nums, i - 1, excluded)
+    rob = nums[i] + rob_ii_bruteforce(nums, i - 2, excluded)
+    skip = rob_ii_bruteforce(nums, i - 1, excluded)
+    return max(rob, skip)
+```
+
+**Memoization:**
+
+```python
+def rob_ii_memo(nums):
+    if len(nums) == 1:
+        return nums[0]
+
+    memo = {}
+
+    def helper(index, start, end):
+        if (index, start, end) in memo:
+            return memo[(index, start, end)]
+        if index < start:
+            return 0
+        rob = nums[index] + helper(index - 2, start, end)
+        skip = helper(index - 1, start, end)
+        memo[(index, start, end)] = max(rob, skip)
+        return memo[(index, start, end)]
+
+    return max(
+        helper(len(nums) - 2, 0, len(nums) - 2),
+        helper(len(nums) - 1, 1, len(nums) - 1),
+    )
+```
+
+**Tabulation (cleaner):**
+
+```python
+def rob_ii(nums):
+    if len(nums) == 1:
+        return nums[0]
+
+    def rob_linear(houses):
+        if not houses:
+            return 0
+        if len(houses) == 1:
+            return houses[0]
+        take, skip = 0, 0
+        for money in houses:
+            take, skip = skip + money, max(take, skip)
+        return max(take, skip)
+
+    # Either skip first house, or skip last house
+    return max(rob_linear(nums[:-1]), rob_linear(nums[1:]))
+
+print(rob_ii([2, 3, 2]))   # 3
+print(rob_ii([1, 2, 3, 1]))  # 4
+print(rob_ii([1, 2, 3]))   # 3
+```
+
+**Complexity:** Time `O(n)`, Space `O(1)`
+
+---
+
+### Problem: Delete and Earn
+
+**Problem statement:**
+Given `nums`, when you take any number `x` you gain `x` points, but must delete all occurrences of `x-1` and `x+1`.
+
+**Why it maps to House Robber:**
+- Build a bucket array where `bucket[v]` = total points from taking all copies of value `v`.
+- Now you cannot take adjacent values (taking `v` deletes `v-1` and `v+1`).
+- This is exactly House Robber on the `bucket` array.
+
+**One-sentence insight:** "Delete and Earn is House Robber with buckets as the houses."
+
+**Decision table for `nums = [3, 4, 2]`:**
+
+| Value | Bucket (value × count) | Take/Skip |
+|-------|----------------------|-----------|
+| 2     | 2                    | |
+| 3     | 3                    | adjacent to 2 and 4 |
+| 4     | 4                    | |
+
+House Robber on `[0, 0, 2, 3, 4]` → best is `2 + 4 = 6`
+
+**Brute force:**
+
+```python
+def delete_and_earn_bruteforce(nums):
+    if not nums:
+        return 0
+    max_val = max(nums)
+    bucket = [0] * (max_val + 1)
+    for n in nums:
+        bucket[n] += n
+
+    def rob(i):
+        if i < 0:
+            return 0
+        return max(bucket[i] + rob(i - 2), rob(i - 1))
+
+    return rob(max_val)
+```
+
+**Memoization:**
+
+```python
+def delete_and_earn_memo(nums):
+    if not nums:
+        return 0
+    max_val = max(nums)
+    bucket = [0] * (max_val + 1)
+    for n in nums:
+        bucket[n] += n
+
+    memo = {}
+
+    def rob(i):
+        if i < 0:
+            return 0
+        if i in memo:
+            return memo[i]
+        memo[i] = max(bucket[i] + rob(i - 2), rob(i - 1))
+        return memo[i]
+
+    return rob(max_val)
+```
+
+**Tabulation:**
+
+```python
+def delete_and_earn(nums):
+    if not nums:
+        return 0
+
+    max_val = max(nums)
+    bucket = [0] * (max_val + 1)
+    for n in nums:
+        bucket[n] += n  # Total points for choosing this value
+
+    # Same as House Robber on bucket
+    take, skip = 0, 0
+    for points in bucket:
+        take, skip = skip + points, max(take, skip)
+
+    return max(take, skip)
+
+print(delete_and_earn([3, 4, 2]))   # 6
+print(delete_and_earn([2, 2, 3, 3, 3, 4]))  # 9
+print(delete_and_earn([1]))  # 1
+```
+
+**Complexity:** Time `O(n + max_val)`, Space `O(max_val)`
+
+---
+
+### Problem: Decode Ways
+
+**Problem statement:**
+A message was encoded as numbers: `A→1`, `B→2`, ..., `Z→26`. Given a digit string, count how many ways you can decode it.
+
+**Why it's related to Fibonacci/Climb Stairs:**
+At each position you can take 1 digit or 2 digits (if valid). This makes it a 1D recurrence with two choices — same skeleton as climbing stairs.
+
+**The differences that catch people:**
+- `"0"` cannot be decoded alone; it must pair with the digit before it.
+- A two-digit number is only valid if it's `10..26`.
+- Leading zeros within a segment (`"06"`) are invalid.
+
+**One-sentence state:** `dp[i]` = number of ways to decode `s[0..i-1]`.
+
+**Decision table for `s = "226"`:**
+
+| i | one-digit `s[i-1]` | two-digit `s[i-2:i]` | dp[i] |
+|---|---------------------|----------------------|-------|
+| 0 | base case | | 1 |
+| 1 | `"2"` valid → dp[0] = 1 | | 1 |
+| 2 | `"2"` valid → dp[1] = 1 | `"22"` valid → dp[0] = 1 | 2 |
+| 3 | `"6"` valid → dp[2] = 2 | `"26"` valid → dp[1] = 1 | 3 |
+
+**Brute force:**
+
+```python
+def num_decodings_bruteforce(s, i=0):
+    if i == len(s):
+        return 1
+    if s[i] == "0":
+        return 0
+    ways = num_decodings_bruteforce(s, i + 1)  # take one digit
+    if i + 1 < len(s) and int(s[i:i+2]) <= 26:
+        ways += num_decodings_bruteforce(s, i + 2)  # take two digits
+    return ways
+```
+
+**Memoization:**
+
+```python
+def num_decodings_memo(s):
+    memo = {}
+
+    def helper(i):
+        if i == len(s):
+            return 1
+        if s[i] == "0":
+            return 0
+        if i in memo:
+            return memo[i]
+
+        ways = helper(i + 1)
+        if i + 1 < len(s) and int(s[i:i+2]) <= 26:
+            ways += helper(i + 2)
+
+        memo[i] = ways
+        return ways
+
+    return helper(0)
+```
+
+**Tabulation:**
+
+```python
+def num_decodings(s):
+    if not s or s[0] == "0":
+        return 0
+
+    n = len(s)
+    dp = [0] * (n + 1)
+    dp[0] = 1       # empty prefix: 1 way
+    dp[1] = 1       # first char: valid as long as it's not "0" (checked above)
+
+    for i in range(2, n + 1):
+        one_digit = int(s[i - 1])
+        two_digit = int(s[i - 2:i])
+
+        if one_digit != 0:
+            dp[i] += dp[i - 1]
+
+        if 10 <= two_digit <= 26:
+            dp[i] += dp[i - 2]
+
+    return dp[n]
+
+print(num_decodings("12"))   # 2
+print(num_decodings("226"))  # 3
+print(num_decodings("06"))   # 0
+print(num_decodings("10"))   # 1
+```
+
+**Complexity:** Time `O(n)`, Space `O(n)` (reducible to `O(1)`)
+
+---
+
+### Problem: Target Sum
+
+**Problem statement:**
+Given `nums` and a `target`, assign `+` or `-` to each number. Count how many ways the expression equals `target`.
+
+**Why it's harder than basic knapsack:**
+You have two choices per element (`+x` or `-x`), and you're counting all ways, not just checking feasibility.
+
+**One-sentence insight:** "The number of ways where positive-sum minus negative-sum equals target."
+
+Let `P` = sum of + numbers, `N` = sum of - numbers.
+- `P - N = target`
+- `P + N = total`
+- → `P = (total + target) / 2`
+
+This reduces to: **count subsets that sum to `P`**. Classic 0/1 knapsack counting.
+
+**Decision table for `nums = [1,1,1,1,1]`, `target = 3`:**
+
+| Positive set | Sum P | Works? |
+|--------------|-------|--------|
+| [1,1,1,1,1] minus [1,1] | P=5, N=2, 5-2=3 | Yes |
+| ... | ... | 5 ways total |
+
+**Brute force:**
+
+```python
+def find_target_sum_ways_bruteforce(nums, target):
+    def dfs(i, current):
+        if i == len(nums):
+            return 1 if current == target else 0
+        return (dfs(i + 1, current + nums[i]) +
+                dfs(i + 1, current - nums[i]))
+    return dfs(0, 0)
+```
+
+**Memoization:**
+
+```python
+def find_target_sum_ways_memo(nums, target):
+    memo = {}
+
+    def dfs(i, current):
+        if i == len(nums):
+            return 1 if current == target else 0
+        if (i, current) in memo:
+            return memo[(i, current)]
+        memo[(i, current)] = (dfs(i + 1, current + nums[i]) +
+                               dfs(i + 1, current - nums[i]))
+        return memo[(i, current)]
+
+    return dfs(0, 0)
+```
+
+**Tabulation (subset sum count, O(n * subset_target)):**
+
+```python
+def find_target_sum_ways(nums, target):
+    total = sum(nums)
+
+    # If (total + target) is odd or out of range, no solution
+    if (total + target) % 2 != 0:
+        return 0
+    if abs(target) > total:
+        return 0
+
+    subset_target = (total + target) // 2
+
+    # Count subsets that sum to subset_target
+    dp = [0] * (subset_target + 1)
+    dp[0] = 1
+
+    for num in nums:
+        for s in range(subset_target, num - 1, -1):
+            dp[s] += dp[s - num]
+
+    return dp[subset_target]
+
+print(find_target_sum_ways([1, 1, 1, 1, 1], 3))  # 5
+print(find_target_sum_ways([1], 1))              # 1
+print(find_target_sum_ways([1, 0], 1))           # 2
+```
+
+**Complexity:**
+- Brute force: Time `O(2^n)`, Space `O(n)`
+- Tabulation: Time `O(n * subset_target)`, Space `O(subset_target)`
 
 ---
 
