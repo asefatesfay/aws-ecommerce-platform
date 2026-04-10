@@ -115,31 +115,65 @@ This order is intentional. Each step reuses the previous intuition.
 
 ### Example 1: Assign Cookies (Easy)
 
-**Problem:** Each child has greed factor `g[i]`; each cookie has size `s[j]`. A child is satisfied if cookie size >= greed. Maximize satisfied children.
+**Problem:** 
+- You have `n` children, each with a greed factor `g[i]` (minimum cookie size needed to satisfy them)
+- You have `m` cookies, each with a size `s[j]`
+- A child is satisfied only if you give them a cookie of size >= their greed factor
+- Each cookie can only be given to one child, and each child gets at most one cookie
+- Goal: Maximize the number of satisfied children
+- Constraints: `1 <= n, m <= 3*10^4`, `1 <= g[i], s[j] <= 2^31 - 1`
 
-**Greedy rule:** Give the smallest possible cookie that can satisfy the current least-greedy child.
+**Example Walkthrough:**
+- Children greed: `[1, 2, 3]` (child 0 needs >=1, child 1 needs >=2, child 2 needs >=3)
+- Available cookies: `[1, 1]` (only two cookies of size 1)
+- Cookie size 1 can satisfy child 0 (1 >= 1) ✓
+- Cookie size 1 CANNOT satisfy child 1 (1 < 2) ✗
+- Result: only 1 child satisfied
 
-**Why it works:** Using a larger cookie on an easier child can only hurt harder children later.
+**Greedy rule:** Sort both arrays. Give the smallest cookie that satisfies the least-greedy child. This way, larger cookies are reserved for harder-to-satisfy children.
+
+**Why it works:** If we use a large cookie on an easy child, we waste potential. By pairing smallest cookie with smallest greed, we preserve larger cookies for more demanding children.
 
 ```python
 def find_content_children(g, s):
-	g.sort()
-	s.sort()
+    g.sort()  # Sort children by greed (ascending)
+    s.sort()  # Sort cookies by size (ascending)
+    
+    i = j = 0
+    while i < len(g) and j < len(s):
+        if s[j] >= g[i]:
+            i += 1  # Child i is satisfied, move to next child
+        j += 1      # Cookie j is used (or discarded if too small)
+    
+    return i  # Number of satisfied children
 
-	i = j = 0
-	while i < len(g) and j < len(s):
-		if s[j] >= g[i]:
-			i += 1  # this child is satisfied
-		j += 1      # cookie j is used (or discarded)
+# Test case 1
+print(find_content_children([1, 2, 3], [1, 1]))      
+# Output: 1
+# Sorted g: [1, 2, 3], Sorted s: [1, 1]
+# Step 1: s[0]=1 >= g[0]=1? Yes. i=1, j=1. Satisfied: 1 child
+# Step 2: s[1]=1 >= g[1]=2? No. j=2. No satisfaction
+# Result: 1 satisfied
 
-	return i
+# Test case 2
+print(find_content_children([1, 2], [1, 2, 3])) 
+# Output: 2
+# Sorted g: [1, 2], Sorted s: [1, 2, 3]
+# Step 1: s[0]=1 >= g[0]=1? Yes. i=1, j=1. Satisfied: 1 child
+# Step 2: s[1]=2 >= g[1]=2? Yes. i=2, j=2. Satisfied: 2 children
+# Result: 2 satisfied
 
-print(find_content_children([1, 2, 3], [1, 1]))      # 1
-print(find_content_children([1, 2], [1, 2, 3]))      # 2
-print(find_content_children([2, 3, 4], [1, 1, 5]))   # 1
+# Test case 3
+print(find_content_children([2, 3, 4], [1, 1, 5]))
+# Output: 1
+# Sorted g: [2, 3, 4], Sorted s: [1, 1, 5]
+# Step 1: s[0]=1 >= g[0]=2? No. j=1
+# Step 2: s[1]=1 >= g[0]=2? No. j=2
+# Step 3: s[2]=5 >= g[0]=2? Yes. i=1, j=3. Satisfied: 1 child
+# Result: 1 satisfied (only child with g=2 gets the cookie of size 5)
 ```
 
-**Complexity:** Time `O(n log n + m log m)`, Space `O(1)` extra (excluding sort internals)
+**Complexity:** Time `O(n log n + m log m)` (sorting dominates), Space `O(1)` extra
 
 **Brute Force vs Greedy:**
 
@@ -184,39 +218,81 @@ print(find_content_children_bruteforce([1, 2], [1, 2, 3]))   # 2
 
 ### Example 2: Lemonade Change (Easy)
 
-**Problem:** Customers pay with 5, 10, 20 in order. Each lemonade costs 5. Return whether you can always give correct change.
+**Problem:**
+- You run a lemonade stand. Each lemonade costs $5
+- Customers pay with bills: $5, $10, or $20 (one customer at a time, in given order)
+- You start with no cash
+- Goal: Return whether you can always give correct change
+- If you cannot give exact change to any customer, return False
+- Constraints: `n <= 10^4`, each bill is 5, 10, or 20
 
-**Greedy rule:** For a 20 bill, prefer giving `10 + 5` (instead of three 5s) to preserve more 5s for future 10-bill changes.
+**Example Walkthrough:**
+- Bills: `[5, 5, 10, 10, 20]`
+- Customer 1 pays $5: no change needed. You keep it. (five_count=1)
+- Customer 2 pays $5: no change needed. (five_count=2)
+- Customer 3 pays $10: owed change=$5. You give 1×$5 bill, keep 1×$10. (five_count=1, ten_count=1)
+- Customer 4 pays $10: owed change=$5. You give 1×$5 bill, keep 1×$10. (five_count=0, ten_count=2)
+- Customer 5 pays $20: owed change=$15. You need 1×$10 + 1×$5... but you have no $5! Return False
+
+**Greedy rule:** When change is needed:
+- For $10 payment: give 1×$5 bill
+- For $20 payment: prefer to give 1×$10 + 1×$5 (NOT 3×$5) to preserve $5 bills
+
+**Why it works:** $5 bills are the most versatile (used for both $10 and $20 change). By minimizing $5 usage on $20 payments, we keep them available for future $10 payments.
 
 ```python
 def lemonade_change(bills):
-	five = ten = 0
+    five = ten = 0  # Count of each bill denomination we hold
+    
+    for bill in bills:
+        if bill == 5:
+            five += 1  # Keep the $5 bill
+        elif bill == 10:
+            if five == 0:
+                return False  # Cannot make change
+            five -= 1
+            ten += 1  # Keep the $10 bill
+        else:  # bill == 20
+            # Prefer: give 1×$10 + 1×$5 (saves $5 bills for future $10 payments)
+            if ten > 0 and five > 0:
+                ten -= 1
+                five -= 1
+            # Fallback: give 3×$5 bills
+            elif five >= 3:
+                five -= 3
+            else:
+                return False  # Cannot make change
+    
+    return True
 
-	for bill in bills:
-		if bill == 5:
-			five += 1
-		elif bill == 10:
-			if five == 0:
-				return False
-			five -= 1
-			ten += 1
-		else:  # bill == 20
-			if ten > 0 and five > 0:
-				ten -= 1
-				five -= 1
-			elif five >= 3:
-				five -= 3
-			else:
-				return False
+# Test case 1
+print(lemonade_change([5, 5, 5, 10, 20]))  
+# Output: True
+# Bill $5: five=1
+# Bill $5: five=2
+# Bill $5: five=3
+# Bill $10: give $5, five=2, ten=1
+# Bill $20: give $10+$5, five=1, ten=0
+# Successfully served all customers
 
-	return True
+# Test case 2
+print(lemonade_change([5, 5, 10, 10, 20])) 
+# Output: False
+# Bill $5: five=1
+# Bill $5: five=2
+# Bill $10: give $5, five=1, ten=1
+# Bill $10: give $5, five=0, ten=2
+# Bill $20: Need to give $15. Have 0×$5 and 2×$10. Cannot make change!
+# Return False
 
-print(lemonade_change([5, 5, 5, 10, 20]))          # True
-print(lemonade_change([5, 5, 10, 10, 20]))         # False
-print(lemonade_change([5, 5, 5, 5, 20, 20, 20]))   # False
+# Test case 3
+print(lemonade_change([10]))                
+# Output: False
+# First customer pays $10 but we have no $5 to give as change
+# Return False
 ```
 
-**Complexity:** Time `O(n)`, Space `O(1)`
+**Complexity:** Time `O(n)` (single pass), Space `O(1)` (just two counters)
 
 **Brute Force vs Greedy:**
 
@@ -261,27 +337,74 @@ print(lemonade_change_bruteforce([5, 5, 10, 10, 20]))  # False
 
 ### Example 3: Jump Game (Medium)
 
-**Problem:** `nums[i]` is max jump length from `i`. Can you reach last index?
+**Problem:**
+- You are given an array `nums` where `nums[i]` represents the max jump length from index `i`
+- Start at index 0, determine if you can reach the last index (return True/False)
+- Constraints: `1 <= len(nums) <= 10^4`, `0 <= nums[i] <= 10^5`
 
-**Greedy rule:** Track farthest index reachable so far. If current index exceeds farthest, you're stuck.
+**Example Walkthrough:**
+- Array: `[2, 3, 1, 1, 4]`
+  - Index 0: can jump 1-2 steps → can reach indices 1 or 2
+  - Index 1: can jump 1-3 steps → can reach indices 2, 3, or 4 (the last index!)
+  - Result: **Can reach last index** → return True
+- Array: `[3, 2, 1, 0, 4]`
+  - Index 0: can jump 1-3 steps → can reach indices 1, 2, or 3
+  - Index 3: value is 0 → stuck, cannot jump further
+  - Index 1, 2: cannot bypass index 3 without hitting it
+  - Result: **Cannot reach last index** → return False
+
+**Greedy rule:** Maintain a variable `farthest` = the furthest index we can currently reach. As we scan left-to-right:
+- If current index > `farthest`, we're stuck → return False
+- Update: `farthest = max(farthest, current_index + nums[current_index])`
+
+**Why it works:** We only need to track the frontier (farthest reachable), not the exact path. If at any point we gap the frontier, we cannot reach beyond.
 
 ```python
 def can_jump(nums):
-	farthest = 0
+    farthest = 0  # Furthest index we can reach so far
+    
+    for i in range(len(nums)):
+        if i > farthest:
+            return False  # We cannot reach index i
+        farthest = max(farthest, i + nums[i])  # Update frontier
+    
+    return True
 
-	for i, jump in enumerate(nums):
-		if i > farthest:
-			return False
-		farthest = max(farthest, i + jump)
+# Test case 1
+print(can_jump([2, 3, 1, 1, 4]))  
+# Output: True
+# i=0: farthest=0, update to max(0, 0+2)=2
+# i=1: farthest=2, i<=farthest ✓, update to max(2, 1+3)=4
+# i=2: farthest=4, i<=farthest ✓, update to max(4, 2+1)=4
+# i=3: farthest=4, i<=farthest ✓, update to max(4, 3+1)=4
+# i=4: farthest=4, i<=farthest ✓ (reached last index)
+# Result: True
 
-	return True
+# Test case 2
+print(can_jump([3, 2, 1, 0, 4])) 
+# Output: False
+# i=0: farthest=0, update to max(0, 0+3)=3
+# i=1: farthest=3, i<=farthest ✓, update to max(3, 1+2)=3
+# i=2: farthest=3, i<=farthest ✓, update to max(3, 2+1)=3
+# i=3: farthest=3, i<=farthest ✓, update to max(3, 3+0)=3
+# i=4: farthest=3, i>farthest? Yes, 4>3 ✗
+# Result: False (stuck at index 3 with 0 jump)
 
-print(can_jump([2, 3, 1, 1, 4]))  # True
-print(can_jump([3, 2, 1, 0, 4]))  # False
-print(can_jump([0]))              # True
+# Test case 3
+print(can_jump([0]))                
+# Output: True
+# i=0: is the last index, so return True immediately
+
+# Test case 4
+print(can_jump([2, 0, 0]))          
+# Output: True
+# i=0: farthest=max(0,0+2)=2
+# i=1: farthest=max(2,1+0)=2
+# i=2: farthest=max(2,2+0)=2, reached last index
+# Result: True
 ```
 
-**Complexity:** Time `O(n)`, Space `O(1)`
+**Complexity:** Time `O(n)` (one pass), Space `O(1)` constant
 
 **Brute Force vs Greedy:**
 
@@ -315,30 +438,91 @@ print(can_jump_bruteforce([0]))              # True
 
 ### Example 4: Jump Game II (Medium)
 
-**Problem:** Minimum jumps to reach the last index.
+**Problem:**
+- You are given an array `nums` where `nums[i]` is the max jump length from index `i`
+- Start at index 0, return the **minimum number of jumps** needed to reach the last index
+- Assume you can always reach the last index
+- Constraints: `1 <= len(nums) <= 10^4`, `1 <= nums[i] <= 10^5`
 
-**Greedy idea:** Treat reachable range as a layer. While scanning current layer, compute next layer's farthest reach. When layer ends, make one jump.
+**Example Walkthrough:**
+- Array: `[2, 3, 1, 1, 4]`
+  - Index 0: can jump to indices 1 or 2
+  - Jump to index 1: can reach indices 2, 3, 4 → reach end!
+  - Minimum jumps: 2 (jump 1 + jump 1)
+- Array: `[2, 3, 0, 1, 4]`
+  - Index 0: can jump to indices 1 or 2
+  - Jump to index 1: can reach indices 2, 3, 4 → reach end!
+  - Minimum jumps: 2
+
+**Greedy rule:** Process indices in "layers":
+- Layer 0: just index 0
+- Layer 1: all indices reachable from layer 0
+- Layer 2: all indices reachable from layer 1 (but not layer 0)
+- ...
+- Count layers until we reach the last index = minimum jumps
+
+While scanning a layer, find the farthest we can reach in the NEXT layer. When layer boundary is hit, increment jumps count.
+
+**Why it works:** Layers correspond to jump counts. Every time we advance to a new layer, we make exactly one jump. No need to try all possible paths.
 
 ```python
 def jump_game_ii(nums):
-	jumps = 0
-	current_end = 0
-	farthest = 0
+    jumps = 0
+    current_end = 0    # Boundary of current layer
+    farthest = 0       # Farthest index reachable from current layer
+    
+    for i in range(len(nums) - 1):
+        farthest = max(farthest, i + nums[i])
+        
+        if i == current_end:
+            jumps += 1
+            current_end = farthest
+            
+            if current_end >= len(nums) - 1:
+                break
+    
+    return jumps
 
-	for i in range(len(nums) - 1):
-		farthest = max(farthest, i + nums[i])
-		if i == current_end:
-			jumps += 1
-			current_end = farthest
+# Test case 1
+print(jump_game_ii([2, 3, 1, 1, 4]))
+# Output: 2
+# i=0: farthest=max(0, 0+2)=2, i==current_end? 0==0 ✓
+#      Make jump 1, current_end=2
+# i=1: farthest=max(2, 1+3)=4, i==current_end? 1==2 ✗
+# i=2: farthest=max(4, 2+1)=4, i==current_end? 2==2 ✓
+#      Make jump 2, current_end=4 (reached end)
+# Total jumps: 2
 
-	return jumps
+# Test case 2
+print(jump_game_ii([2, 3, 0, 1, 4]))
+# Output: 2
+# i=0: farthest=max(0,0+2)=2, i==current_end? 0==0 ✓
+#      Make jump 1, current_end=2
+# i=1: farthest=max(2,1+3)=4, i==current_end? 1==2 ✗
+# i=2: farthest=max(4,2+0)=4, i==current_end? 2==2 ✓
+#      Make jump 2, current_end=4 (reached end)
+# Total jumps: 2
 
-print(jump_game_ii([2, 3, 1, 1, 4]))  # 2
-print(jump_game_ii([2, 3, 0, 1, 4]))  # 2
-print(jump_game_ii([1, 1, 1, 1]))     # 3
+# Test case 3
+print(jump_game_ii([1, 1, 1, 1]))
+# Output: 3
+# i=0: farthest=max(0,0+1)=1, i==current_end? 0==0 ✓
+#      Make jump 1, current_end=1
+# i=1: farthest=max(1,1+1)=2, i==current_end? 1==1 ✓
+#      Make jump 2, current_end=2
+# i=2: farthest=max(2,2+1)=3, i==current_end? 2==2 ✓
+#      Make jump 3, current_end=3 (reached end)
+# Total jumps: 3
+
+# Test case 4
+print(jump_game_ii([10, 1, 1, 1, 1]))
+# Output: 1
+# i=0: farthest=max(0,0+10)=10, i==current_end? 0==0 ✓
+#      Make jump 1, current_end=10 (far beyond last index 4)
+# Total jumps: 1
 ```
 
-**Complexity:** Time `O(n)`, Space `O(1)`
+**Complexity:** Time `O(n)` (one pass), Space `O(1)` constant
 
 **Brute Force vs Greedy:**
 
@@ -377,31 +561,82 @@ print(jump_game_ii_bruteforce([1, 1, 1, 1]))     # 3
 
 ### Example 5: Non-Overlapping Intervals (Medium)
 
-**Problem:** Remove minimum intervals so remaining intervals do not overlap.
+**Problem:**
+- You are given a list of intervals `[start, end]`
+- Return the minimum number of intervals to **remove** so that the remaining intervals do not overlap
+- Two intervals overlap if they share any point (e.g., `[1, 2]` and `[2, 3]` do NOT overlap, but `[1, 3]` and `[2, 4]` do)
+- Constraints: `1 <= intervals.length <= 10^4`, `-10^5 <= start < end <= 10^5`
 
-**Greedy rule:** Sort by end time. Keep the interval that ends earliest; remove overlaps.
+**Example Walkthrough:**
+- Intervals: `[[1, 2], [2, 3], [3, 4], [1, 3]]`
+  - Sorted by end time: `[[1, 2], [2, 3], [3, 4], [1, 3]]` (already sorted)
+  - Keep `[1, 2]` (ends at 2)
+  - Check `[2, 3]`: start 2 < end 2? No, so keep! (ends at 3)
+  - Check `[3, 4]`: start 3 < end 3? No, so keep! (ends at 4)
+  - Check `[1, 3]`: start 1 < end 4? Yes, REMOVE!
+  - Result: 1 interval removed
+
+**Greedy rule:** Sort intervals by end time. Keep the interval ending earliest. Skip any interval that overlaps with it. Always choose the earliest-ending non-overlapping interval next.
+
+**Why it works:** By choosing intervals that end earliest, we leave maximum room for future intervals. Any later interval that doesn't fit our greedy choice also wouldn't fit any other earlier choice.
 
 ```python
 def erase_overlap_intervals(intervals):
-	intervals.sort(key=lambda x: x[1])
+    if not intervals:
+        return 0
+    
+    # Sort by end time (ascending)
+    intervals.sort(key=lambda x: x[1])
+    
+    removed = 0
+    prev_end = intervals[0][1]
+    
+    for start, end in intervals[1:]:
+        if start < prev_end:  # Overlaps with previous
+            removed += 1
+        else:
+            prev_end = end  # Update end of last kept interval
+    
+    return removed
 
-	removed = 0
-	prev_end = intervals[0][1]
+# Test case 1
+print(erase_overlap_intervals([[1, 2], [2, 3], [3, 4], [1, 3]]))
+# Output: 1
+# Sorted: [[1, 2], [2, 3], [3, 4], [1, 3]]
+# Keep [1, 2] with prev_end=2
+# [2, 3]: start=2 < prev_end=2? No, keep it, prev_end=3
+# [3, 4]: start=3 < prev_end=3? No, keep it, prev_end=4
+# [1, 3]: start=1 < prev_end=4? Yes, REMOVE
+# Result: 1 removed
 
-	for start, end in intervals[1:]:
-		if start < prev_end:
-			removed += 1
-		else:
-			prev_end = end
+# Test case 2
+print(erase_overlap_intervals([[1, 2], [1, 2], [1, 2]]))
+# Output: 2
+# All have same bounds [1, 2], prev_end=2
+# Check [1, 2]: start=1 < prev_end=2? Yes, REMOVE
+# Check [1, 2]: start=1 < prev_end=2? Yes, REMOVE
+# Result: 2 removed (keep only 1 out of 3)
 
-	return removed
+# Test case 3
+print(erase_overlap_intervals([[1, 2], [2, 3]]))
+# Output: 0
+# Sorted: [[1, 2], [2, 3]], prev_end=2
+# [2, 3]: start=2 < prev_end=2? No, keep it
+# Result: 0 removed (no overlaps)
 
-print(erase_overlap_intervals([[1, 2], [2, 3], [3, 4], [1, 3]]))  # 1
-print(erase_overlap_intervals([[1, 2], [1, 2], [1, 2]]))          # 2
-print(erase_overlap_intervals([[1, 2], [2, 3]]))                  # 0
+# Test case 4
+print(erase_overlap_intervals([[0, 2], [1, 3], [1, 4], [2, 3], [3, 4]]))
+# Output: 2
+# Sorted by end: [[0, 2], [1, 3], [2, 3], [1, 4], [3, 4]]
+# Keep [0, 2], prev_end=2
+# [1, 3]: 1 < 2? Yes, REMOVE
+# [2, 3]: 2 < 2? No, keep, prev_end=3
+# [1, 4]: 1 < 3? Yes, REMOVE
+# [3, 4]: 3 < 3? No, keep, prev_end=4
+# Result: 2 removed (keep [0,2], [2,3], [3,4])
 ```
 
-**Complexity:** Time `O(n log n)`, Space `O(1)` extra
+**Complexity:** Time `O(n log n)` (sorting dominates), Space `O(1)` extra
 
 **Brute Force vs Greedy:**
 
