@@ -94,6 +94,80 @@ So not all coin change problems are greedy-safe.
 
 ---
 
+## Mental Model For Medium/Hard Greedy
+
+When greedy problems get harder, use this sequence.
+
+1. Define the "risk" you want to avoid.
+- Example risks: wasted room in intervals, getting stranded in jump problems, bad future inventory in change problems.
+2. Choose a state summary that captures only what matters.
+- Typical summaries: current frontier, earliest finishing end, current tank, max-heap of best seen options.
+3. Ask: "If I delay this choice, do I lose options later?"
+- If yes, decide now.
+- If no, defer the choice and keep candidates (usually with a heap).
+4. Prove local safety with one sentence.
+- "Earliest end leaves maximum room."
+- "Largest available refuel gives maximum reach when forced to refuel."
+- "If tank goes negative here, any start in this segment fails."
+5. Convert into one of five common greedy archetypes.
+
+### The 5 Archetypes
+
+1. Earliest finish wins (interval scheduling family)
+- Sort by end and keep compatible intervals.
+2. Frontier expansion (jump/reachability family)
+- Track the farthest reachable boundary.
+3. Local balance/accounting (inventory/cash/gas family)
+- Keep running balance and reset start when balance breaks.
+4. Deferred choice with heap
+- Collect feasible options now, pick best only when forced.
+5. Two-pass correction
+- One pass enforces left constraint, second pass enforces right constraint.
+
+### Quick Decision Flow
+
+1. Is this "pick max number of non-overlapping"? Use sort-by-end.
+2. Is this "minimum jumps/stops/reachability"? Try frontier or heap.
+3. Is this sequence with running surplus/deficit? Try balance/reset logic.
+4. Are constraints from both neighbors? Try two passes.
+5. If none fits, test whether DP is safer.
+
+### Visual Cheat Sheet (Greedy Archetypes)
+
+```mermaid
+flowchart TD
+    Q["New problem"] --> C1{"Non-overlap / maximize count?"}
+    C1 -- Yes --> A1["Archetype: Earliest Finish"]
+    A1 --> M1["Sort by end, keep compatible"]
+    M1 --> E1["Examples: Non-Overlapping Intervals, Arrows"]
+
+    C1 -- No --> C2{"Reachability / min jumps / frontier?"}
+    C2 -- Yes --> A2["Archetype: Frontier Expansion"]
+    A2 --> M2["Track farthest or layer boundary"]
+    M2 --> E2["Examples: Jump Game, Jump Game II, Partition Labels"]
+
+    C2 -- No --> C3{"Need best option among seen choices later?"}
+    C3 -- Yes --> A3["Archetype: Deferred Choice + Heap"]
+    A3 --> M3["Push candidates, pop best when forced"]
+    M3 --> E3["Examples: Refueling Stops, Course Schedule III"]
+
+    C3 -- No --> C4{"Running surplus/deficit in a sequence?"}
+    C4 -- Yes --> A4["Archetype: Local Balance / Reset"]
+    A4 --> M4["Maintain running balance, reset when broken"]
+    M4 --> E4["Examples: Gas Station, Lemonade Change"]
+
+    C4 -- No --> C5{"Constraints from both sides?"}
+    C5 -- Yes --> A5["Archetype: Two-Pass Correction"]
+    A5 --> M5["Left pass + right pass, merge with max"]
+    M5 --> E5["Example: Candy"]
+
+    C5 -- No --> D["Likely DP / Backtracking territory"]
+```
+
+Use this visual as a first-pass classifier before coding.
+
+---
+
 ## Learning Path: Simple to Complex
 
 This order is intentional. Each step reuses the previous intuition.
@@ -108,6 +182,9 @@ This order is intentional. Each step reuses the previous intuition.
 8. Task Scheduler (count-frequency formula)
 9. Candy (two-pass greedy)
 10. Minimum Number of Refueling Stops (heap + deferred greedy)
+11. Partition Labels (last occurrence boundary)
+12. Queue Reconstruction by Height (sorted insertion)
+13. Course Schedule III (duration + max-heap)
 
 ---
 
@@ -359,6 +436,20 @@ print(lemonade_change_bruteforce([5, 5, 10, 10, 20]))  # False
 
 **Why it works:** We only need to track the frontier (farthest reachable), not the exact path. If at any point we gap the frontier, we cannot reach beyond.
 
+**Visual mental model (frontier grows):**
+
+```mermaid
+flowchart LR
+    A0["i=0, jump=2"] --> A1["farthest=max(0, 0+2)=2"]
+    A1 --> A2["reachable indices: 0..2"]
+    A2 --> A3["i=1, jump=3"]
+    A3 --> A4["farthest=max(2, 1+3)=4"]
+    A4 --> A5["reachable indices: 0..4"]
+    A5 --> A6["last index <= farthest ? reachable"]
+```
+
+Think of `farthest` as a wave boundary. If index `i` is outside the wave, you're stuck.
+
 ```python
 def can_jump(nums):
     farthest = 0  # Furthest index we can reach so far
@@ -464,6 +555,19 @@ print(can_jump_bruteforce([0]))              # True
 While scanning a layer, find the farthest we can reach in the NEXT layer. When layer boundary is hit, increment jumps count.
 
 **Why it works:** Layers correspond to jump counts. Every time we advance to a new layer, we make exactly one jump. No need to try all possible paths.
+
+**Visual mental model (BFS-like layers):**
+
+```mermaid
+flowchart TD
+    L0["Layer 0: indices [0..0]"] --> L1["scan i=0 => farthest=2"]
+    L1 --> J1["jump #1, next layer [1..2]"]
+    J1 --> L2["scan i=1..2 => farthest=4"]
+    L2 --> J2["jump #2, next layer [3..4]"]
+    J2 --> END["last index reached"]
+```
+
+Mental shortcut: one layer equals one jump.
 
 ```python
 def jump_game_ii(nums):
@@ -833,6 +937,21 @@ print(candy([1, 3, 4, 5, 2]))  # 11 -> [1,2,3,4,1]
 
 This is greedy because when forced to refuel, choosing largest available fuel gives maximal future reach.
 
+**Visual mental model (defer decision, then pick best seen):**
+
+```mermaid
+flowchart LR
+    S["fuel=startFuel"] --> R1["add all reachable stations to max-heap"]
+    R1 --> C{"fuel >= target?"}
+    C -- Yes --> D["done"]
+    C -- No --> H{"heap empty?"}
+    H -- Yes --> F["fail: cannot progress"]
+    H -- No --> P["pop largest fuel, refuel once"]
+    P --> R1
+```
+
+Interpretation: keep options in a heap, commit only when you must.
+
 ```python
 import heapq
 
@@ -861,6 +980,160 @@ print(min_refuel_stops(1, 1, []))  # 0
 print(min_refuel_stops(100, 10, [[10,60],[20,30],[30,30],[60,40]]))  # 2
 print(min_refuel_stops(100, 1, [[10,100]]))  # -1
 ```
+
+**Complexity:** Time `O(n log n)`, Space `O(n)`
+
+---
+
+### Example 11: Partition Labels (Medium)
+
+**Problem:** Split a string into as many parts as possible so each letter appears in at most one part. Return partition sizes.
+
+**Mental model:**
+
+1. Every letter creates a "must-include-until" boundary at its last occurrence.
+2. While scanning, keep extending the current partition end to the farthest last occurrence seen.
+3. When current index reaches that end, close a partition.
+
+```python
+def partition_labels(s):
+    last = {}
+    for i in range(len(s)):
+        last[s[i]] = i
+
+    result = []
+    start = 0
+    end = 0
+
+    for i in range(len(s)):
+        end = max(end, last[s[i]])
+        if i == end:
+            result.append(end - start + 1)
+            start = i + 1
+
+    return result
+
+
+print(partition_labels("ababcbacadefegdehijhklij"))  # [9, 7, 8]
+print(partition_labels("eccbbbbdec"))               # [10]
+print(partition_labels("abc"))                      # [1, 1, 1]
+```
+
+**Walkthrough (`"ababcbacadefegdehijhklij"`):**
+
+1. Start at index 0 (`a`), current end becomes last(`a`) = 8.
+2. Scan indices 1..8 and keep extending end using last occurrence of each char.
+3. At index 8, `i == end`, close first partition size `9`.
+4. Repeat from index 9, then close at 15 (size `7`), then at 23 (size `8`).
+5. Final answer: `[9, 7, 8]`.
+
+**Complexity:** Time `O(n)`, Space `O(1)` for lowercase alphabet (or `O(U)` unique chars)
+
+---
+
+### Example 12: Queue Reconstruction by Height (Medium)
+
+**Problem:** Each person is `[h, k]` where `h` is height and `k` is number of people in front with height >= `h`. Reconstruct the queue.
+
+**Mental model:**
+
+1. Tall people are "hard constraints" because shorter people do not affect their `k`.
+2. Place taller people first.
+3. For same height, smaller `k` must come first.
+4. Insert each person at index `k`.
+
+```python
+def reconstruct_queue(people):
+    people.sort(key=lambda x: (-x[0], x[1]))
+
+    queue = []
+    for person in people:
+        queue.insert(person[1], person)
+
+    return queue
+
+
+print(reconstruct_queue([[7, 0], [4, 4], [7, 1], [5, 0], [6, 1], [5, 2]]))
+# [[5, 0], [7, 0], [5, 2], [6, 1], [4, 4], [7, 1]]
+
+print(reconstruct_queue([[6, 0], [5, 0], [4, 0]]))
+# [[4, 0], [5, 0], [6, 0]]
+```
+
+**Walkthrough (first case):**
+
+1. Sort by `(-h, k)`: `[[7,0],[7,1],[6,1],[5,0],[5,2],[4,4]]`.
+2. Insert `[7,0]` at index 0 -> `[[7,0]]`
+3. Insert `[7,1]` at index 1 -> `[[7,0],[7,1]]`
+4. Insert `[6,1]` at index 1 -> `[[7,0],[6,1],[7,1]]`
+5. Insert `[5,0]` at index 0 -> `[[5,0],[7,0],[6,1],[7,1]]`
+6. Continue similarly; each insertion preserves prior tall constraints.
+
+**Complexity:** Time `O(n^2)` (list inserts), Space `O(n)`
+
+---
+
+### Example 13: Course Schedule III (Hard)
+
+**Problem:** Each course is `[duration, last_day]`. You can take one course at a time. Maximize number of courses finished by their deadlines.
+
+**Mental model (deferred choice with heap):**
+
+1. Sort by deadline to respect urgency.
+2. Always tentatively take the course.
+3. If total time exceeds current deadline, remove the longest duration course taken so far.
+4. Removing the longest frees maximum time while losing only one course.
+
+**Visual mental model (take-all-then-fix):**
+
+```mermaid
+flowchart TD
+    A["sort courses by deadline"] --> B["take course: total += duration"]
+    B --> C["push duration to max-heap"]
+    C --> D{"total > current deadline?"}
+    D -- No --> E["keep all selected courses"]
+    D -- Yes --> F["remove longest duration from heap"]
+    F --> G["total -= longest"]
+    G --> E
+    E --> H["continue next course"]
+```
+
+Why this picture helps: whenever over budget, dropping the longest buys the most time back for future deadlines.
+
+```python
+import heapq
+
+
+def schedule_course(courses):
+    courses.sort(key=lambda x: x[1])
+
+    total_time = 0
+    max_heap = []
+
+    for duration, last_day in courses:
+        total_time += duration
+        heapq.heappush(max_heap, -duration)
+
+        if total_time > last_day:
+            longest = -heapq.heappop(max_heap)
+            total_time -= longest
+
+    return len(max_heap)
+
+
+print(schedule_course([[100, 200], [200, 1300], [1000, 1250], [2000, 3200]]))  # 3
+print(schedule_course([[1, 2]]))                                                # 1
+print(schedule_course([[3, 2], [4, 3]]))                                        # 0
+```
+
+**Walkthrough (`[[100,200],[200,1300],[1000,1250],[2000,3200]]`):**
+
+1. Sorted by deadline: `[100,200], [1000,1250], [200,1300], [2000,3200]`.
+2. Take `100` -> time `100`.
+3. Take `1000` -> time `1100` (still <= 1250).
+4. Take `200` -> time `1300` (<= 1300).
+5. Take `2000` -> time `3300` (> 3200), remove longest (`2000`), time back to `1300`.
+6. Kept 3 courses.
 
 **Complexity:** Time `O(n log n)`, Space `O(n)`
 
