@@ -143,10 +143,42 @@ print(find_content_children([2, 3, 4], [1, 1, 5]))   # 1
 
 **Brute Force vs Greedy:**
 
-1. Brute force idea: try all assignments of cookies to children and keep the maximum satisfied count.
-2. Why brute force is expensive: matching combinations blow up quickly (combinatorial/exponential search).
-3. Why greedy compresses it: sorting both lists and matching smallest valid pairs eliminates backtracking.
-4. Key takeaway: once a small cookie can satisfy the current smallest greed, saving larger cookies is always at least as good.
+**Brute force approach:** use backtracking to try assigning each cookie to each child and find max satisfied.
+
+```python
+def find_content_children_bruteforce(g, s):
+    def backtrack(child_idx, used_cookies, satisfied):
+        if child_idx == len(g):
+            return satisfied
+        
+        max_satisfied = satisfied
+        
+        # Try assigning each available cookie to this child
+        for cookie_idx in range(len(s)):
+            if cookie_idx not in used_cookies and s[cookie_idx] >= g[child_idx]:
+                used_cookies.add(cookie_idx)
+                result = backtrack(child_idx + 1, used_cookies, satisfied + 1)
+                if result > max_satisfied:
+                    max_satisfied = result
+                used_cookies.remove(cookie_idx)
+        
+        # Also try not satisfying this child (skip to next child)
+        result = backtrack(child_idx + 1, used_cookies, satisfied)
+        if result > max_satisfied:
+            max_satisfied = result
+        
+        return max_satisfied
+    
+    return backtrack(0, set(), 0)
+
+print(find_content_children_bruteforce([1, 2, 3], [1, 1]))  # 1
+print(find_content_children_bruteforce([1, 2], [1, 2, 3]))   # 2
+```
+
+- Brute force: Time `O(m^n)` worst case (try each of m cookies for each of n children)
+- Greedy: Time `O(n log n + m log m)` (just two sorts)
+
+**Key insight:** Once a small cookie can satisfy the current smallest greed, saving larger cookies is always at least as good. No need to backtrack.
 
 ---
 
@@ -188,10 +220,42 @@ print(lemonade_change([5, 5, 5, 5, 20, 20, 20]))   # False
 
 **Brute Force vs Greedy:**
 
-1. Brute force idea: at each `$20` payment, try all valid ways to make change (`10+5` or `5+5+5`) recursively.
-2. Why brute force is expensive: each branching decision doubles states in long sequences.
-3. Why greedy compresses it: always prioritize `10+5`, which preserves more `$5` bills for future `$10` payments.
-4. Key takeaway: not all valid change choices are equally future-safe; greedy chooses the most flexible inventory state.
+**Brute force approach:** recursively try all valid change options at each `$20` payment.
+
+```python
+def lemonade_change_bruteforce(bills):
+    def dfs(index, five, ten):
+        if index == len(bills):
+            return True
+        
+        bill = bills[index]
+        if bill == 5:
+            return dfs(index + 1, five + 1, ten)
+        elif bill == 10:
+            if five == 0:
+                return False
+            return dfs(index + 1, five - 1, ten + 1)
+        else:  # bill == 20
+            # Try option 1: give 10 + 5
+            if ten > 0 and five > 0:
+                if dfs(index + 1, five - 1, ten - 1):
+                    return True
+            # Try option 2: give 5 + 5 + 5
+            if five >= 3:
+                if dfs(index + 1, five - 3, ten):
+                    return True
+            return False
+    
+    return dfs(0, 0, 0)
+
+print(lemonade_change_bruteforce([5, 5, 5, 10, 20]))   # True
+print(lemonade_change_bruteforce([5, 5, 10, 10, 20]))  # False
+```
+
+- Brute force: Time `O(2^n)` (branching choices at each `$20`)
+- Greedy: Time `O(n)` (single pass, always pick same greedy choice)
+
+**Key insight:** Not all valid change choices are equally future-safe. Greedy always prioritizes `10+5` to preserve `$5` bills for future `$10` payments.
 
 ---
 
@@ -221,10 +285,31 @@ print(can_jump([0]))              # True
 
 **Brute Force vs Greedy:**
 
-1. Brute force idea: DFS from index `i` to every reachable index `i+1..i+nums[i]`.
-2. Why brute force is expensive: many repeated reachability branches create exponential behavior.
-3. Why greedy compresses it: the only thing that matters at step `i` is global farthest reachable index so far.
-4. Key takeaway: for reachability (yes/no), you do not need exact path history, only frontier coverage.
+**Brute force approach:** use DFS to explore all jump paths and check if any reaches the end.
+
+```python
+def can_jump_bruteforce(nums):
+    def dfs(index):
+        if index >= len(nums) - 1:
+            return True
+        
+        for jump in range(1, nums[index] + 1):
+            if dfs(index + jump):
+                return True
+        
+        return False
+    
+    return dfs(0)
+
+print(can_jump_bruteforce([2, 3, 1, 1, 4]))  # True
+print(can_jump_bruteforce([3, 2, 1, 0, 4]))  # False
+print(can_jump_bruteforce([0]))              # True
+```
+
+- Brute force: Time `O(2^n)` worst case (exponential jump branches)
+- Greedy: Time `O(n)` (single pass, track farthest)
+
+**Key insight:** For reachability (yes/no), you don't need exact path history—only the frontier. Greedy tracks farthest reachable in one pass.
 
 ---
 
@@ -257,10 +342,36 @@ print(jump_game_ii([1, 1, 1, 1]))     # 3
 
 **Brute Force vs Greedy:**
 
-1. Brute force idea: recursively try every jump length from each index and take minimum depth.
-2. Why brute force is expensive: explores many overlapping paths to the same indices.
-3. Why greedy compresses it: process indices in layers and jump exactly when current layer ends.
-4. Key takeaway: this is BFS-level counting without an explicit queue; frontier boundaries give minimum jumps.
+**Brute force approach:** use DFS/memoization to find minimum jumps (essentially BFS on all paths).
+
+```python
+def jump_game_ii_bruteforce(nums):
+    memo = {}
+    
+    def dfs(index):
+        if index >= len(nums) - 1:
+            return 0
+        if index in memo:
+            return memo[index]
+        
+        min_jumps = float('inf')
+        for jump in range(1, nums[index] + 1):
+            min_jumps = min(min_jumps, 1 + dfs(index + jump))
+        
+        memo[index] = min_jumps
+        return min_jumps
+    
+    return dfs(0)
+
+print(jump_game_ii_bruteforce([2, 3, 1, 1, 4]))  # 2
+print(jump_game_ii_bruteforce([2, 3, 0, 1, 4]))  # 2
+print(jump_game_ii_bruteforce([1, 1, 1, 1]))     # 3
+```
+
+- Brute force: Time `O(n^2)` with memoization (DP approach)
+- Greedy: Time `O(n)` (layer-based one-pass frontier tracking)
+
+**Key insight:** This is BFS-level counting without an explicit queue. Greedy processes indices in layers; when a layer ends, make one jump.
 
 ---
 
@@ -294,10 +405,50 @@ print(erase_overlap_intervals([[1, 2], [2, 3]]))                  # 0
 
 **Brute Force vs Greedy:**
 
-1. Brute force idea: try all subsets of intervals, keep the largest non-overlapping subset.
-2. Why brute force is expensive: subset enumeration is `2^n`.
-3. Why greedy compresses it: sort by end time, keep earliest-finishing compatible interval each time.
-4. Key takeaway: finishing earlier leaves maximum room for future intervals, so this local choice is globally safe.
+**Brute force approach:** try all 2^n subsets of intervals and find max-sized non-overlapping subset.
+
+```python
+def erase_overlap_intervals_bruteforce(intervals):
+    def bubble_sort_by_end(arr):
+        """Sort intervals by end time without using sorted() built-in"""
+        arr_copy = [interval for interval in arr]  # copy
+        for i in range(len(arr_copy)):
+            for j in range(len(arr_copy) - 1 - i):
+                if arr_copy[j][1] > arr_copy[j + 1][1]:
+                    arr_copy[j], arr_copy[j + 1] = arr_copy[j + 1], arr_copy[j]
+        return arr_copy
+    
+    def is_valid_subset(subset):
+        if not subset:
+            return True
+        sorted_subset = bubble_sort_by_end(subset)
+        for i in range(1, len(sorted_subset)):
+            if sorted_subset[i][0] < sorted_subset[i - 1][1]:
+                return False
+        return True
+    
+    max_kept = 0
+    # Try all 2^n subsets
+    for mask in range(1, 1 << len(intervals)):
+        subset = []
+        for i in range(len(intervals)):
+            if mask & (1 << i):
+                subset.append(intervals[i])
+        if is_valid_subset(subset):
+            if len(subset) > max_kept:
+                max_kept = len(subset)
+    
+    return len(intervals) - max_kept
+
+print(erase_overlap_intervals_bruteforce([[1, 2], [2, 3], [3, 4], [1, 3]]))  # 1
+print(erase_overlap_intervals_bruteforce([[1, 2], [1, 2], [1, 2]]))          # 2
+print(erase_overlap_intervals_bruteforce([[1, 2], [2, 3]]))                  # 0
+```
+
+- Brute force: Time `O(2^n * n^2)` (all subsets + bubble sort each)
+- Greedy: Time `O(n log n)` (quick logic, minimal overhead)
+
+**Key insight:** Finishing earlier leaves maximum room for future intervals. This local choice is globally safe.
 
 ---
 
