@@ -1035,50 +1035,128 @@ print(can_complete_circuit([3, 1, 1], [1, 2, 2]))
 ### Example 8: Task Scheduler (Medium)
 
 **Problem:**
-- Each task is represented by a capital letter
-- Same letters must be separated by at least `n` time units
-- In one time unit, you can either execute one task or stay idle
-- Return the minimum total time needed to finish all tasks
+- You are given a list of tasks, each labelled with a capital letter (e.g. `A`, `B`, `C`)
+- A CPU processes one unit of work per time slot
+- The same task label cannot run again until at least `n` time slots have passed since the last time it ran
+- During a waiting slot the CPU sits **idle** (counts as one time unit)
+- You may run the tasks in any order you like
+- Return the **minimum** total number of time slots needed to finish all tasks
 
-**Greedy counting idea:**
-- The most frequent task creates the bottleneck
-- If a task appears `max_freq` times, those copies force `max_freq - 1` gaps between them
-- Each gap has room for `n` positions
-- If multiple tasks tie for highest frequency, they all occupy the tail of the schedule together
+**Concrete real-world picture:**
 
-Let:
-- `max_freq` = highest task frequency
-- `max_count` = number of tasks whose frequency equals `max_freq`
+Think of tasks like passengers boarding a plane. After passenger type A boards, the gate staff need `n` minutes before they will accept another type-A boarding pass. They will board other types in between, or let the gate stand idle if nobody else is ready.
 
-Then the minimum frame size is:
+---
+
+**Building intuition from scratch with a tiny example:**
+
+`tasks = ['A','A','A','B','B','B']`, `n = 2`
+
+First, count frequencies: `A = 3, B = 3`.
+
+The most frequent task appears **3 times**. That means it has to run 3 separate times, and between each pair of consecutive runs you must wait at least `n = 2` slots.
+
+Draw the runs of A as pillars with forced gaps between them:
+
+```
+time:  1    2    3    4    5    6    7    8
+slot: [A] [__] [__] [A] [__] [__] [A]
+       ^   <-- gap n=2 -->   ^   <-- gap n=2 -->  ^
+```
+
+That structure alone uses **7 slots** and has **4 empty slots** to fill.
+
+Now insert B into those gaps greedily — one B per gap slot:
+
+```
+time:  1    2    3    4    5    6    7    8
+slot: [A] [B] [__] [A] [B] [__] [A] [B]
+```
+
+One idle slot remains at position 3 and 6. After filling with B:
+
+```
+time:  1    2    3    4    5    6    7    8
+slot: [A] [B] [idle] [A] [B] [idle] [A] [B]
+```
+
+Total = **8 slots**. No valid schedule can do it in fewer.
+
+---
+
+**Visualizing the frame structure:**
+
+```mermaid
+block-beta
+  columns 9
+  block:frame1["Frame 1 (n+1 = 3 slots)"]:3
+    A1["A"] B1["B"] I1["idle"]
+  end
+  block:frame2["Frame 2 (n+1 = 3 slots)"]:3
+    A2["A"] B2["B"] I2["idle"]
+  end
+  block:tail["Tail (max_count = 2)"]:2
+    A3["A"] B3["B"]
+  end
+```
+
+- Each full frame is `n + 1 = 3` slots wide
+- There are `max_freq - 1 = 2` full frames
+- The tail holds the final copy of every task that tied for highest frequency
+- Total slots = `(max_freq - 1) × (n + 1) + max_count`
 
 $$
-(max\_freq - 1) \cdot (n + 1) + max\_count
+(3 - 1) \cdot (3) + 2 = 8
 $$
 
-The final answer is:
-- the frame size above, or
-- the raw number of tasks if there are enough other tasks to fill all idle gaps
+---
 
-So we return `max(frame, len(tasks))`
+**What happens when there are more tasks than idle slots?**
 
-**Step-by-Step Example:**
-- Tasks: `['A', 'A', 'A', 'B', 'B', 'B']`, cooldown `n = 2`
-- `A` appears 3 times, `B` appears 3 times
-- So `max_freq = 3`, `max_count = 2`
-- Frame calculation:
+`tasks = ['A','A','A','B','B','B','C','C','D','D']`, `n = 2`
+
+Frequencies: `A=3, B=3, C=2, D=2`. Frame formula gives:
 
 $$
-(3 - 1) \cdot (2 + 1) + 2 = 8
+(3 - 1) \cdot (3) + 2 = 8
 $$
 
-- One valid schedule is: `A B idle A B idle A B`
-- Total time = `8`
+But there are 10 tasks. 10 > 8, so the formula would undercount. In this case every idle slot gets filled by C or D, and the schedule runs with **zero idle time**. The answer is just the total task count.
 
-**Why `max(frame, len(tasks))`?**
-- Sometimes there are enough other tasks to fill every idle slot
-- Example: `['A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'D', 'D']` with `n = 2`
-- Here the tasks already fill the gaps, so no idle time is needed beyond the task count
+```
+slot: [A] [B] [C] [A] [B] [C] [A] [B] [D] [D]
+         no idle slots anywhere
+```
+
+That is why the final answer is `max(frame, len(tasks))`.
+
+---
+
+**Decision flow:**
+
+```mermaid
+flowchart TD
+    A["count frequencies"] --> B["find max_freq and max_count"]
+    B --> C["frame = (max_freq - 1) × (n+1) + max_count"]
+    C --> D{"frame >= len(tasks)?"}
+    D -- Yes --> E["idle slots needed\nreturn frame"]
+    D -- No --> F["tasks fill all gaps\nreturn len(tasks)"]
+```
+
+**When does each branch apply?**
+- Frame wins when the most frequent task is dominant and the remaining tasks cannot fill all gaps, so idle slots appear
+- `len(tasks)` wins when there are so many varied tasks that every slot is occupied and cooldown constraints are automatically satisfied
+
+**Why do we never need to simulate the actual schedule?**
+
+You never need to know which specific order to run the tasks. The formula already captures the floor: the most-frequent task forces a certain number of forced gaps, and everything else either fills those gaps or adds to the tail. The formula is derived purely from task counts.
+
+**Edge cases to check:**
+- `n = 0`: cooldown is zero, so tasks run back-to-back with no idle time needed. Answer equals `len(tasks)`.
+- All tasks identical (e.g. `['A','A','A']`, `n = 2`): only A exists, so the schedule is `A idle idle A idle idle A`. Frame formula gives `(3-1)*(3)+1 = 7`.
+- All tasks different: no task repeats, so no cooldown ever kicks in. Answer equals `len(tasks)`.
+
+**Greedy rule:** Always schedule the most frequent remaining task first. This is greedy because the bottleneck task must be separated `n` times; delaying it only creates more forced idles later. The formula encodes this insight without simulating individual slots.
 
 ```python
 from collections import Counter
@@ -1094,25 +1172,39 @@ def least_interval(tasks, n):
         return max(frame, len(tasks))
 
 
-# Test case 1
+# Test case 1 — idle slots appear
 print(least_interval(["A", "A", "A", "B", "B", "B"], 2))
 # Output: 8
-# Need idle slots: A B idle A B idle A B
+# freq: A=3, B=3  max_freq=3, max_count=2
+# frame = (3-1)*(2+1)+2 = 8
+# len(tasks) = 6
+# max(8, 6) = 8
+# Schedule: [A][B][idle][A][B][idle][A][B]
 
-# Test case 2
+# Test case 2 — n=0 means no cooldown at all
 print(least_interval(["A", "A", "A", "B", "B", "B"], 0))
 # Output: 6
-# Cooldown is 0, so just run tasks back-to-back
+# frame = (3-1)*(0+1)+2 = 4
+# len(tasks) = 6
+# max(4, 6) = 6  <- task count wins because cooldown is 0
+# Schedule: [A][A][A][B][B][B] (any order, no gaps needed)
 
-# Test case 3
+# Test case 3 — single dominant task forces idles
 print(least_interval(["A", "A", "A", "A", "B", "C", "D"], 2))
 # Output: 10
-# A is the bottleneck and forces idle slots
+# freq: A=4, B=1, C=1, D=1  max_freq=4, max_count=1
+# frame = (4-1)*(2+1)+1 = 10
+# len(tasks) = 7
+# max(10, 7) = 10
+# Schedule: [A][B][C][A][D][idle][A][idle][idle][A]
 
-# Test case 4
+# Test case 4 — enough tasks to fill every gap, no idle slots
 print(least_interval(["A", "A", "A", "B", "B", "B", "C", "C", "D", "D"], 2))
 # Output: 10
-# Enough other tasks exist to fill all gaps, so answer equals total task count
+# frame = (3-1)*(2+1)+2 = 8
+# len(tasks) = 10
+# max(8, 10) = 10  <- task count wins, B/C/D fill every idle slot
+# Schedule: [A][B][C][A][B][D][A][B][C][D]
 ```
 
 **Complexity:** Time `O(k)` where `k = len(tasks)`, Space `O(1)` for fixed alphabet (or `O(U)` unique tasks)
