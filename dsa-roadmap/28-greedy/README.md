@@ -12,6 +12,20 @@ When that is true, greedy often gives an elegant `O(n)` or `O(n log n)` solution
 
 ---
 
+## How to Practice This Section
+
+Use this chapter actively, not passively.
+
+1. Read only the problem statement and tiny example first.
+2. Pause and classify the problem into one of the 5 greedy archetypes before reading the solution.
+3. Say the greedy rule out loud in one sentence.
+4. Force yourself to give a one-line safety argument such as "earliest end leaves maximum room" or "if tank goes negative here, every start in this segment fails."
+5. Answer the quick quiz after each example without looking back at the code.
+6. Do the pattern-recognition drill set at the end with the solution type hidden.
+7. Re-solve the same examples 2 to 3 days later from memory.
+
+---
+
 ## The Two Properties You Need
 
 ### 1) Greedy Choice Property
@@ -252,6 +266,11 @@ print(find_content_children([2, 3, 4], [1, 1, 5]))
 
 **Complexity:** Time `O(n log n + m log m)` (sorting dominates), Space `O(1)` extra
 
+**Quick Quiz:**
+1. What exact pairing choice makes this greedy instead of brute force?
+2. Why is using a larger cookie on an easier child potentially wasteful?
+3. What should the answer be if every cookie is smaller than every greed factor?
+
 **Brute Force vs Greedy:**
 
 **Brute force approach:** use backtracking to try assigning each cookie to each child and find max satisfied.
@@ -370,6 +389,11 @@ print(lemonade_change([10]))
 ```
 
 **Complexity:** Time `O(n)` (single pass), Space `O(1)` (just two counters)
+
+**Quick Quiz:**
+1. What bill denomination is the most valuable to preserve, and why?
+2. Why is giving `10 + 5` better than giving `5 + 5 + 5` when both are possible?
+3. What is the smallest input that immediately returns `False`?
 
 **Brute Force vs Greedy:**
 
@@ -530,6 +554,11 @@ print(can_jump([2, 0, 0]))
 
 **Complexity:** Time `O(n)` (one pass), Space `O(1)` constant
 
+**Quick Quiz:**
+1. What does `farthest` represent in one sentence?
+2. Why does `i > farthest` prove the game is already lost?
+3. What should the algorithm return for a single-element array like `[0]`?
+
 **Brute Force vs Greedy:**
 
 **Brute force approach:** use DFS to explore all jump paths and check if any reaches the end.
@@ -661,6 +690,11 @@ print(jump_game_ii([10, 1, 1, 1, 1]))
 
 **Complexity:** Time `O(n)` (one pass), Space `O(1)` constant
 
+**Quick Quiz:**
+1. Why do the layer boundaries correspond to jump counts?
+2. What two variables summarize the current layer and the next layer?
+3. What answer should you get for `[1, 1, 1, 1]`?
+
 **Brute Force vs Greedy:**
 
 **Brute force approach:** use DFS/memoization to find minimum jumps (essentially BFS on all paths).
@@ -774,6 +808,11 @@ print(erase_overlap_intervals([[0, 2], [1, 3], [1, 4], [2, 3], [3, 4]]))
 ```
 
 **Complexity:** Time `O(n log n)` (sorting dominates), Space `O(1)` extra
+
+**Quick Quiz:**
+1. Why do we sort by interval end instead of interval start?
+2. What does keeping the earliest-ending compatible interval buy us later?
+3. What should the answer be when all intervals are identical?
 
 **Brute Force vs Greedy:**
 
@@ -905,6 +944,11 @@ print(find_min_arrow_shots([[1, 10], [2, 3], [4, 5], [6, 7], [8, 9]]))
 
 **Complexity:** Time `O(n log n)` for sorting, Space `O(1)` extra if sorting in place
 
+**Quick Quiz:**
+1. Why is shooting at the current smallest end coordinate the safest arrow position?
+2. When exactly do we know a new arrow is required?
+3. What should the answer be for an empty `points` list?
+
 ---
 
 ### Example 7: Gas Station (Medium)
@@ -980,6 +1024,11 @@ print(can_complete_circuit([3, 1, 1], [1, 2, 2]))
 ```
 
 **Complexity:** Time `O(n)`, Space `O(1)`
+
+**Quick Quiz:**
+1. What global condition lets you return `-1` immediately?
+2. Why can every start inside a failed segment be discarded together?
+3. What happens when there is only one station and `gas[0] >= cost[0]`?
 
 ---
 
@@ -1068,6 +1117,11 @@ print(least_interval(["A", "A", "A", "B", "B", "B", "C", "C", "D", "D"], 2))
 
 **Complexity:** Time `O(k)` where `k = len(tasks)`, Space `O(1)` for fixed alphabet (or `O(U)` unique tasks)
 
+**Quick Quiz:**
+1. Which task frequency determines the schedule bottleneck?
+2. Why do we return `max(frame, len(tasks))` instead of just `frame`?
+3. What changes when `n = 0`?
+
 ---
 
 ### Example 9: Candy (Hard)
@@ -1139,6 +1193,11 @@ print(candy([1, 2, 3, 2, 1]))
 ```
 
 **Complexity:** Time `O(n)`, Space `O(n)`
+
+**Quick Quiz:**
+1. Why is one pass not enough for this problem?
+2. What is the purpose of using `max(...)` in the right-to-left pass?
+3. What should the candy array start as before either pass runs?
 
 ---
 
@@ -1233,6 +1292,11 @@ print(min_refuel_stops(100, 50, [[25, 25], [50, 25]]))
 
 **Complexity:** Time `O(n log n)`, Space `O(n)`
 
+**Quick Quiz:**
+1. Why is it better to delay refueling decisions until you are forced to refuel?
+2. Why do we pop the largest fuel amount from the heap instead of the smallest?
+3. What should the answer be if `startFuel >= target`?
+
 ---
 
 ### Example 11: Partition Labels (Medium)
@@ -1287,6 +1351,11 @@ print(partition_labels("abac"))                     # [3, 1]
 
 **Complexity:** Time `O(n)`, Space `O(1)` for lowercase alphabet (or `O(U)` unique chars)
 
+**Quick Quiz:**
+1. What does `last[c]` mean in this solution?
+2. When is it safe to close the current partition?
+3. What should the answer be for a string with all unique characters?
+
 ---
 
 ### Example 12: Queue Reconstruction by Height (Medium)
@@ -1338,6 +1407,11 @@ print(reconstruct_queue([[5, 0], [5, 1], [5, 2]]))
 6. Continue similarly; each insertion preserves prior tall constraints.
 
 **Complexity:** Time `O(n^2)` (list inserts), Space `O(n)`
+
+**Quick Quiz:**
+1. Why do taller people have to be placed before shorter people?
+2. Why is sorting equal heights by smaller `k` important?
+3. What happens if everyone has the same height and increasing `k` values?
 
 ---
 
@@ -1414,6 +1488,11 @@ print(schedule_course([[5, 5], [4, 6], [2, 6]]))                                
 
 **Complexity:** Time `O(n log n)`, Space `O(n)`
 
+**Quick Quiz:**
+1. Why do we sort courses by deadline before making any keep/drop decisions?
+2. Why is removing the longest taken course the best repair when time exceeds a deadline?
+3. What should the answer be if every single course misses its own deadline even when taken alone?
+
 ---
 
 ## Pattern-to-Problem Mapping
@@ -1439,6 +1518,47 @@ Use DP instead when:
 
 1. Multiple future-dependent choices compete and local choices can backfire.
 2. State history matters in many dimensions.
+
+---
+
+## Pattern-Recognition Drill Set
+
+Do these without labeling the solution type first. For each one, answer:
+1. Which greedy archetype fits?
+2. What is the local rule?
+3. Why is it safe?
+
+### Drill 1
+
+You are given meeting intervals. Keep as many meetings as possible with no overlap.
+
+### Drill 2
+
+You are given an array where each value is how far you can move from that index. Return whether the end is reachable.
+
+### Drill 3
+
+You serve customers paying with small denominations and must always return exact change in order.
+
+### Drill 4
+
+A car travels around a circular route. Each stop gives fuel, and moving to the next stop costs fuel. Find a valid start or prove none exists.
+
+### Drill 5
+
+You need the fewest refuels to reach a destination. Several stations are reachable before you actually need to stop.
+
+### Drill 6
+
+Split a string into the maximum number of pieces so that each letter appears in at most one piece.
+
+### Drill 7
+
+Give rewards to neighbors under left and right comparison constraints while minimizing the total reward count.
+
+### Drill 8
+
+You want to keep the largest number of jobs before deadlines. Each job has a duration and a deadline, and when you overrun, you must throw one away.
 
 ---
 

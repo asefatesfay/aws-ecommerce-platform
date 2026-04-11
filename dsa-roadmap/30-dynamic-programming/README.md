@@ -8,6 +8,20 @@ This section is organized by pattern, from foundational 1D recurrences to advanc
 
 ---
 
+## How to Practice This Section
+
+Use this chapter like a lab, not a glossary.
+
+1. Read the problem and tiny input/output first, then stop.
+2. Define the state in one sentence before looking at any code.
+3. Write the transition in words before writing the formula.
+4. Name the base case and fill a tiny table of size 3 to 6 by hand.
+5. Decide whether top-down or bottom-up feels cleaner for that state.
+6. Answer the quick quiz after each example without scrolling back.
+7. Use the pattern-recognition drill set to classify new problems before solving them.
+
+---
+
 ## The Two Essential Properties of DP
 
 ### 1️⃣ Overlapping Subproblems
@@ -434,6 +448,11 @@ print(fibonacci(20))  # 6765 — larger n; memoization makes this instant
 - Brute force: Time `O(2^n)`, Space `O(n)`
 - DP (memo/tabulation): Time `O(n)`, Space `O(n)`
 
+**Quick Quiz:**
+1. What does `dp[i]` mean here?
+2. Why do Fibonacci calls have overlapping subproblems?
+3. What are the two base cases you must get right first?
+
 ---
 
 ### Example 2: Coin Change (Unbounded Knapsack)
@@ -522,6 +541,11 @@ print(coin_change([3, 7], 5))  # -1  — impossible; 3+3=6>5, 7>5
 **Complexity:**
 - Brute force: Time `O(k^amount)` where `k = len(coins)`, Space `O(amount)`
 - DP (memo/tabulation): Time `O(k * amount)`, Space `O(amount)`
+
+**Quick Quiz:**
+1. What state would you define for amount-based DP in this problem?
+2. Why is this not a safe greedy problem for arbitrary coin systems?
+3. What should the answer be when `amount = 0`?
 
 **Overlapping subproblems visualization:**
 
@@ -677,6 +701,11 @@ print(rob_take_skip([5, 1, 1, 5]))      # 10
 - Brute force: Time `O(2^n)`, Space `O(n)`
 - DP (memo/tabulation): Time `O(n)`, Space `O(n)` (or `O(1)` optimized)
 
+**Quick Quiz:**
+1. What are the two choices at house `i`?
+2. Why does robbing house `i` force you to use the best answer from `i - 2`?
+3. What should the answer be for a one-house input?
+
 ---
 
 ### Example 4: Longest Increasing Subsequence (LIS)
@@ -771,6 +800,11 @@ print(longest_increasing_subsequence([5, 4, 3, 2, 1]))  # 1
 **Complexity:**
 - Brute force: Time `O(2^n)`, Space `O(n)`
 - DP: Time `O(n^2)` (or `O(n log n)` optimized), Space `O(n)`
+
+**Quick Quiz:**
+1. What does `dp[i]` mean in the `O(n^2)` LIS solution?
+2. Why do you only transition from indices `j < i` with `nums[j] < nums[i]`?
+3. What should the answer be for a strictly decreasing array?
 
 ---
 
@@ -887,6 +921,11 @@ print(knapsack_0_1([10, 20], [100, 200], 5))  # 0  — capacity 5 cannot hold w=
 - Brute force: Time `O(2^n)`, Space `O(n)`
 - DP (memo/tabulation): Time `O(n * capacity)`, Space `O(n * capacity)`
 
+**Quick Quiz:**
+1. What two parameters uniquely identify a knapsack subproblem?
+2. What is the difference between the skip and take transitions?
+3. Why do reverse-capacity loops matter in 0/1-style formulations?
+
 ---
 
 ### Example 6: Edit Distance (String DP)
@@ -996,6 +1035,11 @@ print(edit_distance("", "xyz"))    # 3  — insert x, y, z
 - Brute force: Time approximately `O(3^(m+n))`, Space `O(m+n)`
 - DP: Time `O(m * n)`, Space `O(m * n)`
 
+**Quick Quiz:**
+1. What does `dp[i][j]` represent here?
+2. What are the three operations considered when characters do not match?
+3. What should the answer be if one string is empty?
+
 ---
 
 ## More Examples with Mermaid Diagrams
@@ -1087,6 +1131,11 @@ print(min_cost_climbing_stairs([1, 2, 3, 4, 5]))  # 6
 - Brute force: Time `O(2^n)`, Space `O(n)`
 - DP: Time `O(n)`, Space `O(n)` (or `O(1)` optimized)
 
+**Quick Quiz:**
+1. What choice is being made at each stair index?
+2. Why is the final answer `min(dp[-1], dp[-2])` in the tabulation version?
+3. What should happen if all step costs are zero?
+
 ---
 
 ### Example 8: Unique Paths (2D Grid DP)
@@ -1175,6 +1224,11 @@ print(unique_paths(2, 3))  # 3
 **Complexity:**
 - Brute force: Time approximately `O(2^(m+n))`, Space `O(m+n)`
 - DP: Time `O(m * n)`, Space `O(m * n)` (or `O(n)` optimized)
+
+**Quick Quiz:**
+1. What does each grid cell `dp[i][j]` store?
+2. Why are the first row and first column all 1?
+3. What is the answer for a `1 x n` grid?
 
 ---
 
@@ -1272,6 +1326,11 @@ print(paint_house([[1, 2, 3], [3, 2, 1]]))  # 2  — H0 red(1), H1 blue(1)
 - Brute force: Time `O(3^n)`, Space `O(n)`
 - DP: Time `O(n)` (for fixed 3 colors), Space `O(n)`
 
+**Quick Quiz:**
+1. What extra piece of information does the state need besides the house index?
+2. Why must the transition exclude the previous color?
+3. What should the answer be for a single house?
+
 ---
 
 ### Example 10: Longest Common Subsequence (2D String DP)
@@ -1367,6 +1426,11 @@ print(longest_common_subsequence("", "xyz"))  # 0
 - Brute force: Time `O(2^(m+n))`, Space `O(m+n)`
 - DP: Time `O(m * n)`, Space `O(m * n)`
 
+**Quick Quiz:**
+1. What does `dp[i][j]` mean for LCS?
+2. When characters differ, which two subproblems do you compare?
+3. What should the answer be if the strings share no common characters?
+
 ---
 
 ### Example 11: Maximum Subarray Sum / Kadane's Algorithm variant of DP
@@ -1442,6 +1506,11 @@ print(max_subarray_sum([-3, -1, -4, -2]))  # -1  — best single element
 **Complexity:**
 - Brute force: Time `O(n^2)`, Space `O(1)`
 - DP/Kadane: Time `O(n)`, Space `O(1)`
+
+**Quick Quiz:**
+1. What does the running state for Kadane's algorithm represent?
+2. When do you start a new subarray instead of extending the old one?
+3. What should the answer be when all numbers are negative?
 
 ---
 
@@ -1542,6 +1611,11 @@ print(word_break("hello", ["hell", "world"]))  # False
 - Brute force: Time approximately `O(2^n)`, Space `O(n)`
 - DP: Time `O(n^2)`, Space `O(n)`
 
+**Quick Quiz:**
+1. What does `dp[i]` mean for segmentation problems?
+2. What condition makes a cut position `j` valid?
+3. Why is `dp[0] = True` the right base case?
+
 ---
 
 ### Example 13: Number of Distinct Subsequences (Pattern: Counting DP)
@@ -1610,6 +1684,52 @@ print(num_distinct_subsequences("aa"))   # 3: "", "a", "aa"  (two 'a' positions 
 **Complexity:**
 - Brute force enumeration: Time `O(2^n)`, Space `O(n)` (plus dedup storage if required)
 - DP with last-seen map: Time `O(n)`, Space `O(n)`
+
+**Quick Quiz:**
+1. Why does each new character seem to double the subsequence count at first?
+2. Why do repeated characters force a subtraction term?
+3. What should the answer be for a string with all unique characters of length `n`?
+
+---
+
+## Pattern-Recognition Drill Set
+
+Do these before naming the pattern. For each one, answer:
+1. What is the state?
+2. What is the transition?
+3. Is top-down or bottom-up cleaner here?
+
+### Drill 1
+
+You can take 1 or 2 moves at a time to reach the end of a staircase. Count how many ways exist.
+
+### Drill 2
+
+You are given item weights and values and can take each item at most once. Maximize value under a capacity limit.
+
+### Drill 3
+
+A robot moves only right or down in a grid with obstacles removed. Count the number of valid paths.
+
+### Drill 4
+
+Two strings are given. You may delete from either side of a prefix comparison and want the best common ordered match.
+
+### Drill 5
+
+You can take or skip each house, but taking one blocks its adjacent neighbors. Maximize total money.
+
+### Drill 6
+
+You are given a dictionary and a string. Determine whether some prefix cut sequence covers the whole string.
+
+### Drill 7
+
+At each index in an array, you may extend the current streak or restart at the current value. Maximize the final streak score.
+
+### Drill 8
+
+You build answers for prefixes of a string, but repeated characters cause duplicate counts that must be removed.
 
 ---
 
