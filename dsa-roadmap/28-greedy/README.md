@@ -826,61 +826,157 @@ print(erase_overlap_intervals_bruteforce([[1, 2], [2, 3]]))                  # 0
 
 ### Example 6: Minimum Number of Arrows to Burst Balloons (Medium)
 
-**Problem:** Each balloon is an interval `[start, end]`. One arrow at position `x` bursts all balloons with `start <= x <= end`. Min arrows needed.
+**Problem:**
+- Each balloon is an interval `[start, end]` on the x-axis
+- One arrow shot at position `x` bursts every balloon where `start <= x <= end`
+- Return the minimum number of arrows needed to burst all balloons
+- Constraints are large enough that trying all arrow placements is not realistic
 
-**Greedy rule:** Sort by end and shoot arrow at current end whenever next balloon starts after it.
+**Example Walkthrough:**
+- Balloons: `[[10, 16], [2, 8], [1, 6], [7, 12]]`
+- Sort by end coordinate: `[[1, 6], [2, 8], [7, 12], [10, 16]]`
+- Shoot the first arrow at `x = 6`
+    - This bursts `[1, 6]` and `[2, 8]` because both contain 6
+    - It does NOT burst `[7, 12]` because `7 > 6`
+- So we must shoot a second arrow, best placed at `x = 12`
+    - This bursts `[7, 12]` and `[10, 16]`
+- Result: `2` arrows
+
+**Greedy rule:** Sort by end. Always shoot the current arrow at the earliest end point available. If the next balloon starts after that arrow position, fire a new arrow.
+
+**Why it works:**
+- If you must burst the earliest-ending balloon, any valid arrow has to be shot at or before its end.
+- Shooting exactly at that end is safest because it gives the best chance of also hitting later balloons.
+- This is the same interval idea as "keep the earliest finishing interval". Earliest end leaves maximum room for the future.
+
+**Step-by-Step Example:**
+
+```mermaid
+flowchart LR
+        A["sort by end"] --> B["arrow at first end"]
+        B --> C{"next start <= arrow?"}
+        C -- Yes --> D["same arrow bursts it too"]
+        C -- No --> E["need new arrow at this balloon's end"]
+        D --> C
+        E --> C
+```
 
 ```python
 def find_min_arrow_shots(points):
-	points.sort(key=lambda x: x[1])
+        if not points:
+                return 0
 
-	arrows = 1
-	arrow_pos = points[0][1]
+        points.sort(key=lambda x: x[1])
 
-	for start, end in points[1:]:
-		if start > arrow_pos:
-			arrows += 1
-			arrow_pos = end
+        arrows = 1
+        arrow_pos = points[0][1]
 
-	return arrows
+        for start, end in points[1:]:
+                if start > arrow_pos:
+                        arrows += 1
+                        arrow_pos = end
 
-print(find_min_arrow_shots([[10,16], [2,8], [1,6], [7,12]]))  # 2
-print(find_min_arrow_shots([[1,2], [3,4], [5,6], [7,8]]))     # 4
-print(find_min_arrow_shots([[1,2], [2,3], [3,4], [4,5]]))     # 2
+        return arrows
+
+
+# Test case 1
+print(find_min_arrow_shots([[10, 16], [2, 8], [1, 6], [7, 12]]))
+# Output: 2
+# Sorted by end: [[1, 6], [2, 8], [7, 12], [10, 16]]
+# Arrow 1 at x=6 bursts [1,6] and [2,8]
+# [7,12] starts after 6, so Arrow 2 at x=12
+
+# Test case 2
+print(find_min_arrow_shots([[1, 2], [3, 4], [5, 6], [7, 8]]))
+# Output: 4
+# No intervals overlap, so each balloon needs its own arrow
+
+# Test case 3
+print(find_min_arrow_shots([[1, 2], [2, 3], [3, 4], [4, 5]]))
+# Output: 2
+# Arrow at 2 bursts [1,2] and [2,3]
+# Arrow at 4 bursts [3,4] and [4,5]
+
+# Test case 4
+print(find_min_arrow_shots([[1, 10], [2, 3], [4, 5], [6, 7], [8, 9]]))
+# Output: 4
+# The large balloon overlaps with many, but the small disjoint balloons still force 4 arrows
 ```
 
-**Complexity:** Time `O(n log n)`, Space `O(1)` extra
+**Complexity:** Time `O(n log n)` for sorting, Space `O(1)` extra if sorting in place
 
 ---
 
 ### Example 7: Gas Station (Medium)
 
-**Problem:** Circular route, `gas[i]` fuel at station `i`, `cost[i]` to go to next. Return starting index if possible, else `-1`.
+**Problem:**
+- `gas[i]` is the fuel you gain at station `i`
+- `cost[i]` is the fuel needed to go from station `i` to station `i + 1`
+- The route is circular, so the last station connects back to the first
+- Return the starting index if you can complete the full circle, otherwise `-1`
 
-**Greedy insight:**
+**Key greedy insight:**
+- If `sum(gas) < sum(cost)`, the trip is impossible no matter where you start
+- If your running tank becomes negative at station `i`, then every candidate start from the current segment also fails
+- So once that happens, skip the whole failed segment and restart from `i + 1`
 
-- If total gas < total cost, impossible.
-- If running tank becomes negative at `i`, any start in that segment fails; next start is `i + 1`.
+**Why can we skip the whole segment?**
+- Suppose we started at `start` and first failed when reaching station `i`
+- That means the total net fuel from `start` through `i` is negative
+- Any station between `start` and `i` would begin with even less spare fuel before reaching `i`
+- So none of them can be a valid answer either
+
+**Step-by-Step Example:**
+- `gas = [1, 2, 3, 4, 5]`
+- `cost = [3, 4, 5, 1, 2]`
+- Net gains: `[-2, -2, -2, +3, +3]`
+- Start at 0:
+    - tank becomes `-2` immediately, so station 0 cannot work
+- Try start at 1:
+    - tank again becomes negative, so station 1 cannot work
+- Same for start at 2
+- Start at 3:
+    - tank goes `+3`, then `+6`, then `+4`, then `+2`, then back to `0`
+- Result: starting at index `3` works
 
 ```python
 def can_complete_circuit(gas, cost):
-	if sum(gas) < sum(cost):
-		return -1
+        if sum(gas) < sum(cost):
+                return -1
 
-	start = 0
-	tank = 0
+        start = 0
+        tank = 0
 
-	for i in range(len(gas)):
-		tank += gas[i] - cost[i]
-		if tank < 0:
-			start = i + 1
-			tank = 0
+        for i in range(len(gas)):
+                tank += gas[i] - cost[i]
 
-	return start
+                if tank < 0:
+                        start = i + 1
+                        tank = 0
 
-print(can_complete_circuit([1,2,3,4,5], [3,4,5,1,2]))  # 3
-print(can_complete_circuit([2,3,4], [3,4,3]))          # -1
-print(can_complete_circuit([5], [4]))                  # 0
+        return start
+
+
+# Test case 1
+print(can_complete_circuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]))
+# Output: 3
+# Starts 0, 1, and 2 all fail before finishing the loop
+# Start 3 succeeds
+
+# Test case 2
+print(can_complete_circuit([2, 3, 4], [3, 4, 3]))
+# Output: -1
+# Total gas = 9, total cost = 10, so impossible globally
+
+# Test case 3
+print(can_complete_circuit([5], [4]))
+# Output: 0
+# Single station, enough gas to complete the loop
+
+# Test case 4
+print(can_complete_circuit([3, 1, 1], [1, 2, 2]))
+# Output: 0
+# Net gains = [2, -1, -1], total is 0 so a valid start exists
 ```
 
 **Complexity:** Time `O(n)`, Space `O(1)`
@@ -889,36 +985,85 @@ print(can_complete_circuit([5], [4]))                  # 0
 
 ### Example 8: Task Scheduler (Medium)
 
-**Problem:** Tasks are letters. Same task needs cooldown `n` units before repeating. Minimum total time.
+**Problem:**
+- Each task is represented by a capital letter
+- Same letters must be separated by at least `n` time units
+- In one time unit, you can either execute one task or stay idle
+- Return the minimum total time needed to finish all tasks
 
-**Greedy counting formula:**
+**Greedy counting idea:**
+- The most frequent task creates the bottleneck
+- If a task appears `max_freq` times, those copies force `max_freq - 1` gaps between them
+- Each gap has room for `n` positions
+- If multiple tasks tie for highest frequency, they all occupy the tail of the schedule together
 
-- Let `max_freq` = highest task frequency
-- Let `max_count` = number of tasks with frequency `max_freq`
-- Minimum slots needed by frame logic:
+Let:
+- `max_freq` = highest task frequency
+- `max_count` = number of tasks whose frequency equals `max_freq`
+
+Then the minimum frame size is:
 
 $$
 (max\_freq - 1) \cdot (n + 1) + max\_count
 $$
 
-Answer is max of that and total tasks.
+The final answer is:
+- the frame size above, or
+- the raw number of tasks if there are enough other tasks to fill all idle gaps
+
+So we return `max(frame, len(tasks))`
+
+**Step-by-Step Example:**
+- Tasks: `['A', 'A', 'A', 'B', 'B', 'B']`, cooldown `n = 2`
+- `A` appears 3 times, `B` appears 3 times
+- So `max_freq = 3`, `max_count = 2`
+- Frame calculation:
+
+$$
+(3 - 1) \cdot (2 + 1) + 2 = 8
+$$
+
+- One valid schedule is: `A B idle A B idle A B`
+- Total time = `8`
+
+**Why `max(frame, len(tasks))`?**
+- Sometimes there are enough other tasks to fill every idle slot
+- Example: `['A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'D', 'D']` with `n = 2`
+- Here the tasks already fill the gaps, so no idle time is needed beyond the task count
 
 ```python
 from collections import Counter
 
 
 def least_interval(tasks, n):
-	freq = Counter(tasks)
-	max_freq = max(freq.values())
-	max_count = sum(1 for v in freq.values() if v == max_freq)
 
-	frame = (max_freq - 1) * (n + 1) + max_count
-	return max(frame, len(tasks))
+        freq = Counter(tasks)
+        max_freq = max(freq.values())
+        max_count = sum(1 for value in freq.values() if value == max_freq)
+
+        frame = (max_freq - 1) * (n + 1) + max_count
+        return max(frame, len(tasks))
 
 
-print(least_interval(["A","A","A","B","B","B"], 2))  # 8
-print(least_interval(["A","A","A","B","B","B"], 0))  # 6
-print(least_interval(["A","A","A","A","B","C","D"], 2))  # 10
+# Test case 1
+print(least_interval(["A", "A", "A", "B", "B", "B"], 2))
+# Output: 8
+# Need idle slots: A B idle A B idle A B
+
+# Test case 2
+print(least_interval(["A", "A", "A", "B", "B", "B"], 0))
+# Output: 6
+# Cooldown is 0, so just run tasks back-to-back
+
+# Test case 3
+print(least_interval(["A", "A", "A", "A", "B", "C", "D"], 2))
+# Output: 10
+# A is the bottleneck and forces idle slots
+
+# Test case 4
+print(least_interval(["A", "A", "A", "B", "B", "B", "C", "C", "D", "D"], 2))
+# Output: 10
+# Enough other tasks exist to fill all gaps, so answer equals total task count
 ```
 
 **Complexity:** Time `O(k)` where `k = len(tasks)`, Space `O(1)` for fixed alphabet (or `O(U)` unique tasks)
@@ -927,31 +1072,70 @@ print(least_interval(["A","A","A","A","B","C","D"], 2))  # 10
 
 ### Example 9: Candy (Hard)
 
-**Problem:** Each child has rating. Give at least one candy each. Higher-rated child than neighbor must get more candies. Min total candies.
+**Problem:**
+- Each child has a rating
+- Every child must get at least 1 candy
+- If a child has a higher rating than an adjacent neighbor, they must get more candies than that neighbor
+- Return the minimum total candies needed
 
-**Greedy strategy:** Two passes.
+**Why one pass is not enough:**
+- Left-to-right can satisfy the rule relative to the left neighbor
+- But it may miss violations relative to the right neighbor
+- So greedy fixes one direction at a time with two passes
 
-1. Left-to-right to satisfy left neighbor rule.
-2. Right-to-left to satisfy right neighbor rule.
+**Greedy strategy:**
+
+1. Left-to-right: if `ratings[i] > ratings[i - 1]`, then `candies[i] = candies[i - 1] + 1`
+2. Right-to-left: if `ratings[i] > ratings[i + 1]`, then `candies[i]` must be at least `candies[i + 1] + 1`
+3. Use `max(...)` in the second pass so we do not break what the first pass already fixed
+
+**Step-by-Step Example:**
+- Ratings: `[1, 0, 2]`
+- Start: `[1, 1, 1]`
+- Left-to-right:
+    - index 1: `0` is not greater than `1`, keep `[1, 1, 1]`
+    - index 2: `2 > 0`, so candies become `[1, 1, 2]`
+- Right-to-left:
+    - index 1: `0` is not greater than `2`, unchanged
+    - index 0: `1 > 0`, so candies become `[2, 1, 2]`
+- Total = `5`
 
 ```python
 def candy(ratings):
-	n = len(ratings)
-	candies = [1] * n
 
-	for i in range(1, n):
-		if ratings[i] > ratings[i - 1]:
-			candies[i] = candies[i - 1] + 1
+        n = len(ratings)
+        candies = [1] * n
 
-	for i in range(n - 2, -1, -1):
-		if ratings[i] > ratings[i + 1]:
-			candies[i] = max(candies[i], candies[i + 1] + 1)
+        for i in range(1, n):
+                if ratings[i] > ratings[i - 1]:
+                        candies[i] = candies[i - 1] + 1
 
-	return sum(candies)
+        for i in range(n - 2, -1, -1):
+                if ratings[i] > ratings[i + 1]:
+                        candies[i] = max(candies[i], candies[i + 1] + 1)
 
-print(candy([1, 0, 2]))        # 5  -> [2,1,2]
-print(candy([1, 2, 2]))        # 4  -> [1,2,1]
-print(candy([1, 3, 4, 5, 2]))  # 11 -> [1,2,3,4,1]
+        return sum(candies)
+
+
+# Test case 1
+print(candy([1, 0, 2]))
+# Output: 5
+# Candy distribution: [2, 1, 2]
+
+# Test case 2
+print(candy([1, 2, 2]))
+# Output: 4
+# Candy distribution: [1, 2, 1]
+
+# Test case 3
+print(candy([1, 3, 4, 5, 2]))
+# Output: 11
+# Candy distribution: [1, 2, 3, 4, 1]
+
+# Test case 4
+print(candy([1, 2, 3, 2, 1]))
+# Output: 9
+# Candy distribution: [1, 2, 3, 2, 1]
 ```
 
 **Complexity:** Time `O(n)`, Space `O(n)`
@@ -960,15 +1144,19 @@ print(candy([1, 3, 4, 5, 2]))  # 11 -> [1,2,3,4,1]
 
 ### Example 10: Minimum Number of Refueling Stops (Hard)
 
-**Problem:** Start with `startFuel`, target distance. Stations are `[position, fuel]`. Minimum stops to reach target.
+**Problem:**
+- You start at position 0 with `startFuel`
+- The destination is at `target`
+- Each station is `[position, fuel]`
+- When you reach a station, you may take all its fuel
+- Return the minimum number of refueling stops, or `-1` if the target is unreachable
 
 **Greedy + heap idea:**
+- Do not refuel immediately just because a station is available
+- Instead, store all reachable station fuels in a max-heap
+- Only when you are forced to refuel, take the largest fuel amount seen so far
 
-- Move forward as far as possible.
-- Add all reachable station fuels to max-heap.
-- Refuel only when needed, taking largest fuel seen so far.
-
-This is greedy because when forced to refuel, choosing largest available fuel gives maximal future reach.
+This is greedy because when you must spend one refuel action, taking the largest available fuel extends your reach the most.
 
 **Visual mental model (defer decision, then pick best seen):**
 
@@ -985,33 +1173,62 @@ flowchart LR
 
 Interpretation: keep options in a heap, commit only when you must.
 
+**Step-by-Step Example:**
+- `target = 100`, `startFuel = 10`
+- Stations: `[[10, 60], [20, 30], [30, 30], [60, 40]]`
+- Start with reach = 10
+    - Station at 10 is reachable, push fuel 60 into heap
+- Cannot reach target yet, so refuel using best seen station: +60
+    - reach becomes 70, stops = 1
+- Now stations at 20, 30, and 60 are all reachable, push `30, 30, 40`
+- Still cannot reach target, so refuel with largest available = 40
+    - reach becomes 110, stops = 2
+- Now reach >= target, answer is 2
+
 ```python
 import heapq
 
 
 def min_refuel_stops(target, start_fuel, stations):
-	max_heap = []
-	fuel = start_fuel
-	i = 0
-	stops = 0
 
-	while fuel < target:
-		while i < len(stations) and stations[i][0] <= fuel:
-			heapq.heappush(max_heap, -stations[i][1])
-			i += 1
+        max_heap = []
+        fuel = start_fuel
+        i = 0
+        stops = 0
 
-		if not max_heap:
-			return -1
+        while fuel < target:
+                while i < len(stations) and stations[i][0] <= fuel:
+                        heapq.heappush(max_heap, -stations[i][1])
+                        i += 1
 
-		fuel += -heapq.heappop(max_heap)
-		stops += 1
+                if not max_heap:
+                        return -1
 
-	return stops
+                fuel += -heapq.heappop(max_heap)
+                stops += 1
+
+        return stops
 
 
-print(min_refuel_stops(1, 1, []))  # 0
-print(min_refuel_stops(100, 10, [[10,60],[20,30],[30,30],[60,40]]))  # 2
-print(min_refuel_stops(100, 1, [[10,100]]))  # -1
+# Test case 1
+print(min_refuel_stops(1, 1, []))
+# Output: 0
+# Already at the target
+
+# Test case 2
+print(min_refuel_stops(100, 10, [[10, 60], [20, 30], [30, 30], [60, 40]]))
+# Output: 2
+# Best sequence is to take 60 first, then 40
+
+# Test case 3
+print(min_refuel_stops(100, 1, [[10, 100]]))
+# Output: -1
+# Cannot even reach the first station
+
+# Test case 4
+print(min_refuel_stops(100, 50, [[25, 25], [50, 25]]))
+# Output: 2
+# Reach 50, then use both reachable stations to hit 100
 ```
 
 **Complexity:** Time `O(n log n)`, Space `O(n)`
@@ -1020,13 +1237,20 @@ print(min_refuel_stops(100, 1, [[10,100]]))  # -1
 
 ### Example 11: Partition Labels (Medium)
 
-**Problem:** Split a string into as many parts as possible so each letter appears in at most one part. Return partition sizes.
+**Problem:**
+- Split a string into as many parts as possible
+- Each letter must appear in at most one part
+- Return the sizes of the parts
 
 **Mental model:**
 
-1. Every letter creates a "must-include-until" boundary at its last occurrence.
-2. While scanning, keep extending the current partition end to the farthest last occurrence seen.
-3. When current index reaches that end, close a partition.
+1. Every letter creates a "must-include-until" boundary at its last occurrence
+2. While scanning, keep extending the current partition end to the farthest last occurrence seen so far
+3. When the current index reaches that end, the partition is complete and can be cut
+
+**Why it works:**
+- If a character appears again later, the current partition must stay open until that later index
+- So the only safe time to close a partition is when all letters inside it have finished appearing
 
 ```python
 def partition_labels(s):
@@ -1050,6 +1274,7 @@ def partition_labels(s):
 print(partition_labels("ababcbacadefegdehijhklij"))  # [9, 7, 8]
 print(partition_labels("eccbbbbdec"))               # [10]
 print(partition_labels("abc"))                      # [1, 1, 1]
+print(partition_labels("abac"))                     # [3, 1]
 ```
 
 **Walkthrough (`"ababcbacadefegdehijhklij"`):**
@@ -1066,14 +1291,21 @@ print(partition_labels("abc"))                      # [1, 1, 1]
 
 ### Example 12: Queue Reconstruction by Height (Medium)
 
-**Problem:** Each person is `[h, k]` where `h` is height and `k` is number of people in front with height >= `h`. Reconstruct the queue.
+**Problem:**
+- Each person is `[h, k]`
+- `h` is height
+- `k` means exactly `k` people in front of them have height `>= h`
+- Reconstruct any valid queue
 
 **Mental model:**
 
-1. Tall people are "hard constraints" because shorter people do not affect their `k`.
-2. Place taller people first.
-3. For same height, smaller `k` must come first.
-4. Insert each person at index `k`.
+1. Taller people should be placed first because shorter people cannot change tall people's `k` counts
+2. For equal heights, smaller `k` must come first
+3. After sorting, insert each person at index `k`
+
+**Why insertion works:**
+- When you insert a shorter or equal-height person later, they do not invalidate the count requirement of taller people already placed
+- So once tall people are correctly positioned, later insertions preserve their constraints
 
 ```python
 def reconstruct_queue(people):
@@ -1091,6 +1323,9 @@ print(reconstruct_queue([[7, 0], [4, 4], [7, 1], [5, 0], [6, 1], [5, 2]]))
 
 print(reconstruct_queue([[6, 0], [5, 0], [4, 0]]))
 # [[4, 0], [5, 0], [6, 0]]
+
+print(reconstruct_queue([[5, 0], [5, 1], [5, 2]]))
+# [[5, 0], [5, 1], [5, 2]]
 ```
 
 **Walkthrough (first case):**
@@ -1108,14 +1343,22 @@ print(reconstruct_queue([[6, 0], [5, 0], [4, 0]]))
 
 ### Example 13: Course Schedule III (Hard)
 
-**Problem:** Each course is `[duration, last_day]`. You can take one course at a time. Maximize number of courses finished by their deadlines.
+**Problem:**
+- Each course is `[duration, last_day]`
+- You can take only one course at a time
+- A course must finish on or before `last_day`
+- Return the maximum number of courses you can complete
 
 **Mental model (deferred choice with heap):**
 
-1. Sort by deadline to respect urgency.
-2. Always tentatively take the course.
-3. If total time exceeds current deadline, remove the longest duration course taken so far.
-4. Removing the longest frees maximum time while losing only one course.
+1. Sort by deadline so urgent courses are handled first
+2. Tentatively take every course
+3. Track durations of chosen courses in a max-heap
+4. If total time exceeds the current deadline, drop the longest course seen so far
+
+**Why remove the longest?**
+- If you are over time budget and must remove one course, dropping the longest gives the biggest time refund
+- That makes it easiest to fit more future courses while only sacrificing one slot
 
 **Visual mental model (take-all-then-fix):**
 
@@ -1157,6 +1400,7 @@ def schedule_course(courses):
 print(schedule_course([[100, 200], [200, 1300], [1000, 1250], [2000, 3200]]))  # 3
 print(schedule_course([[1, 2]]))                                                # 1
 print(schedule_course([[3, 2], [4, 3]]))                                        # 0
+print(schedule_course([[5, 5], [4, 6], [2, 6]]))                                # 2
 ```
 
 **Walkthrough (`[[100,200],[200,1300],[1000,1250],[2000,3200]]`):**
