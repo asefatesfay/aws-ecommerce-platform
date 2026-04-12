@@ -178,9 +178,73 @@ print(st_gcd.query(0, 3))  # gcd(12,8,6,4) = 2
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Range Minimum Query | Classic | Direct application |
-| Sliding Window Maximum (#239) | Hard | Can use sparse table on static windows |
-| Minimum Number of Jumps | Classic | RMQ optimization |
-| LCA of Binary Tree (#236) | Medium | Euler tour + sparse table |
+Sparse tables are most useful for static range queries. LeetCode problems that benefit from this:
+
+---
+
+### 1. Range Minimum Query (Classic)
+
+**Problem**: Given a static array, answer multiple queries of the form "what is the minimum value in the range [l, r]?"
+
+```
+Array:  [2, 4, 3, 1, 6, 7, 8, 9]
+
+Query(0, 3) → min(2,4,3,1) = 1
+Query(2, 5) → min(3,1,6,7) = 1
+Query(4, 7) → min(6,7,8,9) = 6
+Query(1, 1) → 4
+```
+
+**Hints**:
+1. Build sparse table: `table[i][j] = min(arr[i..i+2^j-1])`
+2. Query: `k = floor(log2(r-l+1))`, answer = `min(table[l][k], table[r-2^k+1][k])`
+3. The two overlapping ranges are fine because min is idempotent
+
+---
+
+### 2. Sliding Window Maximum — #239 (Hard)
+
+**Problem**: Given an array and window size k, return the maximum in each sliding window.
+
+```
+Input:  nums=[1,3,-1,-3,5,3,6,7], k=3
+Output: [3,3,5,5,6,7]
+```
+
+**Sparse table connection**: For static windows, you could precompute a sparse table and answer each window query in O(1). In practice, the monotonic deque solution is preferred since it handles the sliding nature more naturally.
+
+**Hints**:
+1. Sparse table approach: build on the array, then for each window [i, i+k-1] query in O(1)
+2. Total: O(N log N) build + O(N) queries = O(N log N)
+3. Monotonic deque is O(N) total — better for this specific problem
+
+---
+
+### 3. Lowest Common Ancestor of a Binary Tree — #236 (Medium)
+
+**Problem**: Given a binary tree and two nodes p and q, find their lowest common ancestor.
+
+```
+Input:
+        3
+       / \
+      5   1
+     / \ / \
+    6  2 0  8
+      / \
+     7   4
+p=5, q=1 → Output: 3
+p=5, q=4 → Output: 5
+```
+
+**Sparse table connection**: The classic O(1) LCA algorithm uses Euler tour + sparse table for range minimum query. This converts the tree LCA problem into an RMQ problem.
+
+**Approach**:
+1. Do an Euler tour of the tree, recording each node when first visited and when returning from children
+2. LCA(u, v) = the node with minimum depth in the Euler tour between the first occurrences of u and v
+3. Use sparse table for O(1) range minimum queries on the depth array
+
+**Hints** (for the simpler O(N) DFS approach):
+1. If root is None, p, or q — return root
+2. Recurse left and right
+3. If both return non-null, root is the LCA; otherwise return whichever is non-null

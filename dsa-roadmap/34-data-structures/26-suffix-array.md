@@ -193,10 +193,74 @@ print(search_pattern("banana", "ana"))         # [1, 3]
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Longest Duplicate Substring (#1044) | Hard | Suffix array + binary search |
-| Longest Common Substring | Classic | Suffix array + LCP |
-| Number of Distinct Substrings | Classic | Suffix array + LCP sum |
-| Shortest Palindrome (#214) | Hard | KMP / suffix array |
-| Longest Happy Prefix (#1392) | Hard | KMP / Z-function |
+---
+
+### 1. Longest Duplicate Substring — #1044 (Hard)
+
+**Problem**: Given a string, find the longest substring that appears at least twice. Return the substring (or empty string if none).
+
+```
+Input:  "banana"
+Output: "ana"
+Explanation: "ana" appears at index 1 and index 3.
+
+Input:  "abcd"
+Output: ""
+Explanation: No substring appears twice.
+
+Input:  "aaaa"
+Output: "aaa"
+```
+
+**Hints**:
+1. Binary search on the answer length L
+2. For a given L, check if any substring of length L appears twice
+3. Use rolling hash (Rabin-Karp) to check all substrings of length L in O(N)
+4. Suffix array approach: build SA + LCP array; answer = max value in LCP array
+
+---
+
+### 2. Longest Happy Prefix — #1392 (Hard)
+
+**Problem**: A "happy prefix" is a non-empty prefix that is also a suffix (but not the whole string). Return the longest happy prefix, or empty string if none.
+
+```
+Input:  "level"
+Output: "l"
+Explanation: "l" is both a prefix and suffix of "level".
+
+Input:  "ababab"
+Output: "abab"
+Explanation: "abab" is both a prefix (first 4 chars) and suffix (last 4 chars).
+
+Input:  "leetcodeleet"
+Output: "leet"
+```
+
+**Hints**:
+1. This is exactly what the KMP failure function computes
+2. Build the KMP prefix function (failure array) for the string
+3. The last value in the failure array gives the length of the longest happy prefix
+4. Alternatively, use Z-function or suffix array
+
+---
+
+### 3. Shortest Palindrome — #214 (Hard)
+
+**Problem**: Given a string, find the shortest palindrome you can create by adding characters only to the front of the string.
+
+```
+Input:  "aacecaaa"
+Output: "aaacecaaa"
+Explanation: Add "a" to the front.
+
+Input:  "abcd"
+Output: "dcbabcd"
+Explanation: Add "dcb" to the front.
+```
+
+**Hints**:
+1. Find the longest palindromic prefix of the string
+2. The characters after that prefix need to be reversed and prepended
+3. Use KMP: concatenate `s + "#" + reverse(s)`, compute failure function; the last value gives the longest palindromic prefix length
+4. Suffix array approach: find the longest prefix that is also a suffix of the reversed string

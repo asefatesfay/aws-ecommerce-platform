@@ -211,11 +211,105 @@ print(josephus_math(5, 3))  # 4
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Find the Winner of the Circular Game (#1823) | Medium | Josephus problem |
-| Insert into a Sorted Circular Linked List (#708) | Medium | Direct circular LL |
-| Design Circular Queue (#622) | Medium | Circular structure |
-| Design Circular Deque (#641) | Medium | Circular structure |
-| Linked List Cycle (#141) | Easy | Detect cycle (Floyd's) |
-| Linked List Cycle II (#142) | Medium | Find cycle entry |
+---
+
+### 1. Find the Winner of the Circular Game — #1823 (Medium)
+
+**Problem**: There are n friends in a circle numbered 1 to n. Starting from friend 1, count k friends clockwise. The k-th friend leaves the circle. Repeat from the next friend. Return the number of the last remaining friend.
+
+```
+Input:  n=5, k=2
+Output: 3
+
+Trace (1-indexed):
+Circle: [1,2,3,4,5], start at 1
+Count 2 from 1: 1,2 → remove 2. Circle: [1,3,4,5]
+Count 2 from 3: 3,4 → remove 4. Circle: [1,3,5]
+Count 2 from 5: 5,1 → remove 1. Circle: [3,5]
+Count 2 from 3: 3,5 → remove 5. Circle: [3]
+Winner: 3
+
+Input:  n=6, k=5
+Output: 1
+```
+
+**Hints**:
+1. Simulate with a circular linked list (O(N*k)) or use the mathematical formula (O(N))
+2. Mathematical solution: `pos = 0` for n=1; for each i from 2 to n: `pos = (pos + k) % i`
+3. Convert 0-indexed result to 1-indexed: `return pos + 1`
+
+---
+
+### 2. Insert into a Sorted Circular Linked List — #708 (Medium)
+
+**Problem**: Given a node in a sorted circular linked list, insert a new value such that the list remains sorted. Return any node in the list.
+
+```
+Input:  head=[3,4,1] (circular: 1→3→4→1), insertVal=2
+Output: [3,4,1,2]  (any rotation is valid, e.g., 1→2→3→4→1)
+
+Input:  head=[1], insertVal=0
+Output: [1,0]  (circular: 0→1→0)
+
+Input:  head=[], insertVal=1
+Output: [1]  (single node pointing to itself)
+```
+
+**Hints**:
+1. Traverse the list looking for the right insertion point
+2. Insert between `curr` and `curr.next` when: `curr.val <= insertVal <= curr.next.val`
+3. Handle the wrap-around case: when `curr.val > curr.next.val` (we're at the max→min boundary), insert if `insertVal >= curr.val` OR `insertVal <= curr.next.val`
+4. If no insertion point found after a full loop, insert anywhere (all values are equal)
+
+---
+
+### 3. Design Circular Queue — #622 (Medium)
+
+**Problem**: Design a circular queue with fixed capacity supporting `enQueue(val)`, `deQueue()`, `Front()`, `Rear()`, `isEmpty()`, `isFull()`.
+
+```
+Input:
+["MyCircularQueue","enQueue","enQueue","enQueue","enQueue","Rear","isFull","deQueue","enQueue","Rear"]
+[[3],              [1],      [2],      [3],      [4],      [],    [],      [],       [4],      []]
+
+Output: [null, true, true, true, false, 3, true, true, true, 4]
+
+Trace (capacity=3):
+enQueue(1) → [1], true
+enQueue(2) → [1,2], true
+enQueue(3) → [1,2,3], true
+enQueue(4) → full, false
+Rear()     → 3
+isFull()   → true
+deQueue()  → remove 1, [2,3], true
+enQueue(4) → [2,3,4], true
+Rear()     → 4
+```
+
+**Hints**:
+1. Use a fixed-size array with `head` and `tail` pointers
+2. `enQueue`: place at `tail`, advance `tail = (tail + 1) % capacity`
+3. `deQueue`: advance `head = (head + 1) % capacity`
+4. Track size separately to distinguish full vs empty (both have head == tail)
+
+---
+
+### 4. Linked List Cycle — #141 (Easy)
+
+**Problem**: Given the head of a linked list, determine if it has a cycle.
+
+```
+Input:  3 → 2 → 0 → -4 → (back to node 2)
+Output: true
+
+Input:  1 → 2 → (back to node 1)
+Output: true
+
+Input:  1 → None
+Output: false
+```
+
+**Hints**:
+1. Floyd's cycle detection: slow pointer moves 1 step, fast pointer moves 2 steps
+2. If they ever meet, there's a cycle
+3. If fast reaches None, no cycle exists

@@ -192,7 +192,72 @@ print(f"Empirical FP rate: {false_positives/tests:.4f}")  # ≈ 0.01
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Design Skiplist (#1206) | Hard | Probabilistic DS |
-| Distinct Echo Substrings (#1316) | Hard | Set membership |
+Bloom filters don't map directly to LeetCode problems (they're a systems/infrastructure data structure), but the underlying concepts appear in these problems:
+
+---
+
+### 1. Contains Duplicate — #217 (Easy)
+
+**Problem**: Given an integer array, return true if any value appears at least twice.
+
+```
+Input:  [1, 2, 3, 1]
+Output: true
+
+Input:  [1, 2, 3, 4]
+Output: false
+
+Input:  [1, 1, 1, 3, 3, 4, 3, 2, 4, 2]
+Output: true
+```
+
+**Bloom filter connection**: A bloom filter is a probabilistic version of this — it can tell you "definitely not a duplicate" or "probably a duplicate" using much less memory than a hash set.
+
+**Hints**:
+1. Use a hash set; add each element and check if it's already present
+2. Alternatively, sort and check adjacent elements
+
+---
+
+### 2. Find the Duplicate Number — #287 (Medium)
+
+**Problem**: Given an array of n+1 integers where each integer is in range [1, n], find the one duplicate number. Must use O(1) extra space and not modify the array.
+
+```
+Input:  [1, 3, 4, 2, 2]
+Output: 2
+
+Input:  [3, 1, 3, 4, 2]
+Output: 3
+```
+
+**Bloom filter connection**: A bloom filter could detect the duplicate with very low memory, but with a small false positive risk. The O(1) space solution uses Floyd's cycle detection instead.
+
+**Hints**:
+1. Treat the array as a linked list: index → value → next index
+2. The duplicate creates a cycle (two indices point to the same value)
+3. Use Floyd's algorithm to find the cycle entry point
+
+---
+
+### 3. Distinct Echo Substrings — #1316 (Hard)
+
+**Problem**: Return the number of distinct non-empty substrings of a string that can be written as the concatenation of some string with itself (e.g., "abab" = "ab"+"ab").
+
+```
+Input:  "abcabcabc"
+Output: 3
+Substrings: "abcabc", "bcabca", "cabcab" — each is a string repeated twice
+
+Input:  "leetcodeleetcode"
+Output: 2
+Substrings: "leetcodeleetcode", "eetcodeeetcode"? 
+Actually: "leetcodeleetcode" and "eetcodeeetcode" — 2 distinct echo substrings
+```
+
+**Bloom filter connection**: You need to track which substrings you've already counted — a bloom filter could do this with less memory (with small false positive risk). In practice, use a hash set.
+
+**Hints**:
+1. For each possible half-length L (1 to n//2), check all substrings of length 2L
+2. A substring `s[i..i+2L-1]` is an echo if `s[i..i+L-1] == s[i+L..i+2L-1]`
+3. Use rolling hash to compare substrings in O(1); store seen echo substrings in a set

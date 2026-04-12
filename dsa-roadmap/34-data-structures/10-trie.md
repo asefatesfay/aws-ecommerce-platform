@@ -135,15 +135,140 @@ print(trie.search("care"))       # True (unaffected)
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Technique |
-|---------|-----------|-----------|
-| Implement Trie (#208) | Medium | Basic trie |
-| Design Add and Search Words (#211) | Medium | Trie + DFS for wildcards |
-| Search Suggestions System (#1268) | Medium | Trie or binary search |
-| Replace Words (#648) | Medium | Trie for shortest root |
-| Word Search II (#212) | Hard | Trie + DFS backtracking |
-| Longest Word in Dictionary (#720) | Medium | Trie BFS |
-| Maximum XOR of Two Numbers (#421) | Medium | Binary trie |
-| Palindrome Pairs (#336) | Hard | Reverse trie |
-| Stream of Characters (#1032) | Hard | Trie on reversed words |
-| Concatenated Words (#472) | Hard | Trie + DP |
+---
+
+### 1. Implement Trie — #208 (Medium)
+
+**Problem**: Implement a trie with `insert(word)`, `search(word)` (returns true if exact word exists), and `startsWith(prefix)` (returns true if any word starts with prefix).
+
+```
+Input:
+["Trie","insert","search","search","startsWith","insert","search"]
+[[],   ["apple"],["apple"],["app"], ["app"],     ["app"],  ["app"]]
+
+Output: [null, null, true, false, true, null, true]
+
+Trace:
+insert("apple")
+search("apple")    → true
+search("app")      → false  (not a complete word)
+startsWith("app")  → true   (prefix exists)
+insert("app")
+search("app")      → true   (now it's a complete word)
+```
+
+**Hints**:
+1. Each node has a `children` dict and an `is_end` flag
+2. `insert`: walk the trie, creating nodes as needed, set `is_end=True` at the last character
+3. `search`: walk the trie, return `node.is_end` at the end; `startsWith`: return `node is not None`
+
+---
+
+### 2. Design Add and Search Words Data Structure — #211 (Medium)
+
+**Problem**: Design a data structure supporting `addWord(word)` and `search(word)` where `word` may contain `.` as a wildcard matching any single letter.
+
+```
+Input:
+["WordDictionary","addWord","addWord","addWord","search","search","search","search"]
+[[],              ["bad"],  ["dad"],  ["mad"],  ["pad"], ["bad"], [".ad"], ["b.."]]
+
+Output: [null, null, null, null, false, true, true, true]
+
+Trace:
+addWord("bad"), addWord("dad"), addWord("mad")
+search("pad")  → false
+search("bad")  → true
+search(".ad")  → true  (matches "bad", "dad", "mad")
+search("b..")  → true  (matches "bad")
+```
+
+**Hints**:
+1. Build a trie for `addWord`
+2. For `search`, when you hit a `.`, recursively try all children
+3. DFS with backtracking for wildcard matching
+
+---
+
+### 3. Search Suggestions System — #1268 (Medium)
+
+**Problem**: Given a list of products and a search word, return a list of up to 3 product suggestions after each character is typed. Suggestions must start with the typed prefix and be lexicographically sorted.
+
+```
+Input:  products=["mobile","mouse","moneypot","monitor","mousepad"], searchWord="mouse"
+Output: [
+  ["mobile","moneypot","monitor"],  (after "m")
+  ["mobile","moneypot","monitor"],  (after "mo")
+  ["mouse","mousepad"],             (after "mou")
+  ["mouse","mousepad"],             (after "mous")
+  ["mouse","mousepad"]              (after "mouse")
+]
+```
+
+**Hints**:
+1. Sort products first (ensures lexicographic order)
+2. Insert all products into a trie
+3. For each prefix, do DFS from the prefix node and collect up to 3 words
+4. Simpler alternative: binary search on the sorted list for each prefix
+
+---
+
+### 4. Word Search II — #212 (Hard)
+
+**Problem**: Given an `m x n` board of characters and a list of words, return all words that can be found in the board. Words can be constructed from sequentially adjacent cells (horizontally or vertically), and each cell can only be used once per word.
+
+```
+Input:
+board = [["o","a","a","n"],
+         ["e","t","a","e"],
+         ["i","h","k","r"],
+         ["i","f","l","v"]]
+words = ["oath","pea","eat","rain"]
+
+Output: ["eat","oath"]
+```
+
+**Hints**:
+1. Build a trie from all words
+2. DFS from every cell; at each step, check if the current path is a trie prefix
+3. Mark cells as visited during DFS, unmark on backtrack
+4. When `is_end=True` in the trie, add the word to results
+
+---
+
+### 5. Replace Words — #648 (Medium)
+
+**Problem**: Given a dictionary of root words and a sentence, replace each word in the sentence with its shortest root from the dictionary. If no root exists, keep the original word.
+
+```
+Input:  dictionary=["cat","bat","rat"], sentence="the cattle was rattled by the battery"
+Output: "the cat was rat by the bat"
+
+Input:  dictionary=["a","b","c"], sentence="aadsfasf absbs bbab cadsfafs"
+Output: "a a b c"
+```
+
+**Hints**:
+1. Insert all roots into a trie
+2. For each word in the sentence, traverse the trie character by character
+3. Return the root as soon as you hit an `is_end` node; otherwise return the full word
+
+---
+
+### 6. Maximum XOR of Two Numbers in an Array — #421 (Medium)
+
+**Problem**: Given an integer array, find the maximum XOR of any two elements.
+
+```
+Input:  [3, 10, 5, 25, 2, 8]
+Output: 28
+Explanation: 5 XOR 25 = 28
+
+Input:  [14, 70, 53, 83, 49, 91, 36, 80, 92, 51, 66, 70]
+Output: 127
+```
+
+**Hints**:
+1. Build a binary trie (bit by bit from MSB to LSB)
+2. For each number, greedily try to find a complement bit at each level
+3. If the opposite bit exists in the trie, take it (maximizes XOR); otherwise take the same bit

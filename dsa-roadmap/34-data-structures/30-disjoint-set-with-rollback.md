@@ -176,8 +176,77 @@ print(uf.connected(0, 4))  # False
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Offline dynamic connectivity | Classic | Direct application |
-| Tarjan's LCA | Classic | Uses rollback UF |
-| Number of Islands II (#305) | Hard | Online version (no rollback needed) |
+---
+
+### 1. Number of Islands II — #305 (Hard)
+
+**Problem**: Given an `m x n` grid initially all water, process a list of positions where land is added one at a time. After each addition, return the number of islands.
+
+```
+Input:  m=3, n=3, positions=[[0,0],[0,1],[1,2],[2,1]]
+Output: [1, 1, 2, 3]
+
+Trace:
+Add (0,0): grid has 1 island → [1]
+Add (0,1): connects to (0,0) → still 1 island → [1]
+Add (1,2): isolated → 2 islands → [2]
+Add (2,1): isolated → 3 islands → [3]
+```
+
+**Rollback UF connection**: This is the online version (no deletions). Standard Union-Find works here. The rollback version would be needed if land could also be removed.
+
+**Hints**:
+1. Use Union-Find; each cell is a node
+2. When adding land at `(r,c)`: create a new component, then union with any adjacent land cells
+3. Track component count: start at 0, +1 on each new land, -1 for each successful union
+
+---
+
+### 2. Checking Existence of Edge Length Limited Paths — #1697 (Hard)
+
+**Problem**: Given an undirected graph with weighted edges and queries `[u, v, limit]`, for each query determine if there's a path from u to v where every edge has weight strictly less than `limit`.
+
+```
+Input:
+n=3, edgeList=[[0,1,2],[1,2,4],[2,0,8],[1,0,16]]
+queries=[[0,1,2],[0,2,5]]
+
+Output: [false, true]
+
+Trace:
+Query [0,1,2]: path from 0 to 1 with all edges < 2? Edge (0,1) has weight 2, not < 2 → false
+Query [0,2,5]: path from 0 to 2 with all edges < 5? 0→1 (weight 2) → 1→2 (weight 4), both < 5 → true
+```
+
+**Rollback UF connection**: Sort both edges and queries by weight/limit. Process queries offline — add edges with weight < limit, check connectivity. Rollback UF allows undoing edge additions between queries.
+
+**Hints**:
+1. Sort edges by weight; sort queries by limit
+2. For each query (in order of limit), add all edges with weight < limit to Union-Find
+3. Check if u and v are connected; this is offline processing (no rollback needed here)
+
+---
+
+### 3. Graph Connectivity With Threshold — #1627 (Hard)
+
+**Problem**: There are n cities. Two cities u and v are connected if there exists a z > threshold such that both u and v are divisible by z. Given queries `[u, v]`, determine if u and v are in the same connected component.
+
+```
+Input:  n=6, threshold=2, queries=[[1,4],[2,5],[3,6]]
+Output: [false, false, true]
+
+Explanation (threshold=2, so z must be > 2, i.e., z >= 3):
+z=3: connects 3 and 6
+z=4: connects 4 (only one multiple ≤ 6)
+z=5: connects 5 (only one multiple ≤ 6)
+z=6: connects 6 (only one multiple ≤ 6)
+So: {3,6} are connected, others are isolated.
+Query [1,4]: not connected → false
+Query [2,5]: not connected → false
+Query [3,6]: connected → true
+```
+
+**Hints**:
+1. For each z from threshold+1 to n, union all multiples of z together
+2. Use Union-Find; for each z, union z with 2z, 3z, 4z, ... (up to n)
+3. Total work: n/(t+1) + n/(t+2) + ... ≈ O(N log N / threshold)

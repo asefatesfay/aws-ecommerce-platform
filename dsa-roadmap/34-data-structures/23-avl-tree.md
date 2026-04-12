@@ -199,8 +199,86 @@ class AVLTree:
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Balance a Binary Search Tree (#1382) | Medium | Rebuild as balanced BST |
-| Height of Binary Tree After Subtree Removal (#2458) | Hard | Height tracking |
-| Count of Smaller Numbers After Self (#315) | Hard | Balanced BST counting |
+---
+
+### 1. Balance a Binary Search Tree — #1382 (Medium)
+
+**Problem**: Given the root of a BST, return a balanced BST with the same node values. A balanced BST has a height difference of at most 1 between left and right subtrees for every node.
+
+```
+Input:
+1
+ \
+  2
+   \
+    3
+     \
+      4
+Output (one valid answer):
+    2
+   / \
+  1   3
+       \
+        4
+Or:
+    3
+   / \
+  2   4
+ /
+1
+```
+
+**Hints**:
+1. Inorder traversal of a BST gives a sorted array
+2. Build a balanced BST from a sorted array: pick the middle element as root, recurse on left and right halves
+3. This is exactly what AVL tree insertion achieves automatically
+
+---
+
+### 2. Count of Smaller Numbers After Self — #315 (Hard)
+
+**Problem**: Given an integer array, return a count array where `count[i]` is the number of elements to the right of `nums[i]` that are smaller than `nums[i]`.
+
+```
+Input:  [5, 2, 6, 1]
+Output: [2, 1, 1, 0]
+
+Explanation:
+5: [2,1] are smaller to the right → 2
+2: [1] is smaller to the right → 1
+6: [1] is smaller to the right → 1
+1: nothing to the right → 0
+```
+
+**Hints**:
+1. Process from right to left; maintain a sorted structure (AVL/BST/BIT)
+2. For each element, query how many elements already inserted are smaller
+3. Then insert the current element
+4. In Python, use `SortedList` from `sortedcontainers` for O(log N) insert and rank queries
+
+---
+
+### 3. Kth Largest Element in a Stream — #703 (Easy)
+
+**Problem**: Design a class that finds the kth largest element in a stream. Initialize with k and an initial array. `add(val)` adds a new value and returns the kth largest.
+
+```
+Input:
+["KthLargest","add","add","add","add","add"]
+[[3,[4,5,8,2]],[3],[5],[10],[9],[4]]
+
+Output: [null, 4, 5, 5, 8, 8]
+
+Trace (k=3, initial=[4,5,8,2]):
+Sorted: [2,4,5,8], 3rd largest = 4
+add(3) → [2,3,4,5,8], 3rd largest = 4
+add(5) → [2,3,4,5,5,8], 3rd largest = 5
+add(10)→ [2,3,4,5,5,8,10], 3rd largest = 5
+add(9) → [2,3,4,5,5,8,9,10], 3rd largest = 8
+add(4) → [2,3,4,4,5,5,8,9,10], 3rd largest = 8
+```
+
+**Hints**:
+1. Maintain a min-heap of size k
+2. The root of the heap is always the kth largest element
+3. On `add`: push to heap, pop if size > k; return `heap[0]`

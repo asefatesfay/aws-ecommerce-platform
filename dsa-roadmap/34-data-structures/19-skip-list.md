@@ -181,8 +181,56 @@ print(sl.to_list())    # [1, 3, 4, 6, 7, 8]
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Design Skiplist (#1206) | Hard | Direct implementation |
-| My Calendar I (#729) | Medium | Sorted structure |
-| Count of Smaller Numbers After Self (#315) | Hard | Sorted structure |
+---
+
+### 1. Design Skiplist — #1206 (Hard)
+
+**Problem**: Design a skip list that supports `search(target)`, `add(num)`, and `erase(num)`. Duplicates are allowed. All operations should average O(log N).
+
+```
+Input:
+["Skiplist","add","add","add","search","add","search","erase","erase","search"]
+[[],        [1],  [2],  [3],  [0],     [4],  [1],     [0],   [1],    [1]]
+
+Output: [null, null, null, null, false, null, true, false, true, false]
+
+Trace:
+add(1), add(2), add(3)
+search(0) → false  (0 not in list)
+add(4)
+search(1) → true
+erase(0)  → false  (0 not in list, nothing erased)
+erase(1)  → true   (1 removed)
+search(1) → false  (1 was removed)
+```
+
+**Hints**:
+1. Each node has a value and a list of forward pointers (one per level)
+2. `search`: start at top level, move right while next value < target, drop down when blocked
+3. `add`: find insertion point at each level, randomly decide how many levels to use
+4. `erase`: find the node at each level and update forward pointers to skip it
+
+---
+
+### 2. My Calendar I — #729 (Medium)
+
+**Problem**: Implement a calendar where you can book events `[start, end)`. A booking is successful if it doesn't overlap with any existing booking. Return true if the booking succeeds, false otherwise.
+
+```
+Input:
+["MyCalendar","book","book","book"]
+[[],          [10,20],[15,25],[20,30]]
+
+Output: [null, true, false, true]
+
+Trace:
+book(10,20) → no conflicts → true
+book(15,25) → overlaps with [10,20] (15 < 20) → false
+book(20,30) → [20,30) starts exactly where [10,20) ends → no overlap → true
+```
+
+**Hints**:
+1. Store booked intervals in a sorted structure
+2. A new interval `[s, e)` conflicts with existing `[a, b)` if `s < b AND e > a`
+3. With a sorted list, binary search for the insertion point and only check neighbors
+4. Python: use `SortedList` from `sortedcontainers` for O(log N) insert and search

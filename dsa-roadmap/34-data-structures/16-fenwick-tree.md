@@ -143,11 +143,96 @@ print(count_smaller([5, 2, 6, 1]))  # [2, 1, 1, 0]
 
 ## LeetCode Problems
 
-| Problem | Difficulty | How BIT Helps |
-|---------|-----------|---------------|
-| Range Sum Query - Mutable (#307) | Medium | Point update + range sum |
-| Count of Smaller Numbers After Self (#315) | Hard | Count elements in range |
-| Reverse Pairs (#493) | Hard | Count pairs with condition |
-| Count of Range Sum (#327) | Hard | Count sums in range |
-| Number of Pairs Satisfying Inequality (#2426) | Hard | Count valid pairs |
-| Create Sorted Array through Instructions (#1649) | Hard | Count smaller/larger |
+---
+
+### 1. Range Sum Query - Mutable — #307 (Medium)
+
+**Problem**: Given an integer array, implement `update(index, val)` and `sumRange(left, right)`. Both must be efficient (not O(N) per query).
+
+```
+Input:
+["NumArray","sumRange","update","sumRange"]
+[[[1,3,5]], [0,2],     [1,2],   [0,2]]
+
+Output: [null, 9, null, 8]
+
+Trace:
+NumArray([1,3,5])
+sumRange(0,2) → 1+3+5 = 9
+update(1, 2)  → array becomes [1,2,5]
+sumRange(0,2) → 1+2+5 = 8
+```
+
+**Hints**:
+1. Build a Fenwick Tree (1-indexed); store original values to compute deltas on update
+2. `update(i, val)`: compute `delta = val - original[i]`, call `bit.update(i+1, delta)`
+3. `sumRange(l, r)`: return `bit.query(r+1) - bit.query(l)`
+
+---
+
+### 2. Count of Smaller Numbers After Self — #315 (Hard)
+
+**Problem**: Given an integer array, return a count array where `count[i]` is the number of elements to the right of `nums[i]` that are smaller than `nums[i]`.
+
+```
+Input:  [5, 2, 6, 1]
+Output: [2, 1, 1, 0]
+
+Explanation:
+5: [2,1] are smaller to the right → 2
+2: [1] is smaller to the right → 1
+6: [1] is smaller to the right → 1
+1: nothing to the right → 0
+```
+
+**Hints**:
+1. Coordinate compress the values (map to 1..n range)
+2. Process from right to left; for each number, query BIT for count of values in range [1, rank-1]
+3. Then update BIT at rank by +1
+
+---
+
+### 3. Reverse Pairs — #493 (Hard)
+
+**Problem**: Given an integer array, return the number of "reverse pairs" — pairs (i, j) where `i < j` and `nums[i] > 2 * nums[j]`.
+
+```
+Input:  [1, 3, 2, 3, 1]
+Output: 2
+Pairs: (3,1) at indices (1,4) and (3,1) at indices (3,4)
+
+Input:  [2, 4, 3, 5, 1]
+Output: 3
+```
+
+**Hints**:
+1. Coordinate compress; process from right to left
+2. For each `nums[i]`, query BIT for count of values ≤ `nums[i]//2` (or `(nums[i]-1)//2` for strict)
+3. Then insert `nums[i]` into BIT
+4. Alternatively, use merge sort and count during the merge step
+
+---
+
+### 4. Create Sorted Array through Instructions — #1649 (Hard)
+
+**Problem**: Given an integer array `instructions`, create a sorted array by inserting each element one by one. The cost of inserting `instructions[i]` is `min(count of elements < instructions[i], count of elements > instructions[i])`. Return the total cost modulo 10^9+7.
+
+```
+Input:  [1,5,6,2]
+Output: 1
+
+Trace:
+Insert 1: sorted=[], cost=min(0,0)=0. sorted=[1]
+Insert 5: sorted=[1], cost=min(1,0)=0. sorted=[1,5]
+Insert 6: sorted=[1,5], cost=min(2,0)=0. sorted=[1,5,6]
+Insert 2: sorted=[1,5,6], cost=min(1,2)=1. sorted=[1,2,5,6]
+Total cost = 1
+
+Input:  [1,2,3,6,5,4]
+Output: 3
+```
+
+**Hints**:
+1. Use a BIT to count elements already inserted
+2. For each new element, query BIT for count of elements less than it (= cost_left)
+3. `cost_right = total_inserted - count_less_or_equal`; cost = min(cost_left, cost_right)

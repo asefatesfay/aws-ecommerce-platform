@@ -144,13 +144,102 @@ print(constrained_subsequence_sum([10,2,-10,5,20], 2))
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Pattern |
-|---------|-----------|---------|
-| Sliding Window Maximum (#239) | Hard | Decreasing deque |
-| Jump Game VI (#1696) | Medium | DP + deque optimization |
-| Constrained Subsequence Sum (#1425) | Hard | DP + deque |
-| Shortest Subarray with Sum ≥ K (#862) | Hard | Increasing deque |
-| Max Value of Equation (#1499) | Hard | Decreasing deque |
-| Longest Continuous Subarray Abs Diff ≤ Limit (#1438) | Medium | Two deques (min+max) |
-| Count Partitions with Max-Min Diff ≤ K (#2779) | Medium | Two deques |
-| Find the Most Competitive Subsequence (#1673) | Medium | Increasing deque |
+---
+
+### 1. Sliding Window Maximum — #239 (Hard)
+
+**Problem**: Given an integer array and a window size k, return the maximum value in each sliding window of size k.
+
+```
+Input:  nums=[1,3,-1,-3,5,3,6,7], k=3
+Output: [3,3,5,5,6,7]
+
+Window positions:
+[1,3,-1]  → max 3
+[3,-1,-3] → max 3
+[-1,-3,5] → max 5
+[-3,5,3]  → max 5
+[5,3,6]   → max 6
+[3,6,7]   → max 7
+```
+
+**Hints**:
+1. Monotonic decreasing deque of indices
+2. Remove front when `dq[0] <= i - k` (outside window)
+3. Remove back when `nums[dq[-1]] <= nums[i]` (can never be max while current exists)
+4. `dq[0]` is always the index of the current window's maximum
+
+---
+
+### 2. Jump Game VI — #1696 (Medium)
+
+**Problem**: Given an integer array and integer k, start at index 0. At each step, jump forward 1 to k indices. The score is the sum of values at visited indices. Return the maximum score to reach the last index.
+
+```
+Input:  nums=[1,-1,-2,4,-7,3], k=2
+Output: 7
+Path:   index 0 (1) → index 3 (4) → index 5 (3) = 1+4+3 = 8? 
+        Wait: 0→1→3→5: 1+(-1)+4+3=7. Or 0→2→3→5: 1+(-2)+4+3=6.
+        Best: 0→1→3→5 = 7
+
+Input:  nums=[10,-5,-2,4,0,3], k=3
+Output: 17
+Path:   0→3→5: 10+4+3=17
+```
+
+**Hints**:
+1. DP: `dp[i] = nums[i] + max(dp[i-k..i-1])`
+2. Use a monotonic decreasing deque to get `max(dp[i-k..i-1])` in O(1)
+3. Remove front when it's outside the window of size k
+
+---
+
+### 3. Constrained Subsequence Sum — #1425 (Hard)
+
+**Problem**: Given an integer array and integer k, return the maximum sum of a non-empty subsequence where for every two consecutive elements in the subsequence, their indices differ by at most k.
+
+```
+Input:  nums=[10,2,-10,5,20], k=2
+Output: 37
+Subsequence: [10,2,5,20] (indices 0,1,3,4 — each gap ≤ 2)
+
+Input:  nums=[-1,-2,-3], k=1
+Output: -1  (must pick at least one element)
+
+Input:  nums=[10,-2,-10,-5,20], k=2
+Output: 23
+Subsequence: [10,-2,-5,20] → 23? Or [10,20]? Indices 0 and 4, gap=4 > k=2.
+Best: [10,-2,20] indices 0,1,4? Gap 1→4 = 3 > 2. 
+Best valid: [10,-2,-5,20] indices 0,1,3,4 → 23.
+```
+
+**Hints**:
+1. `dp[i] = nums[i] + max(0, max(dp[i-k..i-1]))`
+2. Use a monotonic decreasing deque of dp indices to get the max in the window
+3. If the best previous dp is negative, don't extend (take 0 instead)
+
+---
+
+### 4. Shortest Subarray with Sum at Least K — #862 (Hard)
+
+**Problem**: Given an integer array (may contain negatives) and integer k, return the length of the shortest subarray with sum at least k. Return -1 if no such subarray exists.
+
+```
+Input:  nums=[1], k=1
+Output: 1
+
+Input:  nums=[1,2], k=4
+Output: -1
+
+Input:  nums=[2,-1,2], k=3
+Output: 3  (entire array sums to 3)
+
+Input:  nums=[84,-37,32,40,95], k=167
+Output: 3  (subarray [32,40,95] = 167)
+```
+
+**Hints**:
+1. Compute prefix sums; problem becomes: find shortest `[j, i]` where `prefix[i] - prefix[j] >= k`
+2. Use a monotonic increasing deque of prefix sum indices
+3. For each i, pop from front while `prefix[i] - prefix[dq[0]] >= k` (valid subarray found)
+4. Then pop from back while `prefix[dq[-1]] >= prefix[i]` (maintain increasing order)

@@ -203,10 +203,99 @@ print(sl.bisect_left(3))  # index of first element >= 3
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| My Calendar I (#729) | Medium | Sorted set / interval tree |
-| My Calendar II (#731) | Medium | Sorted set |
-| Count of Smaller Numbers After Self (#315) | Hard | Sorted structure |
-| Sliding Window Median (#480) | Hard | Two sorted sets |
-| Find K-th Smallest Pair Distance (#719) | Hard | Sorted structure |
+---
+
+### 1. My Calendar I — #729 (Medium)
+
+**Problem**: Implement a calendar where you can book events `[start, end)`. A booking is successful if it doesn't overlap with any existing booking.
+
+```
+Input:
+["MyCalendar","book","book","book"]
+[[],          [10,20],[15,25],[20,30]]
+
+Output: [null, true, false, true]
+
+Trace:
+book(10,20) → no conflicts → true
+book(15,25) → overlaps [10,20] (15 < 20) → false
+book(20,30) → [20,30) starts exactly where [10,20) ends → no overlap → true
+```
+
+**Red-Black Tree connection**: Python's `SortedList` (backed by a sorted structure similar to RB trees) lets you binary search for the insertion point and check neighbors in O(log N).
+
+**Hints**:
+1. Store booked intervals sorted by start time
+2. For new `[s, e)`: find the largest start ≤ s; check if it ends after s; find the smallest start > s; check if it starts before e
+3. In Python: `from sortedcontainers import SortedList`
+
+---
+
+### 2. Sliding Window Median — #480 (Hard)
+
+**Problem**: Given an integer array and window size k, return the median of each sliding window of size k.
+
+```
+Input:  nums=[1,3,-1,-3,5,3,6,7], k=3
+Output: [1.0, -1.0, -1.0, 3.0, 5.0, 6.0]
+
+Window [1,3,-1]   → sorted [-1,1,3]   → median 1.0
+Window [3,-1,-3]  → sorted [-3,-1,3]  → median -1.0
+Window [-1,-3,5]  → sorted [-3,-1,5]  → median -1.0
+Window [-3,5,3]   → sorted [-3,3,5]   → median 3.0
+Window [5,3,6]    → sorted [3,5,6]    → median 5.0
+Window [3,6,7]    → sorted [3,6,7]    → median 6.0
+```
+
+**Red-Black Tree connection**: Two sorted multisets (one for lower half, one for upper half) allow O(log N) insert, delete, and median access — exactly what RB trees provide.
+
+**Hints**:
+1. Maintain two sorted structures: `lo` (lower half, max at top) and `hi` (upper half, min at top)
+2. Balance them so `len(lo) == len(hi)` or `len(lo) == len(hi) + 1`
+3. On each slide: add new element, remove outgoing element, rebalance
+4. In Python: use two `SortedList` objects from `sortedcontainers`
+
+---
+
+### 3. Count of Smaller Numbers After Self — #315 (Hard)
+
+**Problem**: Given an integer array, return a count array where `count[i]` is the number of elements to the right of `nums[i]` that are smaller than `nums[i]`.
+
+```
+Input:  [5, 2, 6, 1]
+Output: [2, 1, 1, 0]
+
+Explanation:
+5: [2,1] are smaller to the right → 2
+2: [1] is smaller to the right → 1
+6: [1] is smaller to the right → 1
+1: nothing to the right → 0
+```
+
+**Red-Black Tree connection**: A sorted multiset (backed by RB tree in C++/Java) supports O(log N) insert and rank queries. In Python, use `SortedList`.
+
+**Hints**:
+1. Process right to left; maintain a sorted structure of seen elements
+2. For each element, count how many elements in the structure are smaller (`bisect_left`)
+3. Then insert the current element
+
+---
+
+### 4. Find K-th Smallest Pair Distance — #719 (Hard)
+
+**Problem**: Given an integer array, find the kth smallest distance among all pairs `(nums[i], nums[j])` where `i < j`. Distance = `|nums[i] - nums[j]|`.
+
+```
+Input:  nums=[1,3,1], k=1
+Output: 0
+Explanation: Pairs: (1,3)→2, (1,1)→0, (3,1)→2. Sorted: [0,2,2]. 1st smallest = 0.
+
+Input:  nums=[1,6,1], k=3
+Output: 5
+Explanation: Pairs: (1,6)→5, (1,1)→0, (6,1)→5. Sorted: [0,5,5]. 3rd smallest = 5.
+```
+
+**Hints**:
+1. Binary search on the answer (distance d from 0 to max-min)
+2. For a given d, count how many pairs have distance ≤ d using two pointers on sorted array
+3. Find the smallest d where count ≥ k

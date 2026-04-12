@@ -129,11 +129,102 @@ print(st_min.query_min(1, 4))  # min(3,5,7,9) = 3
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Operation |
-|---------|-----------|-----------|
-| Range Sum Query - Mutable (#307) | Medium | Point update + range sum |
-| Count of Smaller Numbers After Self (#315) | Hard | Coordinate compression |
-| The Skyline Problem (#218) | Hard | Segment tree on x-coords |
-| Falling Squares (#699) | Hard | Range max query |
-| My Calendar III (#732) | Hard | Range update + max query |
-| Count of Range Sum (#327) | Hard | Merge sort / segment tree |
+---
+
+### 1. Range Sum Query - Mutable — #307 (Medium)
+
+**Problem**: Given an integer array, implement `update(index, val)` and `sumRange(left, right)` (returns sum of elements from index left to right inclusive). Both operations must be efficient.
+
+```
+Input:
+["NumArray","sumRange","update","sumRange"]
+[[[1,3,5]], [0,2],     [1,2],   [0,2]]
+
+Output: [null, 9, null, 8]
+
+Trace:
+NumArray([1,3,5])
+sumRange(0,2) → 1+3+5 = 9
+update(1, 2)  → array becomes [1,2,5]
+sumRange(0,2) → 1+2+5 = 8
+```
+
+**Hints**:
+1. Build a segment tree from the array
+2. `update`: walk down to the leaf, update it, propagate sums back up
+3. `sumRange`: query the tree, combining ranges that fall within [left, right]
+
+---
+
+### 2. Count of Smaller Numbers After Self — #315 (Hard)
+
+**Problem**: Given an integer array, return a count array where `count[i]` is the number of elements to the right of `nums[i]` that are smaller than `nums[i]`.
+
+```
+Input:  [5, 2, 6, 1]
+Output: [2, 1, 1, 0]
+
+Explanation:
+5: elements to right smaller than 5 → [2, 1] → count=2
+2: elements to right smaller than 2 → [1] → count=1
+6: elements to right smaller than 6 → [1] → count=1
+1: no elements to right → count=0
+```
+
+**Hints**:
+1. Process from right to left; use a segment tree (or BIT) on coordinate-compressed values
+2. For each number, query how many values already inserted are smaller
+3. Then insert the current number into the tree
+
+---
+
+### 3. The Skyline Problem — #218 (Hard)
+
+**Problem**: Given a list of buildings `[left, right, height]`, return the skyline as a list of key points `[x, height]` where the height changes.
+
+```
+Input:  [[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]]
+Output: [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]
+
+Visualization:
+         15
+      ┌──┐
+   10 │  │12
+┌────┤  ├──────┐
+│    │  │      │  10
+│    └──┘      └──────┐  8
+│                     └──┐
+2  3  5  7  9 12    15 19 20 24
+```
+
+**Hints**:
+1. Collect all x-coordinates (building starts and ends) as events
+2. Use a max-heap (or segment tree) to track active building heights
+3. At each x, the current max height determines the skyline; record a point when height changes
+
+---
+
+### 4. My Calendar III — #732 (Hard)
+
+**Problem**: Implement a calendar where you can book events `[start, end)`. After each booking, return the maximum number of overlapping events at any point in time.
+
+```
+Input:
+["MyCalendarThree","book","book","book","book","book","book"]
+[[],               [10,20],[50,60],[10,40],[5,15],[5,10],[25,55]]
+
+Output: [null, 1, 1, 2, 3, 3, 3]
+
+Trace:
+book(10,20) → max overlap = 1
+book(50,60) → max overlap = 1
+book(10,40) → [10,20] and [10,40] overlap → max = 2
+book(5,15)  → [5,15],[10,20],[10,40] overlap at [10,15] → max = 3
+book(5,10)  → max still 3
+book(25,55) → max still 3
+```
+
+**Hints**:
+1. Use a segment tree with lazy propagation on the time axis
+2. For each booking, do a range update (+1 on [start, end))
+3. Query the maximum value in the entire range after each update

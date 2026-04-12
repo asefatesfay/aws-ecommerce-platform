@@ -181,17 +181,131 @@ class MedianFinder:
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Pattern |
-|---------|-----------|---------|
-| Kth Largest Element in Array (#215) | Medium | Min-heap size K |
-| Top K Frequent Elements (#347) | Medium | Min-heap size K |
-| K Closest Points to Origin (#973) | Medium | Min-heap size K |
-| Find Median from Data Stream (#295) | Hard | Two heaps |
-| Merge k Sorted Lists (#23) | Hard | K-way merge |
-| Task Scheduler (#621) | Medium | Max-heap + greedy |
-| Last Stone Weight (#1046) | Easy | Max-heap simulation |
-| Kth Smallest in Sorted Matrix (#378) | Medium | Min-heap |
-| Sliding Window Median (#480) | Hard | Two heaps |
-| IPO (#502) | Hard | Two heaps |
-| Furthest Building You Can Reach (#1642) | Medium | Min-heap |
-| Find K Pairs with Smallest Sums (#373) | Medium | Min-heap |
+---
+
+### 1. Kth Largest Element in an Array — #215 (Medium)
+
+**Problem**: Given an integer array and integer k, return the kth largest element (not the kth distinct element).
+
+```
+Input:  nums=[3,2,1,5,6,4], k=2
+Output: 5
+
+Input:  nums=[3,2,3,1,2,4,5,5,6], k=4
+Output: 4
+```
+
+**Hints**:
+1. Min-heap of size k: push each element, pop when size > k
+2. After processing all elements, `heap[0]` is the kth largest
+3. Alternative: QuickSelect for O(N) average time
+
+---
+
+### 2. Top K Frequent Elements — #347 (Medium)
+
+**Problem**: Given an integer array and integer k, return the k most frequent elements in any order.
+
+```
+Input:  nums=[1,1,1,2,2,3], k=2
+Output: [1,2]
+
+Input:  nums=[1], k=1
+Output: [1]
+```
+
+**Hints**:
+1. Count frequencies with a hash map
+2. Use a min-heap of size k storing `(freq, num)`; pop when size > k
+3. Alternative: bucket sort — bucket[freq] = list of nums with that frequency; scan from high to low
+
+---
+
+### 3. K Closest Points to Origin — #973 (Medium)
+
+**Problem**: Given an array of points on a 2D plane, return the k closest points to the origin (0,0). Distance = Euclidean distance (no need to take square root).
+
+```
+Input:  points=[[1,3],[-2,2]], k=1
+Output: [[-2,2]]
+Explanation: dist(1,3)=√10, dist(-2,2)=√8. Closest is [-2,2].
+
+Input:  points=[[3,3],[5,-1],[-2,4]], k=2
+Output: [[3,3],[-2,4]]
+```
+
+**Hints**:
+1. Max-heap of size k storing `(-dist, point)` (negate for max-heap behavior)
+2. Pop when size > k; remaining k elements are the closest
+3. Or use `heapq.nsmallest(k, points, key=lambda p: p[0]**2 + p[1]**2)`
+
+---
+
+### 4. Find Median from Data Stream — #295 (Hard)
+
+**Problem**: Design a data structure that supports `addNum(num)` and `findMedian()`. The median is the middle value of a sorted list (or average of two middle values for even length).
+
+```
+Input:
+["MedianFinder","addNum","addNum","findMedian","addNum","findMedian"]
+[[],            [1],     [2],     [],          [3],     []]
+
+Output: [null, null, null, 1.5, null, 2.0]
+
+Trace:
+addNum(1) → [1], median = 1.0
+addNum(2) → [1,2], median = (1+2)/2 = 1.5
+addNum(3) → [1,2,3], median = 2.0
+```
+
+**Hints**:
+1. Two heaps: `lo` = max-heap (lower half), `hi` = min-heap (upper half)
+2. Always keep `len(lo) == len(hi)` or `len(lo) == len(hi) + 1`
+3. `findMedian`: if sizes equal, return `(-lo[0] + hi[0]) / 2`; else return `-lo[0]`
+4. On `addNum`: push to `lo`, then balance by moving top of `lo` to `hi` if needed
+
+---
+
+### 5. Merge k Sorted Lists — #23 (Hard)
+
+**Problem**: Given an array of k linked lists, each sorted in ascending order, merge all into one sorted linked list.
+
+```
+Input:  [[1,4,5],[1,3,4],[2,6]]
+Output: [1,1,2,3,4,4,5,6]
+
+Input:  []
+Output: []
+
+Input:  [[]]
+Output: []
+```
+
+**Hints**:
+1. Use a min-heap of `(value, list_index, node)` — one entry per list
+2. Pop the minimum, add to result, push the next node from that list
+3. Total time: O(N log k) where N = total nodes, k = number of lists
+
+---
+
+### 6. Task Scheduler — #621 (Medium)
+
+**Problem**: Given a list of tasks (letters) and a cooldown n, find the minimum number of intervals needed to execute all tasks. Same task must be separated by at least n intervals.
+
+```
+Input:  tasks=["A","A","A","B","B","B"], n=2
+Output: 8
+Schedule: A → B → idle → A → B → idle → A → B
+
+Input:  tasks=["A","A","A","B","B","B"], n=0
+Output: 6  (no cooldown needed)
+
+Input:  tasks=["A","A","A","A","A","A","B","C","D","E","F","G"], n=2
+Output: 16
+```
+
+**Hints**:
+1. Always execute the most frequent remaining task first (greedy)
+2. Use a max-heap of `(-count, task)`
+3. In each round of n+1 slots, pop up to n+1 tasks from the heap, execute them, re-add with decremented count
+4. Formula shortcut: `max(len(tasks), (max_freq - 1) * (n + 1) + count_of_max_freq_tasks)`

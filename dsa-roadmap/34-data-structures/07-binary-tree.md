@@ -178,18 +178,252 @@ print(bt.is_balanced())  # True
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Technique |
-|---------|-----------|-----------|
-| Maximum Depth of Binary Tree (#104) | Easy | DFS height |
-| Invert Binary Tree (#226) | Easy | Recursive swap |
-| Symmetric Tree (#101) | Easy | Mirror check |
-| Diameter of Binary Tree (#543) | Easy | Max left+right depth |
-| Balanced Binary Tree (#110) | Easy | Height with -1 sentinel |
-| Binary Tree Level Order Traversal (#102) | Medium | BFS |
-| Binary Tree Right Side View (#199) | Medium | BFS last of each level |
-| Path Sum II (#113) | Medium | DFS with path tracking |
-| Path Sum III (#437) | Medium | Prefix sum + DFS |
-| Lowest Common Ancestor (#236) | Medium | Post-order DFS |
-| Binary Tree Maximum Path Sum (#124) | Hard | Post-order, max gain |
-| Serialize and Deserialize Binary Tree (#297) | Hard | BFS/DFS encoding |
-| Construct Tree from Preorder+Inorder (#105) | Medium | Divide and conquer |
+---
+
+### 1. Maximum Depth of Binary Tree — #104 (Easy)
+
+**Problem**: Given the root of a binary tree, return its maximum depth (number of nodes along the longest path from root to a leaf).
+
+```
+Input:
+    3
+   / \
+  9  20
+     / \
+    15   7
+Output: 3
+
+Input: [1, null, 2]
+Output: 2
+
+Input: []
+Output: 0
+```
+
+**Hints**:
+1. `depth(node) = 1 + max(depth(left), depth(right))`
+2. Base case: `depth(None) = 0`
+3. Alternatively, BFS and count levels
+
+---
+
+### 2. Invert Binary Tree — #226 (Easy)
+
+**Problem**: Given the root of a binary tree, invert the tree (mirror it), and return its root.
+
+```
+Input:
+     4
+   /   \
+  2     7
+ / \   / \
+1   3 6   9
+
+Output:
+     4
+   /   \
+  7     2
+ / \   / \
+9   6 3   1
+```
+
+**Hints**:
+1. Swap left and right children at every node
+2. Recursively invert both subtrees
+3. `node.left, node.right = invert(node.right), invert(node.left)`
+
+---
+
+### 3. Symmetric Tree — #101 (Easy)
+
+**Problem**: Given the root of a binary tree, check whether it is a mirror of itself (symmetric around its center).
+
+```
+Input:
+    1
+   / \
+  2   2
+ / \ / \
+3  4 4  3
+Output: true
+
+Input:
+    1
+   / \
+  2   2
+   \   \
+    3    3
+Output: false
+```
+
+**Hints**:
+1. A tree is symmetric if its left and right subtrees are mirrors
+2. Two trees are mirrors if: their roots are equal, and left.left mirrors right.right, and left.right mirrors right.left
+3. Use recursion or BFS with pairs of nodes
+
+---
+
+### 4. Diameter of Binary Tree — #543 (Easy)
+
+**Problem**: Given the root of a binary tree, return the length of the diameter (the longest path between any two nodes — the path may or may not pass through the root). Length = number of edges.
+
+```
+Input:
+      1
+     / \
+    2   3
+   / \
+  4   5
+Output: 3
+Path: 4 → 2 → 1 → 3  (or 5 → 2 → 1 → 3)
+
+Input: [1, 2]
+Output: 1
+```
+
+**Hints**:
+1. For each node, diameter through it = `depth(left) + depth(right)`
+2. Track the global maximum during the depth calculation
+3. Return `1 + max(depth(left), depth(right))` from the depth function
+
+---
+
+### 5. Binary Tree Level Order Traversal — #102 (Medium)
+
+**Problem**: Return the level-order traversal of a binary tree's values as a list of lists (each inner list = one level).
+
+```
+Input:
+    3
+   / \
+  9  20
+     / \
+    15   7
+Output: [[3], [9, 20], [15, 7]]
+```
+
+**Hints**:
+1. BFS with a queue; process all nodes at the current level before moving to the next
+2. Use `len(queue)` at the start of each level to know how many nodes to process
+
+---
+
+### 6. Binary Tree Right Side View — #199 (Medium)
+
+**Problem**: Given the root of a binary tree, imagine standing on the right side. Return the values of the nodes you can see (one per level, rightmost node).
+
+```
+Input:
+    1
+   / \
+  2   3
+   \   \
+    5   4
+Output: [1, 3, 4]
+
+Input: [1, null, 3]
+Output: [1, 3]
+```
+
+**Hints**:
+1. BFS level by level; the last node in each level is visible from the right
+2. Alternatively, DFS — visit right child before left, record the first node at each depth
+
+---
+
+### 7. Path Sum II — #113 (Medium)
+
+**Problem**: Given the root of a binary tree and a target sum, return all root-to-leaf paths where the sum of node values equals the target.
+
+```
+Input: target = 22
+        5
+       / \
+      4   8
+     /   / \
+    11  13   4
+   /  \     / \
+  7    2   5   1
+
+Output: [[5,4,11,2], [5,8,4,5]]
+```
+
+**Hints**:
+1. DFS with a running path and remaining sum
+2. At a leaf, if `remaining == leaf.val`, add the current path to results
+3. Backtrack by removing the last element after returning from recursion
+
+---
+
+### 8. Lowest Common Ancestor of a Binary Tree — #236 (Medium)
+
+**Problem**: Given a binary tree and two nodes `p` and `q`, find their lowest common ancestor (LCA) — the deepest node that has both p and q as descendants (a node can be a descendant of itself).
+
+```
+Input:
+        3
+       / \
+      5   1
+     / \ / \
+    6  2 0  8
+      / \
+     7   4
+p=5, q=1 → Output: 3
+p=5, q=4 → Output: 5  (5 is an ancestor of 4)
+```
+
+**Hints**:
+1. If `root` is None, p, or q — return root
+2. Recurse left and right
+3. If both sides return non-null, current node is the LCA
+4. Otherwise return whichever side is non-null
+
+---
+
+### 9. Binary Tree Maximum Path Sum — #124 (Hard)
+
+**Problem**: A path in a binary tree is a sequence of nodes where each pair of adjacent nodes has an edge. The path does not need to pass through the root. Return the maximum sum of any path.
+
+```
+Input:
+    1
+   / \
+  2   3
+Output: 6  (path: 2 → 1 → 3)
+
+Input:
+   -10
+   /  \
+  9   20
+      / \
+     15   7
+Output: 42  (path: 15 → 20 → 7)
+```
+
+**Hints**:
+1. For each node, the max path through it = `node.val + max(0, left_gain) + max(0, right_gain)`
+2. Track the global max across all nodes
+3. Return `node.val + max(0, left_gain, right_gain)` upward (can only extend one side)
+
+---
+
+### 10. Serialize and Deserialize Binary Tree — #297 (Hard)
+
+**Problem**: Design an algorithm to serialize a binary tree to a string and deserialize that string back to the tree.
+
+```
+Input:
+    1
+   / \
+  2   3
+     / \
+    4   5
+
+Serialized: "1,2,null,null,3,4,null,null,5,null,null"
+Deserialized: same tree structure
+```
+
+**Hints**:
+1. Preorder DFS: serialize as `val,left,right` with "null" for missing nodes
+2. Deserialize by splitting on comma and using a queue/index to consume tokens
+3. Alternatively, use BFS (level-order) serialization

@@ -202,8 +202,80 @@ print(pst.query(0, 4, version=0)) # 15 (still original!)
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Connection |
-|---------|-----------|------------|
-| Count of Range Sum (#327) | Hard | Persistent / merge sort tree |
-| Count of Smaller Numbers After Self (#315) | Hard | Persistent segment tree |
-| Range Module (#715) | Hard | Segment tree with lazy |
+---
+
+### 1. Count of Range Sum — #327 (Hard)
+
+**Problem**: Given an integer array and bounds `[lower, upper]`, return the number of range sums `sum(i, j)` that lie in `[lower, upper]` (inclusive).
+
+```
+Input:  nums=[-2,5,-1], lower=-2, upper=2
+Output: 3
+
+All range sums:
+sum(0,0) = -2  ✓ (in [-2,2])
+sum(0,1) = 3   ✗
+sum(0,2) = 2   ✓
+sum(1,1) = 5   ✗
+sum(1,2) = 4   ✗
+sum(2,2) = -1  ✓
+Count = 3
+```
+
+**Persistent segment tree connection**: Build a persistent segment tree on prefix sums. For each prefix sum `P[j]`, count how many previous prefix sums `P[i]` satisfy `P[j] - upper <= P[i] <= P[j] - lower`.
+
+**Hints**:
+1. Compute prefix sums; problem becomes: count pairs (i,j) where `lower <= prefix[j] - prefix[i] <= upper`
+2. Use merge sort: during merge, count valid pairs across left and right halves
+3. Persistent segment tree: for each j, query version j for count of values in `[prefix[j]-upper, prefix[j]-lower]`
+
+---
+
+### 2. Count of Smaller Numbers After Self — #315 (Hard)
+
+**Problem**: Given an integer array, return a count array where `count[i]` is the number of elements to the right of `nums[i]` that are smaller than `nums[i]`.
+
+```
+Input:  [5, 2, 6, 1]
+Output: [2, 1, 1, 0]
+
+Explanation:
+5: [2,1] are smaller to the right → 2
+2: [1] is smaller to the right → 1
+6: [1] is smaller to the right → 1
+1: nothing to the right → 0
+```
+
+**Persistent segment tree connection**: Build a persistent segment tree on coordinate-compressed values. For each element (right to left), query the current version for count of values less than current.
+
+**Hints**:
+1. Process right to left; coordinate compress values to range [1..n]
+2. For each element, query how many values already inserted are smaller (range query [1, rank-1])
+3. Insert current element; persistent segment tree preserves all versions
+
+---
+
+### 3. Range Module — #715 (Hard)
+
+**Problem**: Design a data structure to track ranges of numbers. Support `addRange(left, right)`, `queryRange(left, right)` (returns true if every number in [left, right) is tracked), and `removeRange(left, right)`.
+
+```
+Input:
+["RangeModule","addRange","removeRange","queryRange","queryRange","queryRange"]
+[[],           [10,20],   [14,16],      [10,14],     [13,15],     [16,17]]
+
+Output: [null, null, null, true, false, true]
+
+Trace:
+addRange(10,20)   → tracking [10,20)
+removeRange(14,16)→ tracking [10,14) and [16,20)
+queryRange(10,14) → [10,14) fully tracked → true
+queryRange(13,15) → [13,15) not fully tracked (14 missing) → false
+queryRange(16,17) → [16,17) fully tracked → true
+```
+
+**Hints**:
+1. Use a sorted list of non-overlapping intervals
+2. `addRange`: merge all overlapping intervals with the new one
+3. `removeRange`: split/trim intervals that overlap with the removed range
+4. `queryRange`: check if a single interval covers [left, right)

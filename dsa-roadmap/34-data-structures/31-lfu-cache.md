@@ -443,11 +443,288 @@ test_lfu()
 
 ---
 
-## LeetCode
+## LeetCode Problems
 
-| Problem | Difficulty |
-|---------|-----------|
-| LFU Cache (#460) | Hard |
-| LRU Cache (#146) | Medium (simpler, good warmup) |
-| All O`one Data Structure (#432) | Hard (similar frequency tracking) |
-| Maximum Frequency Stack (#895) | Hard (frequency-based stack) |
+---
+
+### 1. LFU Cache — #460 (Hard)
+
+**Problem**
+
+Design a data structure that follows the Least Frequently Used (LFU) cache eviction policy.
+
+Implement the `LFUCache` class:
+- `LFUCache(int capacity)` — initialize with positive capacity
+- `int get(int key)` — return the value if key exists, else return `-1`
+- `void put(int key, int value)` — insert or update the key. If at capacity, evict the least frequently used key before inserting. Ties broken by least recently used.
+
+Both `get` and `put` must run in **O(1)** average time.
+
+**Example**
+
+```
+Input:
+["LFUCache", "put", "put", "get", "put", "get", "get", "put", "get", "get", "get"]
+[[2],        [1,1], [2,2], [1],   [3,3], [2],   [3],   [4,4], [1],   [3],   [4]]
+
+Output:
+[null, null, null, 1, null, -1, 3, null, -1, 3, 4]
+
+Trace:
+LFUCache(2)
+put(1,1) → {1:1}, freq[1]=1
+put(2,2) → {1:1, 2:2}, freq[1]=1, freq[2]=1
+get(1)   → 1, freq[1] becomes 2
+put(3,3) → capacity full, min_freq=1, evict key 2 (only key with freq=1)
+           → {1:1, 3:3}, freq[1]=2, freq[3]=1
+get(2)   → -1 (evicted)
+get(3)   → 3, freq[3] becomes 2
+put(4,4) → capacity full, min_freq=2, both keys have freq=2
+           → evict key 1 (LRU among freq=2, inserted before key 3)
+           → {3:3, 4:4}, freq[3]=2, freq[4]=1
+get(1)   → -1 (evicted)
+get(3)   → 3
+get(4)   → 4
+```
+
+**Constraints**
+- `1 <= capacity <= 10^4`
+- `0 <= key <= 10^5`
+- `0 <= value <= 10^9`
+- At most `2 * 10^5` calls to `get` and `put`
+
+**How LFU applies**: This IS the LFU problem. The implementation above is the direct solution.
+
+**Hints**
+1. You need three maps: `key→value`, `key→freq`, `freq→ordered_keys`
+2. `min_freq` resets to 1 every time you insert a new key
+3. `min_freq` only increments when the current min bucket becomes empty after a `get`/`put` update
+4. Use `OrderedDict` for each frequency bucket — `popitem(last=False)` gives you the LRU item in O(1)
+
+---
+
+### 2. LRU Cache — #146 (Medium)
+
+**Problem**
+
+Design a data structure that follows the Least Recently Used (LRU) cache eviction policy.
+
+Implement the `LRUCache` class:
+- `LRUCache(int capacity)` — initialize with positive capacity
+- `int get(int key)` — return the value if key exists, else return `-1`. Marks key as most recently used.
+- `void put(int key, int value)` — insert or update the key. If at capacity, evict the least recently used key first.
+
+Both operations must run in **O(1)**.
+
+**Example**
+
+```
+Input:
+["LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get"]
+[[2],        [1,1], [2,2], [1],   [3,3], [2],   [4,4], [1],   [3],   [4]]
+
+Output:
+[null, null, null, 1, null, -1, null, -1, 3, 4]
+
+Trace:
+LRUCache(2)
+put(1,1) → cache: [1]
+put(2,2) → cache: [1, 2]  (2 is most recent)
+get(1)   → 1, cache: [2, 1]  (1 moved to most recent)
+put(3,3) → evict LRU=2, cache: [1, 3]
+get(2)   → -1 (evicted)
+put(4,4) → evict LRU=1, cache: [3, 4]
+get(1)   → -1 (evicted)
+get(3)   → 3
+get(4)   → 4
+```
+
+**Constraints**
+- `1 <= capacity <= 3000`
+- `0 <= key <= 10^4`
+- `0 <= value <= 10^5`
+- At most `2 * 10^4` calls to `get` and `put`
+
+**How LFU applies**: LRU is simpler — you only track recency, not frequency. Think of it as LFU where every key has the same frequency. You only need one doubly linked list + one hash map.
+
+**Key insight**: A doubly linked list maintains order (head = most recent, tail = least recent). The hash map gives O(1) access to any node so you can move it to the head in O(1).
+
+**Hints**
+1. Use a doubly linked list with sentinel head/tail nodes to avoid null checks
+2. `get`: find node via hash map, move to head, return value
+3. `put`: if key exists, update and move to head; if new, add to head and evict tail if over capacity
+4. Python shortcut: `OrderedDict` with `move_to_end` and `popitem(last=False)` handles this in ~10 lines
+
+```python
+from collections import OrderedDict
+
+class LRUCache:
+    def __init__(self, capacity):
+        self.cap = capacity
+        self.cache = OrderedDict()
+
+    def get(self, key):
+        if key not in self.cache:
+            return -1
+        self.cache.move_to_end(key)   # mark as most recent
+        return self.cache[key]
+
+    def put(self, key, value):
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        self.cache[key] = value
+        if len(self.cache) > self.cap:
+            self.cache.popitem(last=False)  # evict LRU (first item)
+```
+
+---
+
+### 3. All O`one Data Structure — #432 (Hard)
+
+**Problem**
+
+Design a data structure to store string keys with counts, supporting:
+- `inc(key)` — increment count of `key` by 1. If `key` doesn't exist, insert with count 1.
+- `dec(key)` — decrement count of `key` by 1. If count reaches 0, remove the key.
+- `getMaxKey()` — return any key with the maximum count. Return `""` if empty.
+- `getMinKey()` — return any key with the minimum count. Return `""` if empty.
+
+All operations must run in **O(1)** average time.
+
+**Example**
+
+```
+Input:
+["AllOne","inc","inc","getMaxKey","getMinKey","inc","getMaxKey","getMinKey"]
+[[],      ["a"],["b"],  [],         [],        ["b"],  [],         []]
+
+Output:
+[null, null, null, "a", "a", null, "b", "a"]
+
+Trace:
+inc("a") → {a:1}
+inc("b") → {a:1, b:1}
+getMaxKey() → "a" (or "b", both have count=1)
+getMinKey() → "a" (or "b", both have count=1)
+inc("b") → {a:1, b:2}
+getMaxKey() → "b" (count=2)
+getMinKey() → "a" (count=1)
+```
+
+**Constraints**
+- `1 <= key.length <= 10`
+- `key` consists of lowercase English letters
+- At most `5 * 10^4` calls to `inc`, `dec`, `getMaxKey`, `getMinKey`
+- It's guaranteed that `dec` is called on an existing key
+
+**How LFU applies**: This is essentially LFU's internal structure exposed as an API. You need the same `freq→keys` doubly linked list, but now you also need O(1) access to both the min AND max frequency nodes simultaneously.
+
+**Key insight**: Use a doubly linked list of "count buckets" sorted by count. Each bucket holds a set of keys with that count. Maintain pointers to the head (max) and tail (min) of the list.
+
+```
+Bucket list (doubly linked):
+[count=1: {a}] ↔ [count=2: {b}] ↔ [count=3: {c}]
+     ↑ min                               ↑ max
+```
+
+**Hints**
+1. Each node in the DLL represents a count value and holds a set of keys with that count
+2. `inc(key)`: move key from its current bucket to `bucket.count + 1` (create if needed)
+3. `dec(key)`: move key from its current bucket to `bucket.count - 1` (create if needed, remove if count=0)
+4. After each move, delete the old bucket if it becomes empty
+5. `getMaxKey()` → peek at head bucket's key set; `getMinKey()` → peek at tail bucket's key set
+
+---
+
+### 4. Maximum Frequency Stack — #895 (Hard)
+
+**Problem**
+
+Design a stack-like data structure that pushes and pops elements based on frequency.
+
+Implement the `FreqStack` class:
+- `FreqStack()` — construct an empty stack
+- `void push(int val)` — push `val` onto the stack
+- `int pop()` — remove and return the most frequently occurring element. If there's a tie, remove the element closest to the top of the stack (most recently pushed).
+
+**Example**
+
+```
+Input:
+["FreqStack","push","push","push","push","push","push","pop","pop","pop","pop"]
+[[],         [5],   [7],   [5],   [7],   [4],   [5],   [],   [],   [],   []]
+
+Output:
+[null, null, null, null, null, null, null, 5, 7, 5, 4]
+
+Trace:
+push(5) → freq[5]=1, group[1]=[5]
+push(7) → freq[7]=1, group[1]=[5,7]
+push(5) → freq[5]=2, group[2]=[5]
+push(7) → freq[7]=2, group[2]=[5,7]
+push(4) → freq[4]=1, group[1]=[5,7,4]
+push(5) → freq[5]=3, group[3]=[5]
+          max_freq = 3
+
+pop()   → max_freq=3, group[3]=[5] → pop 5, freq[5]=2, max_freq stays 3? 
+          No: group[3] is now empty → max_freq=2
+          returns 5
+
+pop()   → max_freq=2, group[2]=[5,7] → pop 7 (most recent), freq[7]=1
+          returns 7
+
+pop()   → max_freq=2, group[2]=[5] → pop 5, freq[5]=1, group[2] empty → max_freq=1
+          returns 5
+
+pop()   → max_freq=1, group[1]=[5,7,4] → pop 4 (most recent)
+          returns 4
+```
+
+**Constraints**
+- `0 <= val <= 10^9`
+- At most `2 * 10^4` calls to `push` and `pop`
+- It's guaranteed that `pop` is not called on an empty stack
+
+**How LFU applies**: Same `freq→keys` mapping as LFU, but instead of evicting the LRU item, you pop the most recently pushed item (stack order, not queue order). The key difference from LFU:
+- LFU: evict from the **front** of the freq bucket (oldest = LRU)
+- FreqStack: pop from the **back** of the freq bucket (newest = most recent push)
+
+**Hints**
+1. Two maps: `freq[val]` = how many times val has been pushed; `group[freq]` = list of vals pushed at that frequency
+2. Track `max_freq` — it only decreases when `group[max_freq]` becomes empty after a pop
+3. `push(val)`: increment `freq[val]`, append to `group[freq[val]]`, update `max_freq`
+4. `pop()`: pop last element from `group[max_freq]`, decrement its freq, if group is empty decrement `max_freq`
+
+```python
+from collections import defaultdict
+
+class FreqStack:
+    def __init__(self):
+        self.freq = defaultdict(int)       # val → frequency
+        self.group = defaultdict(list)     # freq → stack of vals
+        self.max_freq = 0
+
+    def push(self, val):
+        self.freq[val] += 1
+        f = self.freq[val]
+        self.group[f].append(val)
+        self.max_freq = max(self.max_freq, f)
+
+    def pop(self):
+        val = self.group[self.max_freq].pop()
+        self.freq[val] -= 1
+        if not self.group[self.max_freq]:
+            self.max_freq -= 1
+        return val
+```
+
+---
+
+## Problem Comparison
+
+| Problem | Core Idea | Eviction/Pop Order | Difficulty |
+|---------|-----------|-------------------|------------|
+| LFU Cache #460 | freq→ordered_keys, evict min freq LRU | min freq, then LRU | Hard |
+| LRU Cache #146 | recency only, evict oldest | least recently used | Medium |
+| All O`one #432 | freq buckets DLL, O(1) min+max | N/A (inc/dec API) | Hard |
+| Max Freq Stack #895 | freq→stack, pop max freq newest | max freq, then LIFO | Hard |

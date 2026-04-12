@@ -132,9 +132,89 @@ print(cache2.get(2))  # -1
 
 ## LeetCode Problems
 
-| Problem | Difficulty | Notes |
-|---------|-----------|-------|
-| LRU Cache (#146) | Medium | Direct implementation |
-| LFU Cache (#460) | Hard | Frequency-based eviction |
-| Design In-Memory File System (#588) | Hard | Cache + trie |
-| All O`one Data Structure (#432) | Hard | Similar DLL technique |
+---
+
+### 1. LRU Cache — #146 (Medium)
+
+**Problem**: Design a data structure that follows the Least Recently Used (LRU) cache eviction policy. Implement `get(key)` (returns value or -1) and `put(key, value)` (inserts/updates, evicts LRU if at capacity). Both must be O(1).
+
+```
+Input:
+["LRUCache","put","put","get","put","get","put","get","get","get"]
+[[2],       [1,1],[2,2],[1],  [3,3],[2],  [4,4],[1],  [3],  [4]]
+
+Output: [null, null, null, 1, null, -1, null, -1, 3, 4]
+
+Trace (capacity=2):
+put(1,1) → {1:1}
+put(2,2) → {1:1, 2:2}
+get(1)   → 1, order: [2→1] (1 is now most recent)
+put(3,3) → evict 2 (LRU), {1:1, 3:3}
+get(2)   → -1 (evicted)
+put(4,4) → evict 1 (LRU), {3:3, 4:4}
+get(1)   → -1 (evicted)
+get(3)   → 3
+get(4)   → 4
+```
+
+**Hints**:
+1. Hash map for O(1) lookup; doubly linked list for O(1) move-to-front and eviction
+2. Use sentinel head/tail nodes to avoid null checks
+3. Python shortcut: `OrderedDict` with `move_to_end(key)` and `popitem(last=False)`
+
+---
+
+### 2. LFU Cache — #460 (Hard)
+
+**Problem**: Design a data structure following the Least Frequently Used (LFU) cache policy. Ties broken by LRU. Both `get` and `put` must be O(1).
+
+```
+Input:
+["LFUCache","put","put","get","put","get","get","put","get","get","get"]
+[[2],       [1,1],[2,2],[1],  [3,3],[2],  [3],  [4,4],[1],  [3],  [4]]
+
+Output: [null, null, null, 1, null, -1, 3, null, -1, 3, 4]
+
+Trace (capacity=2):
+put(1,1) → freq[1]=1
+put(2,2) → freq[2]=1
+get(1)   → 1, freq[1]=2
+put(3,3) → evict key 2 (min_freq=1, only key with freq=1)
+get(2)   → -1 (evicted)
+get(3)   → 3, freq[3]=2
+put(4,4) → evict key 1 (min_freq=2, key 1 is LRU among freq=2)
+get(1)   → -1 (evicted)
+get(3)   → 3
+get(4)   → 4
+```
+
+**Hints**:
+1. Three maps: `key→val`, `key→freq`, `freq→OrderedDict(keys)`
+2. `min_freq` resets to 1 on every new insert
+3. When a frequency bucket empties and it was `min_freq`, increment `min_freq`
+
+---
+
+### 3. Design In-Memory File System — #588 (Hard)
+
+**Problem**: Implement a file system with `ls(path)`, `mkdir(path)`, `addContentToFile(filePath, content)`, `readContentFromFile(filePath)`.
+
+```
+Input:
+["FileSystem","ls","mkdir","addContentToFile","ls","readContentFromFile"]
+[[],          ["/"],["/a/b/c"],["a/b/c/d","hello"],["/"],["/a/b/c/d"]]
+
+Output: [null, [], null, null, ["a"], "hello"]
+
+Trace:
+ls("/")                    → []  (empty root)
+mkdir("/a/b/c")            → creates directories a, b, c
+addContentToFile("/a/b/c/d","hello") → creates file d with content "hello"
+ls("/")                    → ["a"]  (only top-level entry)
+readContentFromFile("/a/b/c/d") → "hello"
+```
+
+**Hints**:
+1. Use a trie where each node represents a directory or file
+2. Each node stores: children (dict), is_file (bool), content (str)
+3. `ls` on a file returns `[filename]`; on a directory returns sorted children names

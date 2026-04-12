@@ -176,3 +176,78 @@ You won't implement a B-Tree from scratch in interviews, but you should know:
 - Difference between B-Tree and B+ Tree
 - Why B+ Trees are preferred for range queries
 - How indexes work in SQL databases
+
+## LeetCode Problems
+
+B-Trees are a systems/database concept — you won't implement one in a LeetCode interview. However, the underlying concepts appear in these problems:
+
+---
+
+### 1. Search in a Sorted Array of Unknown Size — #702 (Medium)
+
+**Problem**: You have access to a sorted array of unknown size via an API `ArrayReader.get(index)` (returns 2^31-1 for out-of-bounds). Find the index of a target value, or -1 if not found.
+
+```
+Input:  array=[-1,0,3,5,9,12], target=9
+Output: 4
+
+Input:  array=[-1,0,3,5,9,12], target=2
+Output: -1
+```
+
+**B-Tree connection**: B-Trees use binary search within each node to find the right child pointer — same idea as searching within a sorted range.
+
+**Hints**:
+1. First find the search bounds: start with `[0, 1]`, double the right bound until `reader.get(right) >= target`
+2. Then binary search within those bounds
+
+---
+
+### 2. Range Sum Query - Immutable — #303 (Easy)
+
+**Problem**: Given an integer array, handle multiple `sumRange(left, right)` queries efficiently.
+
+```
+Input:
+["NumArray","sumRange","sumRange","sumRange"]
+[[[-2,0,3,-5,2,-1]],[0,2],[2,5],[0,5]]
+
+Output: [null, 1, -1, -3]
+
+Trace:
+sumRange(0,2) → -2+0+3 = 1
+sumRange(2,5) → 3+(-5)+2+(-1) = -1
+sumRange(0,5) → -2+0+3+(-5)+2+(-1) = -3
+```
+
+**B-Tree connection**: Database indexes (B-Trees) are used to answer range queries efficiently — this problem is the simplest form of a range query.
+
+**Hints**:
+1. Precompute prefix sums: `prefix[i] = sum(nums[0..i-1])`
+2. `sumRange(l, r) = prefix[r+1] - prefix[l]`
+
+---
+
+### 3. Design a Key-Value Store (Conceptual)
+
+B-Trees are the foundation of key-value stores. Understanding them helps with:
+
+- **LevelDB/RocksDB internals**: LSM-tree (Log-Structured Merge-tree) vs B-Tree tradeoffs
+- **SQL index design**: When to use a B-Tree index vs hash index
+- **Range queries**: B-Tree indexes support `WHERE x BETWEEN a AND b`; hash indexes don't
+
+**Key interview talking points**:
+```
+Q: Why does MySQL use B+ Trees instead of hash tables for indexes?
+A: B+ Trees support range queries (BETWEEN, >, <) and ORDER BY.
+   Hash tables only support exact lookups.
+
+Q: Why are B-Trees better than BSTs for disk storage?
+A: B-Trees have high branching factor (many keys per node),
+   so tree height is O(log_t N) with large t.
+   Fewer disk reads needed to find a record.
+
+Q: What's the difference between clustered and non-clustered indexes?
+A: Clustered: leaf nodes contain actual row data (InnoDB primary key).
+   Non-clustered: leaf nodes contain primary key → extra lookup needed.
+```
