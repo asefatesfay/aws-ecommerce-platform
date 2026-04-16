@@ -114,3 +114,7 @@ yarn-error.log*
 
 # AWS
 .aws/
+
+# AWS CDK
+cdk.out/
+

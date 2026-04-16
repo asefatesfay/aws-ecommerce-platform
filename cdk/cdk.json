@@ -1,0 +1,10 @@
+{
+  "app": "python app.py",
+  "context": {
+    "project": "ecommerce",
+    "environment": "dev",
+    "aws_region": "us-east-1",
+    "service_image_tag": "latest",
+    "frontend_price_class": "PRICE_CLASS_100"
+  }
+}
