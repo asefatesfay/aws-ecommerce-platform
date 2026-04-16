@@ -32,33 +32,104 @@ Given an integer array `nums`, rotate the array to the right by `k` steps, where
 
 > 💡 **Hint 3:** Reverse the entire array, then reverse the first k elements, then reverse the remaining n-k elements. This achieves the rotation in three O(n) passes with O(1) space.
 
-## Approach
+## Approach 1: Brute Force (Extra Array)
+
+**Time Complexity:** O(n)
+**Space Complexity:** O(n)
+
+Copy the last k elements to the front using a new array.
+
+```python
+def rotate_brute(nums: list[int], k: int) -> None:
+    n = len(nums)
+    k %= n
+    rotated = nums[-k:] + nums[:-k]
+    for i in range(n):
+        nums[i] = rotated[i]
+```
+
+**Downside:** O(n) extra space. The problem requires O(1).
+
+---
+
+## Approach 2: Rotate One Step at a Time
+
+**Time Complexity:** O(n × k)
+**Space Complexity:** O(1)
+
+Rotate by 1 step, k times.
+
+```python
+def rotate_one_by_one(nums: list[int], k: int) -> None:
+    n = len(nums)
+    k %= n
+    for _ in range(k):
+        last = nums[-1]
+        for i in range(n - 1, 0, -1):
+            nums[i] = nums[i - 1]
+        nums[0] = last
+```
+
+**Downside:** O(n×k) — for k=n/2 this is O(n²).
+
+---
+
+## Approach 3: Three Reversals — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Use the three-reversal trick: reverse the entire array, then reverse the first k elements, then reverse the last n-k elements. The key insight is that reversing the whole array and then reversing the two halves separately achieves the rotation.
+Reverse the whole array, then reverse the first k elements, then reverse the rest.
 
-## Python Implementation
+### Why It Works
+
+```
+Original:  [1, 2, 3, 4, 5, 6, 7], k=3
+Expected:  [5, 6, 7, 1, 2, 3, 4]
+
+Step 1 — Reverse all:    [7, 6, 5, 4, 3, 2, 1]
+Step 2 — Reverse [0,k):  [5, 6, 7, 4, 3, 2, 1]
+Step 3 — Reverse [k,n):  [5, 6, 7, 1, 2, 3, 4] ✓
+
+Intuition: reversing the whole array puts the last k elements at the front
+(but reversed). Reversing each half fixes the order within each part.
+```
+
+### Visual Trace
+
+```
+nums = [1,2,3,4,5,6,7], k=3, n=7
+
+k = 3 % 7 = 3
+
+reverse(0, 6): [7,6,5,4,3,2,1]
+reverse(0, 2): [5,6,7,4,3,2,1]
+reverse(3, 6): [5,6,7,1,2,3,4] ✓
+```
 
 ```python
-def rotate(nums, k):
-	n = len(nums)
-	if n == 0:
-		return
+def rotate(nums: list[int], k: int) -> None:
+    n = len(nums)
+    k %= n
 
-	k %= n
+    def reverse(i: int, j: int) -> None:
+        while i < j:
+            nums[i], nums[j] = nums[j], nums[i]
+            i += 1
+            j -= 1
 
-	def reverse(i, j):
-		while i < j:
-			nums[i], nums[j] = nums[j], nums[i]
-			i += 1
-			j -= 1
-
-	reverse(0, n - 1)
-	reverse(0, k - 1)
-	reverse(k, n - 1)
+    reverse(0, n - 1)
+    reverse(0, k - 1)
+    reverse(k, n - 1)
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Extra array | O(n) | O(n) | Simple but not in-place |
+| One step at a time | O(n×k) | O(1) | Too slow for large k |
+| Three reversals | O(n) | O(1) | Optimal |
 
 ## Typical Interview Use Cases
 

@@ -36,23 +36,82 @@ You are given an integer array `prices` where `prices[i]` is the price of a give
 
 > 💡 **Hint 3:** Greedily add every positive consecutive difference: `profit += max(0, prices[i+1] - prices[i])` for all i. This is equivalent to buying at every local minimum and selling at every local maximum.
 
-## Approach
+## Approach 1: Brute Force (DP)
+
+**Time Complexity:** O(n²)
+**Space Complexity:** O(n)
+
+For each day, try all possible previous buy days and track the best multi-transaction profit.
+
+```python
+def max_profit_brute(prices: list[int]) -> int:
+    n = len(prices)
+    # dp[i] = max profit using prices[0..i]
+    dp = [0] * n
+    for i in range(1, n):
+        dp[i] = dp[i - 1]  # don't sell today
+        for j in range(i):
+            if prices[i] > prices[j]:
+                dp[i] = max(dp[i], dp[j] + prices[i] - prices[j])
+    return dp[-1]
+```
+
+**Why it's slow:** O(n²) — reconsiders all previous buy days for each sell day.
+
+---
+
+## Approach 2: Greedy (Capture Every Upswing) — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Sum up all positive consecutive differences. This greedy approach works because any multi-day gain can be decomposed into a sum of single-day gains, and we capture all of them.
+Key insight: any multi-day gain can be decomposed into consecutive single-day gains. Capture every positive consecutive difference.
 
-## Python Implementation
+### Why This Works
+
+```
+prices = [1, 5, 3, 6]
+
+Optimal trades: buy at 1, sell at 5 (profit=4), buy at 3, sell at 6 (profit=3). Total=7.
+
+Greedy consecutive differences:
+  5-1=4, 3-5=-2 (skip), 6-3=3
+  Sum of positives = 4+3 = 7 ✓
+
+This works because: profit(buy@1, sell@6) = (5-1) + (3-5) + (6-3)
+Any multi-day gain = sum of all daily gains in that period.
+Skipping negative days is equivalent to selling and rebuying.
+```
+
+### Visual Trace
+
+```
+prices = [7, 1, 5, 3, 6, 4]
+
+i=1: 1-7=-6 → skip
+i=2: 5-1=4  → profit += 4 = 4
+i=3: 3-5=-2 → skip
+i=4: 6-3=3  → profit += 3 = 7
+i=5: 4-6=-2 → skip
+
+Answer: 7 ✓
+```
 
 ```python
-def max_profit(prices):
-	profit = 0
-	for i in range(1, len(prices)):
-		if prices[i] > prices[i - 1]:
-			profit += prices[i] - prices[i - 1]
-	return profit
+def max_profit(prices: list[int]) -> int:
+    profit = 0
+    for i in range(1, len(prices)):
+        if prices[i] > prices[i - 1]:
+            profit += prices[i] - prices[i - 1]
+    return profit
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| DP | O(n²) | O(n) | Reconsiders all buy days |
+| Greedy | O(n) | O(1) | Optimal — capture all upswings |
 
 ## Typical Interview Use Cases
 

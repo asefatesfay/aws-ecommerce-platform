@@ -32,29 +32,84 @@ Given an integer array `nums`, return the number of subarrays filled with `0`. A
 
 > 💡 **Hint 3:** A run of k zeros contains k*(k+1)/2 zero-filled subarrays. Equivalently, as you extend a run, each new zero adds (current run length) new subarrays. Sum these contributions across all runs.
 
-## Approach
+## Approach 1: Brute Force
+
+**Time Complexity:** O(n²)
+**Space Complexity:** O(1)
+
+Check every subarray, count those filled with zeros.
+
+```python
+def zero_filled_subarray_brute(nums: list[int]) -> int:
+    count = 0
+    n = len(nums)
+    for i in range(n):
+        if nums[i] == 0:
+            for j in range(i, n):
+                if nums[j] == 0:
+                    count += 1
+                else:
+                    break
+    return count
+```
+
+---
+
+## Approach 2: Run-Length Counting — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Track the current run length of zeros. When you see a zero, increment the run length and add it to the total count (each new zero creates exactly `run_length` new subarrays ending at the current position). Reset the run length to 0 on non-zero elements.
+For a run of k consecutive zeros, it contributes `k*(k+1)/2` subarrays. Equivalently, each new zero in a run adds exactly `run_length` new subarrays (all subarrays ending at the current position).
 
-## Python Implementation
+### Why Each New Zero Adds `run_length` Subarrays
+
+```
+Run of zeros at positions [i, i+1, i+2]:
+  After position i:   1 new subarray  → [i]
+  After position i+1: 2 new subarrays → [i+1], [i,i+1]
+  After position i+2: 3 new subarrays → [i+2], [i+1,i+2], [i,i+1,i+2]
+
+Each new zero creates exactly `run_length` new subarrays ending at it.
+Total = 1+2+3 = 6 = 3*(3+1)/2 ✓
+```
+
+### Visual Trace
+
+```
+nums = [1, 3, 0, 0, 2, 0, 0, 4]
+
+x=1: run=0
+x=3: run=0
+x=0: run=1, total+=1=1
+x=0: run=2, total+=2=3
+x=2: run=0
+x=0: run=1, total+=1=4
+x=0: run=2, total+=2=6
+x=4: run=0
+
+Answer: 6 ✓
+```
 
 ```python
-def zero_filled_subarray(nums):
-	run = 0
-	total = 0
-
-	for x in nums:
-		if x == 0:
-			run += 1
-			total += run
-		else:
-			run = 0
-
-	return total
+def zero_filled_subarray(nums: list[int]) -> int:
+    run = 0
+    total = 0
+    for x in nums:
+        if x == 0:
+            run += 1
+            total += run
+        else:
+            run = 0
+    return total
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Brute force | O(n²) | O(1) | Check all subarrays |
+| Run-length counting | O(n) | O(1) | Optimal |
 
 ## Typical Interview Use Cases
 

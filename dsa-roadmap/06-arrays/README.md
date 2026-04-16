@@ -68,6 +68,8 @@ Quick intuition:
 
 ## Problems in This Section
 
+### Core Problems (Original)
+
 | Problem | Difficulty |
 |---------|-----------|
 | [Move Zeroes](./move-zeroes.md) | Easy |
@@ -88,3 +90,33 @@ Quick intuition:
 | [Product of Array Except Self](./product-of-array-except-self.md) | Medium |
 | [Next Permutation](./next-permutation.md) | Medium |
 | [First Missing Positive](./first-missing-positive.md) | Hard |
+
+### Adobe / Microsoft / Google Focus
+
+| Problem | Difficulty | Companies |
+|---------|-----------|-----------|
+| [Two Sum](./two-sum.md) | Easy | Google, Microsoft, Adobe |
+| [Maximum Subarray (Kadane's)](./maximum-subarray.md) | Medium | Microsoft, Google, Adobe |
+| [Container With Most Water](./container-with-most-water.md) | Medium | Google, Microsoft, Adobe |
+| [Trapping Rain Water](./trapping-rain-water.md) | Hard | Google, Microsoft, Adobe |
+| [Find Minimum in Rotated Sorted Array](./find-minimum-in-rotated-sorted-array.md) | Medium | Microsoft, Google, Adobe |
+| [Merge Intervals](./merge-intervals.md) | Medium | Google, Microsoft, Adobe |
+| [Subarray Sum Equals K](./subarray-sum-equals-k.md) | Medium | Google, Microsoft, Adobe |
+| [Spiral Matrix](./spiral-matrix.md) | Medium | Microsoft, Google, Adobe |
+| [Jump Game](./jump-game.md) | Medium | Microsoft, Google, Adobe |
+| [Find All Duplicates in an Array](./find-all-duplicates-in-array.md) | Medium | Adobe, Microsoft |
+| [Set Matrix Zeroes](./set-matrix-zeroes.md) | Medium | Microsoft, Adobe, Google |
+
+### Quick Pattern Reference
+
+| Pattern | Problems |
+|---------|---------|
+| Hash Map / Complement | Two Sum, Subarray Sum Equals K |
+| Two Pointers (opposite ends) | Container With Most Water, Trapping Rain Water |
+| Two Pointers (read/write) | Move Zeroes, Remove Duplicates |
+| Prefix/Suffix | Product of Array Except Self, Subarray Sum Equals K |
+| Greedy | Jump Game, Merge Intervals, Best Time to Buy/Sell |
+| Binary Search | Find Minimum in Rotated Sorted Array |
+| Index as Identity | First Missing Positive, Find All Duplicates, Set Matrix Zeroes |
+| Kadane's Algorithm | Maximum Subarray, Maximum Product Subarray |
+| Simulation | Spiral Matrix, Rotate Image |

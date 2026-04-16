@@ -37,35 +37,101 @@ The replacement must be in place and use only constant extra memory.
 
 > 💡 **Hint 3:** Reverse the suffix after index i to make it ascending (the smallest possible arrangement for that suffix). This gives the next permutation.
 
-## Approach
+## Approach 1: Brute Force (Generate All Permutations)
+
+**Time Complexity:** O(n! × n)
+**Space Complexity:** O(n!)
+
+Generate all permutations in sorted order, find the current one, return the next.
+
+```python
+from itertools import permutations
+
+def next_permutation_brute(nums: list[int]) -> None:
+    perms = sorted(set(permutations(nums)))
+    idx = perms.index(tuple(nums))
+    if idx + 1 < len(perms):
+        result = perms[idx + 1]
+    else:
+        result = perms[0]
+    for i, v in enumerate(result):
+        nums[i] = v
+```
+
+**Downside:** O(n!) space — completely impractical for n > 10.
+
+---
+
+## Approach 2: Three-Step In-Place Algorithm — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Three steps: (1) find the rightmost "dip" (index i where nums[i] < nums[i+1]), (2) find the smallest element to the right of i that is greater than nums[i] and swap them, (3) reverse the suffix starting at i+1 to get the smallest arrangement.
+Find the rightmost "dip" (pivot), swap with the next larger element to its right, then reverse the suffix.
 
-## Python Implementation
+### Why It Works
+
+```
+To get the next permutation (smallest increase):
+1. Find the rightmost position i where nums[i] < nums[i+1]
+   (the "pivot" — everything to its right is in descending order)
+2. Find the smallest element to the right of i that is > nums[i]
+   (swap with it to make the smallest possible increase at position i)
+3. Reverse the suffix after i
+   (it was descending, reversing makes it ascending = smallest arrangement)
+
+If no pivot found (array is fully descending), reverse the whole array.
+```
+
+### Visual Trace
+
+```
+nums = [1, 3, 5, 4, 2]
+
+Step 1 — Find pivot (rightmost dip):
+  Scan right to left: 2<4? No. 4<5? Yes! → pivot at i=2 (value 5)
+  Wait: nums[2]=5, nums[3]=4: 5>4, not a dip.
+  nums[1]=3, nums[2]=5: 3<5 → pivot at i=1 (value 3)
+
+Step 2 — Find smallest element > nums[1]=3 to the right of i=1:
+  Suffix [5,4,2]: smallest > 3 is 4 at index 3.
+  Swap nums[1] and nums[3]: [1, 4, 5, 3, 2]
+
+Step 3 — Reverse suffix after i=1 (indices 2..4):
+  [5,3,2] reversed → [2,3,5]
+  Result: [1, 4, 2, 3, 5] ✓
+```
 
 ```python
-def next_permutation(nums):
-	n = len(nums)
-	i = n - 2
+def next_permutation(nums: list[int]) -> None:
+    n = len(nums)
+    i = n - 2
 
-	while i >= 0 and nums[i] >= nums[i + 1]:
-		i -= 1
+    # Step 1: find rightmost pivot (nums[i] < nums[i+1])
+    while i >= 0 and nums[i] >= nums[i + 1]:
+        i -= 1
 
-	if i >= 0:
-		j = n - 1
-		while nums[j] <= nums[i]:
-			j -= 1
-		nums[i], nums[j] = nums[j], nums[i]
+    if i >= 0:
+        # Step 2: find smallest element > nums[i] in suffix
+        j = n - 1
+        while nums[j] <= nums[i]:
+            j -= 1
+        nums[i], nums[j] = nums[j], nums[i]
 
-	left, right = i + 1, n - 1
-	while left < right:
-		nums[left], nums[right] = nums[right], nums[left]
-		left += 1
-		right -= 1
+    # Step 3: reverse suffix after i
+    left, right = i + 1, n - 1
+    while left < right:
+        nums[left], nums[right] = nums[right], nums[left]
+        left += 1
+        right -= 1
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Generate all permutations | O(n! × n) | O(n!) | Completely impractical |
+| Three-step in-place | O(n) | O(1) | Optimal |
 
 ## Typical Interview Use Cases
 

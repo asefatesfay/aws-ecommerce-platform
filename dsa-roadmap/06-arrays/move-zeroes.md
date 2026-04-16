@@ -31,59 +31,84 @@ Given an integer array `nums`, move all `0`s to the end of it while maintaining 
 
 > 💡 **Hint 3:** After placing all non-zero elements, fill the remaining positions from the write pointer to the end with zeros.
 
-## Approach
+## Approach 1: Brute Force
+
+**Time Complexity:** O(n²)
+**Space Complexity:** O(n)
+
+Create a new array, copy non-zeros, then fill zeros. Or use Python's built-in filter.
+
+```python
+def move_zeroes_brute(nums: list[int]) -> None:
+    non_zeros = [x for x in nums if x != 0]
+    zeros = [0] * (len(nums) - len(non_zeros))
+    result = non_zeros + zeros
+    for i in range(len(nums)):
+        nums[i] = result[i]
+```
+
+**Downside:** Uses O(n) extra space. The problem requires in-place.
+
+---
+
+## Approach 2: Swap Variant (O(n), O(1) space)
+
+Swap each non-zero element with the element at the write pointer. Fewer writes than the fill approach.
+
+```python
+def move_zeroes_swap(nums: list[int]) -> None:
+    write = 0
+    for read in range(len(nums)):
+        if nums[read] != 0:
+            nums[write], nums[read] = nums[read], nums[write]
+            write += 1
+```
+
+**Tradeoff:** More swaps than the write+fill approach when there are many zeros, but avoids the separate fill loop.
+
+---
+
+## Approach 3: Write + Fill — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Use a write pointer starting at 0. Scan through the array; whenever a non-zero element is found, place it at the write pointer and advance both pointers. After the scan, fill everything from the write pointer onward with zeros.
+Write all non-zeros to the front, then fill the rest with zeros. Minimizes total writes.
 
-### Visual Example: Two-Pointer Movement
+### Visual Trace
 
 ```
 Input: [0, 1, 0, 3, 12]
 
-write=0 (where next non-zero should go)
+write=0
+read=0: nums[0]=0 → skip
+read=1: nums[1]=1 → nums[0]=1, write=1  → [1, 1, 0, 3, 12]
+read=2: nums[2]=0 → skip
+read=3: nums[3]=3 → nums[1]=3, write=2  → [1, 3, 0, 3, 12]
+read=4: nums[4]=12 → nums[2]=12, write=3 → [1, 3, 12, 3, 12]
 
-Step 1-2: read=0,1 → nums[0]=0 (skip), read=1 → nums[1]=1 (non-zero, place at write=0)
-  [1, 1, 0, 3, 12]
-   ↑        ↑
-  write    read=2
-
-Step 3: read=2 → nums[2]=0 (skip)
-  [1, 1, 0, 3, 12]
-   ↑           ↑
-  write       read=3
-
-Step 4: read=3 → nums[3]=3 (non-zero, place at write=1)
-  [1, 3, 0, 3, 12]
-     ↑           ↑
-  write        read=4
-
-Step 5: read=4 → nums[4]=12 (non-zero, place at write=2)
-  [1, 3, 12, 3, 12]
-        ↑           ↑
-     write        read=5 (end)
-
-Fill remaining with zeros (write=3 to end):
-  [1, 3, 12, 0, 0] ✓
+Fill from write=3: nums[3]=0, nums[4]=0 → [1, 3, 12, 0, 0] ✓
 ```
-
-## Python Implementation
 
 ```python
-def move_zeroes(nums):
-	write = 0
-
-	for read in range(len(nums)):
-		if nums[read] != 0:
-			nums[write] = nums[read]
-			write += 1
-
-	while write < len(nums):
-		nums[write] = 0
-		write += 1
+def move_zeroes(nums: list[int]) -> None:
+    write = 0
+    for read in range(len(nums)):
+        if nums[read] != 0:
+            nums[write] = nums[read]
+            write += 1
+    while write < len(nums):
+        nums[write] = 0
+        write += 1
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Extra array | O(n) | O(n) | Simple but not in-place |
+| Swap | O(n) | O(1) | In-place, more swaps |
+| Write + fill | O(n) | O(1) | Optimal — fewest writes |
 
 ## Typical Interview Use Cases
 

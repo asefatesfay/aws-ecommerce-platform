@@ -32,60 +32,101 @@ Given an integer array `nums`, return an array `answer` such that `answer[i]` is
 
 > 💡 **Hint 3:** To achieve O(1) extra space (excluding output), do two passes over the output array: first fill it with prefix products (left to right), then multiply in suffix products (right to left) using a running variable.
 
-## Approach
+## Approach 1: Brute Force (Division)
 
 **Time Complexity:** O(n)
-**Space Complexity:** O(1) extra (output array doesn't count)
+**Space Complexity:** O(1)
 
-Two-pass approach: first pass fills the output with prefix products. Second pass multiplies each position by the running suffix product, computed on the fly from right to left.
-
-### Visual Example: Prefix × Suffix
-
-```
-Input: [1, 2, 3, 4]
-
-Pass 1: Fill output with LEFT products (prefix)
-  out[0] = 1 (nothing to left)
-  out[1] = 1 (1*1)
-  out[2] = 1*2 = 2
-  out[3] = 1*2*3 = 6
-  After Pass 1: [1, 1, 2, 6]
-
-Pass 2: Multiply by RIGHT products (suffix), right to left
-  i=3: suffix=1, out[3] *= 1 = 6, suffix *= 4 = 4
-       out[3] = 6 (left=1*2*3, right=1) ✓
-       
-  i=2: suffix=4, out[2] *= 4 = 8, suffix *= 3 = 12
-       out[2] = 8 (left=1*2, right=4) ✓
-       
-  i=1: suffix=12, out[1] *= 12 = 12, suffix *= 2 = 24
-       out[1] = 12 (left=1, right=3*4) ✓
-       
-  i=0: suffix=24, out[0] *= 24 = 24, suffix *= 1 = 24
-       out[0] = 24 (left=1, right=2*3*4) ✓
-
-Final output: [24, 12, 8, 6] ✓
-```
-
-## Python Implementation
+Compute total product, divide by each element. Fails when zeros are present.
 
 ```python
-def product_except_self(nums):
-	n = len(nums)
-	out = [1] * n
+from math import prod
 
-	prefix = 1
-	for i in range(n):
-		out[i] = prefix
-		prefix *= nums[i]
-
-	suffix = 1
-	for i in range(n - 1, -1, -1):
-		out[i] *= suffix
-		suffix *= nums[i]
-
-	return out
+def product_except_self_brute(nums: list[int]) -> list[int]:
+    total = prod(nums)
+    # Fails if any element is 0 (division by zero)
+    return [total // x for x in nums]
 ```
+
+**Problems:** Division not allowed per problem constraints; fails with zeros.
+
+---
+
+## Approach 2: Prefix + Suffix Arrays
+
+**Time Complexity:** O(n)
+**Space Complexity:** O(n)
+
+Build explicit prefix and suffix product arrays, multiply them.
+
+```python
+def product_except_self_arrays(nums: list[int]) -> list[int]:
+    n = len(nums)
+    prefix = [1] * n
+    suffix = [1] * n
+
+    for i in range(1, n):
+        prefix[i] = prefix[i - 1] * nums[i - 1]
+    for i in range(n - 2, -1, -1):
+        suffix[i] = suffix[i + 1] * nums[i + 1]
+
+    return [prefix[i] * suffix[i] for i in range(n)]
+```
+
+---
+
+## Approach 3: Two-Pass with Running Variable — Optimal
+
+**Time Complexity:** O(n)
+**Space Complexity:** O(1) extra
+
+Use the output array itself to store prefix products, then multiply in suffix products using a running variable.
+
+### Visual Trace
+
+```
+nums = [1, 2, 3, 4]
+
+Pass 1 (prefix into output):
+  out[0]=1 (prefix=1), prefix=1
+  out[1]=1 (prefix=1), prefix=2
+  out[2]=2 (prefix=2), prefix=6
+  out[3]=6 (prefix=6), prefix=24
+  out = [1, 1, 2, 6]
+
+Pass 2 (multiply suffix from right):
+  i=3: out[3]*=suffix(1)=6,  suffix*=4=4
+  i=2: out[2]*=suffix(4)=8,  suffix*=3=12
+  i=1: out[1]*=suffix(12)=12, suffix*=2=24
+  i=0: out[0]*=suffix(24)=24, suffix*=1=24
+  out = [24, 12, 8, 6] ✓
+```
+
+```python
+def product_except_self(nums: list[int]) -> list[int]:
+    n = len(nums)
+    out = [1] * n
+
+    prefix = 1
+    for i in range(n):
+        out[i] = prefix
+        prefix *= nums[i]
+
+    suffix = 1
+    for i in range(n - 1, -1, -1):
+        out[i] *= suffix
+        suffix *= nums[i]
+
+    return out
+```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Division | O(n) | O(1) | Fails with zeros, not allowed |
+| Prefix + suffix arrays | O(n) | O(n) | Clear but uses extra space |
+| Two-pass running variable | O(n) | O(1) | Optimal |
 
 ## Typical Interview Use Cases
 

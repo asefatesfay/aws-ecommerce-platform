@@ -32,63 +32,87 @@ Given an array `nums` of size `n`, return the majority element. The majority ele
 
 > 💡 **Hint 3:** Maintain a candidate and a count. When count is 0, set the current element as the new candidate. If the current element matches the candidate, increment count; otherwise decrement. The final candidate is the majority element.
 
-## Approach
+## Approach 1: Brute Force (Hash Map)
+
+**Time Complexity:** O(n)
+**Space Complexity:** O(n)
+
+Count frequencies, return the element with count > n/2.
+
+```python
+from collections import Counter
+
+def majority_element_brute(nums: list[int]) -> int:
+    counts = Counter(nums)
+    return max(counts, key=counts.get)
+```
+
+**Downside:** O(n) extra space. Can we do O(1)?
+
+---
+
+## Approach 2: Sort
+
+**Time Complexity:** O(n log n)
+**Space Complexity:** O(1) (in-place sort)
+
+The majority element always occupies the middle index after sorting.
+
+```python
+def majority_element_sort(nums: list[int]) -> int:
+    nums.sort()
+    return nums[len(nums) // 2]
+```
+
+**Why it works:** If an element appears > n/2 times, it must occupy index n//2 after sorting.
+
+---
+
+## Approach 3: Boyer-Moore Voting — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Boyer-Moore Voting: maintain a candidate and a vote count. The majority element's votes can never be fully cancelled out by minority elements, so the final candidate is always the majority element.
+Maintain a candidate and a vote count. The majority element's votes can never be fully cancelled by minority elements.
 
-### Visual Example: Vote Cancellation
+### Visual Trace
 
 ```
-Input: [2, 2, 1, 1, 1, 2, 2]
-Majority: 2 (appears 4 times, > n/2=3.5)
+nums = [2, 2, 1, 1, 1, 2, 2]
 
-Evolution of (candidate, count):
-
-i=0, x=2:  count=0 → set candidate=2, count=1
-           (candidate, count) = (2, 1)
-
-i=1, x=2:  x==candidate → count++ → (2, 2)
-
-i=2, x=1:  x!=candidate → count-- → (2, 1)
-           (voting cancels out minority 1)
-
-i=3, x=1:  x!=candidate → count-- → (2, 0)
-
-i=4, x=1:  count=0 → set candidate=1, count=1
-           (restart with new candidate)
-
-i=5, x=2:  x!=candidate → count-- → (1, 0)
-
-i=6, x=2:  count=0 → set candidate=2, count=1
-           (2 is back as candidate)
+i=0, x=2: count=0 → candidate=2, count=1
+i=1, x=2: x==candidate → count=2
+i=2, x=1: x≠candidate → count=1
+i=3, x=1: x≠candidate → count=0
+i=4, x=1: count=0 → candidate=1, count=1
+i=5, x=2: x≠candidate → count=0
+i=6, x=2: count=0 → candidate=2, count=1
 
 Final candidate: 2 ✓
-
-Note: Because 2 appears > n/2 times, its votes can never be fully depleted.
-The final candidate is guaranteed to be the majority element.
 ```
-
-## Python Implementation
 
 ```python
-def majority_element(nums):
-	candidate = None
-	count = 0
-
-	for x in nums:
-		if count == 0:
-			candidate = x
-			count = 1
-		elif x == candidate:
-			count += 1
-		else:
-			count -= 1
-
-	return candidate
+def majority_element(nums: list[int]) -> int:
+    candidate = None
+    count = 0
+    for x in nums:
+        if count == 0:
+            candidate = x
+            count = 1
+        elif x == candidate:
+            count += 1
+        else:
+            count -= 1
+    return candidate
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Hash map | O(n) | O(n) | Simple, extra space |
+| Sort | O(n log n) | O(1) | Modifies array |
+| Boyer-Moore | O(n) | O(1) | Optimal |
 
 ## Typical Interview Use Cases
 

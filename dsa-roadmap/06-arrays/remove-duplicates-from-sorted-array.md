@@ -33,27 +33,69 @@ Given an integer array `nums` sorted in non-decreasing order, remove the duplica
 
 > 💡 **Hint 3:** The condition `nums[i] != nums[k-1]` (comparing with the last written value) is equivalent and slightly cleaner. Advance `k` each time you write.
 
-## Approach
+## Approach 1: Brute Force
+
+**Time Complexity:** O(n)
+**Space Complexity:** O(n)
+
+Collect unique elements into a set, sort, copy back.
+
+```python
+def remove_duplicates_brute(nums: list[int]) -> int:
+    unique = sorted(set(nums))
+    for i, v in enumerate(unique):
+        nums[i] = v
+    return len(unique)
+```
+
+**Downside:** Uses O(n) extra space. The problem requires O(1).
+
+---
+
+## Approach 2: Write Pointer — Optimal
 
 **Time Complexity:** O(n)
 **Space Complexity:** O(1)
 
-Use a write pointer starting at 1. Scan from index 1; whenever the current element differs from the previous element (or from the last written element), copy it to the write position and advance the write pointer.
+Since the array is sorted, duplicates are adjacent. Keep a write pointer; advance it only when a new unique value is found.
 
-## Python Implementation
+### Visual Trace
+
+```
+nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+
+k=1 (first element always kept)
+i=1: nums[1]=0 == nums[0]=0 → skip
+i=2: nums[2]=1 ≠ nums[1]=0 → nums[1]=1, k=2
+i=3: nums[3]=1 == nums[2]=1 → skip
+i=4: nums[4]=1 == nums[2]=1 → skip
+i=5: nums[5]=2 ≠ nums[2]=1 → nums[2]=2, k=3
+i=6: nums[6]=2 == nums[3]=2 → skip
+i=7: nums[7]=3 ≠ nums[3]=2 → nums[3]=3, k=4
+i=8: nums[8]=3 == nums[4]=3 → skip
+i=9: nums[9]=4 ≠ nums[4]=3 → nums[4]=4, k=5
+
+Result: nums[:5] = [0,1,2,3,4], k=5 ✓
+```
 
 ```python
-def remove_duplicates(nums):
-	if not nums:
-		return 0
-
-	k = 1
-	for i in range(1, len(nums)):
-		if nums[i] != nums[k - 1]:
-			nums[k] = nums[i]
-			k += 1
-	return k
+def remove_duplicates(nums: list[int]) -> int:
+    if not nums:
+        return 0
+    k = 1
+    for i in range(1, len(nums)):
+        if nums[i] != nums[k - 1]:
+            nums[k] = nums[i]
+            k += 1
+    return k
 ```
+
+### Complexity Comparison
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Set + sort | O(n log n) | O(n) | Not in-place |
+| Write pointer | O(n) | O(1) | Optimal |
 
 ## Typical Interview Use Cases
 
