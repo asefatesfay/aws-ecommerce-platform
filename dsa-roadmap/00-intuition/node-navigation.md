@@ -74,7 +74,7 @@ what comes next.
 
 ```
 Goal: reverse [1] → [2] → [3] → None
-              into None ← [1] ← [2] ← [3]
+Result:        [3] → [2] → [1] → None
 
 Before starting:
   prev = None   (nothing before the first node yet)
@@ -82,54 +82,93 @@ Before starting:
   nxt  = ???    (will save curr.next before we cut it)
 ```
 
+**The arrow `→` always means `.next` points to the right-hand node.**
+After reversal, `[3].next = [2]`, `[2].next = [1]`, `[1].next = None`.
+
 **Step by step — think of it as redirecting arrows:**
 
 ```
-Initial state:
-  prev=None   curr=[1]→[2]→[3]→None
+INITIAL STATE:
+  prev = None
+  curr = [1]
+  List: [1] → [2] → [3] → None
 
-STEP 1: Save the next node BEFORE cutting
-  nxt = curr.next   →  nxt=[2]
+─────────────────────────────────────────────────────
+ITERATION 1  (curr = [1])
 
-  prev=None   curr=[1]   nxt=[2]→[3]→None
-                ↓
-              (about to redirect this arrow)
+  STEP 1: Save nxt BEFORE cutting
+    nxt = curr.next
+    nxt = [2]
 
-STEP 2: Redirect curr's arrow to point BACKWARD (to prev)
-  curr.next = prev   →  curr=[1]→None
+  STEP 2: Redirect curr.next to point at prev (None)
+    curr.next = prev
+    [1].next is now None
+    List so far: None ← [1]   [2] → [3] → None
+                              ↑
+                             (nxt still holds this address)
 
-  None←[1]   curr=[1]   nxt=[2]→[3]→None
-  (curr.next now points to None, the old prev)
+  STEP 3: Advance prev to curr
+    prev = [1]
 
-STEP 3: Advance prev to curr
-  prev = curr   →  prev=[1]
+  STEP 4: Advance curr to nxt
+    curr = [2]
 
-  None←[1]←prev   nxt=[2]→[3]→None
+  State after iteration 1:
+    prev = [1],  curr = [2]
+    Reversed so far: [1] → None
+    Remaining:       [2] → [3] → None
 
-STEP 4: Advance curr to nxt
-  curr = nxt   →  curr=[2]
+─────────────────────────────────────────────────────
+ITERATION 2  (curr = [2])
 
-  None←[1]←prev   curr=[2]→[3]→None
+  STEP 1: nxt = curr.next = [3]
 
---- Repeat ---
+  STEP 2: curr.next = prev
+    [2].next is now [1]
+    [2] → [1] → None
 
-STEP 1: nxt = curr.next  →  nxt=[3]
-STEP 2: curr.next = prev →  [2]→[1]→None
-STEP 3: prev = curr      →  prev=[2]
-STEP 4: curr = nxt       →  curr=[3]
+  STEP 3: prev = [2]
+  STEP 4: curr = [3]
 
-  None←[1]←[2]←prev   curr=[3]→None
+  State after iteration 2:
+    prev = [2],  curr = [3]
+    Reversed so far: [2] → [1] → None
+    Remaining:       [3] → None
 
---- Repeat ---
+─────────────────────────────────────────────────────
+ITERATION 3  (curr = [3])
 
-STEP 1: nxt = curr.next  →  nxt=None
-STEP 2: curr.next = prev →  [3]→[2]→[1]→None
-STEP 3: prev = curr      →  prev=[3]
-STEP 4: curr = nxt       →  curr=None
+  STEP 1: nxt = curr.next = None
 
-curr is None → STOP. New head = prev = [3]
+  STEP 2: curr.next = prev
+    [3].next is now [2]
+    [3] → [2] → [1] → None
 
-Result: [3]→[2]→[1]→None ✓
+  STEP 3: prev = [3]
+  STEP 4: curr = None  ← loop ends here
+
+─────────────────────────────────────────────────────
+RESULT:
+  curr = None → loop exits
+  prev = [3]  → this is the new head
+
+  [3] → [2] → [1] → None  ✓
+```
+
+**Why the arrows look "backward" during the process:**
+
+```
+During iteration 1, after step 2:
+  [1].next = None   (we just cut [1]'s connection to [2])
+  nxt still points to [2]
+
+So at that moment you have TWO separate chains:
+  Chain A (reversed so far): [1] → None
+  Chain B (not yet reversed): [2] → [3] → None
+
+prev tracks the head of Chain A.
+curr/nxt tracks the head of Chain B.
+Each iteration moves one node from Chain B to the front of Chain A.
 ```
 
 ```python

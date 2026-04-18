@@ -111,41 +111,45 @@ flowchart LR
 ```
 State machine — what changes each iteration:
 
-BEFORE:  prev=None  curr=[1]  nxt=[2]
-         None  [1]→[2]→[3]→None
+INITIAL:
+  prev = None,  curr = [1],  list: [1] → [2] → [3] → None
 
-STEP 1 (save nxt):
-         nxt = curr.next = [2]
+─────────────────────────────────────────────────────
+ITERATION 1  (curr = [1])
 
-STEP 2 (redirect arrow):
-         curr.next = prev
-         None←[1]  [2]→[3]→None
+  nxt  = curr.next = [2]          ← save before cutting
+  curr.next = prev = None         ← [1].next now points to None
+  prev = curr = [1]               ← prev advances
+  curr = nxt  = [2]               ← curr advances
 
-STEP 3 (advance prev):
-         prev = curr = [1]
+  Reversed so far: [1] → None
+  Remaining:       [2] → [3] → None
 
-STEP 4 (advance curr):
-         curr = nxt = [2]
+─────────────────────────────────────────────────────
+ITERATION 2  (curr = [2])
 
-─────────────────────────────────────
-BEFORE:  prev=[1]  curr=[2]  nxt=?
-         None←[1]  [2]→[3]→None
+  nxt  = curr.next = [3]
+  curr.next = prev = [1]          ← [2].next now points to [1]
+  prev = curr = [2]
+  curr = nxt  = [3]
 
-STEP 1: nxt = [3]
-STEP 2: curr.next = prev → None←[1]←[2]  [3]→None
-STEP 3: prev = [2]
-STEP 4: curr = [3]
+  Reversed so far: [2] → [1] → None
+  Remaining:       [3] → None
 
-─────────────────────────────────────
-BEFORE:  prev=[2]  curr=[3]  nxt=?
-         None←[1]←[2]  [3]→None
+─────────────────────────────────────────────────────
+ITERATION 3  (curr = [3])
 
-STEP 1: nxt = None
-STEP 2: curr.next = prev → None←[1]←[2]←[3]
-STEP 3: prev = [3]
-STEP 4: curr = None  ← STOP
+  nxt  = curr.next = None
+  curr.next = prev = [2]          ← [3].next now points to [2]
+  prev = curr = [3]
+  curr = nxt  = None              ← loop ends
 
-New head = prev = [3] ✓
+─────────────────────────────────────────────────────
+RESULT:
+  curr = None → exit loop
+  prev = [3]  → new head
+
+  [3] → [2] → [1] → None  ✓
 ```
 
 ```mermaid
