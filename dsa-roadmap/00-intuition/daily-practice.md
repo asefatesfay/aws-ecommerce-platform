@@ -153,9 +153,34 @@ Input:  s="paper", t="title"
 Output: true  (p→t, a→i, e→l, r→e)
 ```
 
-Brute force — check all mappings:
+Brute force — try all possible character mappings:
 ```python
 def is_isomorphic_brute(s, t):
+    """
+    For each unique char in s, check if it consistently maps to one char in t.
+    Also check no two s-chars map to the same t-char.
+    """
+    if len(s) != len(t):
+        return False
+    # Build mapping by scanning
+    mapping = {}
+    for cs, ct in zip(s, t):
+        if cs in mapping:
+            if mapping[cs] != ct:
+                return False  # cs mapped to two different chars
+        else:
+            # Check no other s-char already maps to ct
+            if ct in mapping.values():  # O(n) scan each time!
+                return False
+            mapping[cs] = ct
+    return True
+# O(n²) time — mapping.values() scan is O(n) per character
+# O(n) space
+```
+
+Optimal — two hash maps for bidirectional mapping:
+```python
+def is_isomorphic(s, t):
     if len(s) != len(t):
         return False
     s_to_t = {}
@@ -172,7 +197,7 @@ def is_isomorphic_brute(s, t):
         else:
             t_to_s[ct] = cs
     return True
-# O(n) time, O(1) space — this IS the optimal solution
+# O(n) time, O(1) space (at most 256 ASCII chars)
 ```
 
 Why two maps? You need bidirectional mapping. "a→b" and "b→a" must both be
@@ -260,6 +285,24 @@ Trace:
   Total: 5 + 10 + 15 = 30
 ```
 
+Brute force — process operations with an array (no stack abstraction):
+```python
+def cal_points_brute(operations):
+    scores = []
+    for op in operations:
+        if op == "+":
+            scores.append(scores[len(scores)-1] + scores[len(scores)-2])
+        elif op == "D":
+            scores.append(scores[len(scores)-1] * 2)
+        elif op == "C":
+            scores = scores[:-1]  # rebuild list without last element
+        else:
+            scores.append(int(op))
+    return sum(scores)
+# O(n²) time in worst case — scores[:-1] copies the entire list each time
+```
+
+Optimal — stack (list with append/pop):
 ```python
 def cal_points(operations):
     stack = []
@@ -269,7 +312,7 @@ def cal_points(operations):
         elif op == "D":
             stack.append(stack[-1] * 2)
         elif op == "C":
-            stack.pop()
+            stack.pop()   # O(1) removal from end
         else:
             stack.append(int(op))
     return sum(stack)
@@ -521,13 +564,38 @@ The pixel at (1,1) has color 1. All connected pixels with color 1
 get changed to 2. The 0's and the isolated 1 at (2,2) don't change.
 ```
 
+Brute force — DFS (recursive, uses call stack instead of explicit queue):
+```python
+def flood_fill_brute(image, sr, sc, color):
+    original = image[sr][sc]
+    if original == color:
+        return image
+    rows, cols = len(image), len(image[0])
+
+    def dfs(r, c):
+        if r < 0 or r >= rows or c < 0 or c >= cols:
+            return
+        if image[r][c] != original:
+            return
+        image[r][c] = color
+        dfs(r+1, c)
+        dfs(r-1, c)
+        dfs(r, c+1)
+        dfs(r, c-1)
+
+    dfs(sr, sc)
+    return image
+# O(m × n) time, O(m × n) space (recursion stack — can overflow on large grids)
+```
+
+Optimal — BFS (iterative, no recursion depth limit):
 ```python
 from collections import deque
 
 def flood_fill(image, sr, sc, color):
     original = image[sr][sc]
     if original == color:
-        return image  # no change needed
+        return image
     rows, cols = len(image), len(image[0])
     queue = deque([(sr, sc)])
     image[sr][sc] = color
@@ -540,7 +608,7 @@ def flood_fill(image, sr, sc, color):
                 image[nr][nc] = color
                 queue.append((nr, nc))
     return image
-# O(m × n) time, O(m × n) space
+# O(m × n) time, O(m × n) space (queue — no recursion depth issues)
 ```
 
 Why BFS? Spreading color to neighbors = exploring connected cells level by
@@ -751,6 +819,18 @@ Input:  p=[1,2,1], q=[1,1,2]
 Output: false
 ```
 
+Brute force — serialize both trees and compare strings:
+```python
+def is_same_tree_brute(p, q):
+    def serialize(node):
+        if not node:
+            return "null,"
+        return str(node.val) + "," + serialize(node.left) + serialize(node.right)
+    return serialize(p) == serialize(q)
+# O(n) time, O(n) space — builds two full strings
+```
+
+Optimal — recursive comparison (no extra strings):
 ```python
 def is_same_tree(p, q):
     if not p and not q:
@@ -760,7 +840,7 @@ def is_same_tree(p, q):
     if p.val != q.val:
         return False         # values differ
     return is_same_tree(p.left, q.left) and is_same_tree(p.right, q.right)
-# O(n) time, O(h) space (recursion depth)
+# O(n) time, O(h) space (recursion depth only, no extra data structures)
 ```
 
 Why recursion? Two trees are the same if: roots match, left subtrees match,
@@ -791,6 +871,27 @@ Node 1 (right-left): ancestor 4 > 1 → not good
 Node 5: no ancestor > 5 → good ✓
 ```
 
+Brute force — collect all root-to-node paths, check each:
+```python
+def good_nodes_brute(root):
+    count = 0
+    def dfs(node, path):
+        nonlocal count
+        if not node:
+            return
+        path.append(node.val)
+        if node.val >= max(path[:-1]) if len(path) > 1 else True:
+            count += 1
+        dfs(node.left, path)
+        dfs(node.right, path)
+        path.pop()
+    dfs(root, [])
+    return count
+# O(n × h) time — max(path) is O(h) per node
+# O(h) space
+```
+
+Optimal — pass max_so_far down (no path storage, no max() call):
 ```python
 def good_nodes(root):
     count = [0]
@@ -806,7 +907,8 @@ def good_nodes(root):
 
     dfs(root, root.val)
     return count[0]
-# O(n) time, O(h) space
+# O(n) time — O(1) work per node
+# O(h) space
 ```
 
 Why pass state down? Each node needs to know the maximum value on the path
@@ -815,9 +917,909 @@ a parameter.
 
 ---
 
+## Day 7 — Linked List
+
+The linked list pattern: "pointer manipulation" and "can't go backward."
+
+---
+
+### Problem 7.1 — Reverse Linked List (Easy) #206
+
+```
+Given the head of a singly linked list, reverse it.
+
+Input:  [1] → [2] → [3] → [4] → [5]
+Output: [5] → [4] → [3] → [2] → [1]
+
+Input:  [1] → [2]
+Output: [2] → [1]
+
+Input:  []
+Output: []
+```
+
+Brute force — collect values, rebuild:
+```python
+def reverse_brute(head):
+    vals = []
+    curr = head
+    while curr:
+        vals.append(curr.val)
+        curr = curr.next
+    curr = head
+    for v in reversed(vals):
+        curr.val = v
+        curr = curr.next
+    return head
+# O(n) time, O(n) space — stores all values
+```
+
+Optimal — three pointers in-place:
+```python
+def reverse_list(head):
+    prev, curr = None, head
+    while curr:
+        nxt = curr.next      # save next before cutting
+        curr.next = prev     # redirect arrow backward
+        prev = curr          # advance prev
+        curr = nxt           # advance curr
+    return prev              # prev is the new head
+# O(n) time, O(1) space
+```
+
+Why three pointers? You're about to cut `curr.next`, so you must save it
+first in `nxt`. Without `nxt`, you lose the rest of the list.
+
+---
+
+### Problem 7.2 — Merge Two Sorted Lists (Easy) #21
+
+```
+Merge two sorted linked lists into one sorted list.
+
+Input:  l1 = [1] → [2] → [4],  l2 = [1] → [3] → [4]
+Output: [1] → [1] → [2] → [3] → [4] → [4]
+
+Input:  l1 = [],  l2 = [0]
+Output: [0]
+```
+
+Brute force — collect all values, sort, rebuild:
+```python
+def merge_brute(l1, l2):
+    vals = []
+    while l1:
+        vals.append(l1.val); l1 = l1.next
+    while l2:
+        vals.append(l2.val); l2 = l2.next
+    vals.sort()
+    dummy = curr = ListNode(0)
+    for v in vals:
+        curr.next = ListNode(v)
+        curr = curr.next
+    return dummy.next
+# O(n log n) time, O(n) space
+```
+
+Optimal — pointer weaving with dummy head:
+```python
+def merge_two_lists(l1, l2):
+    dummy = curr = ListNode(0)
+    while l1 and l2:
+        if l1.val <= l2.val:
+            curr.next = l1
+            l1 = l1.next
+        else:
+            curr.next = l2
+            l2 = l2.next
+        curr = curr.next
+    curr.next = l1 or l2   # attach remaining
+    return dummy.next
+# O(n + m) time, O(1) space
+```
+
+Why dummy head? The first node of the result is unknown until we compare
+l1 and l2. A dummy node avoids a special case for the first attachment.
+
+---
+
+### Problem 7.3 — Linked List Cycle (Easy) #141
+
+```
+Given a linked list, determine if it has a cycle.
+
+Input:  [3] → [2] → [0] → [-4] → (back to [2])
+Output: true
+
+Input:  [1] → None
+Output: false
+```
+
+Brute force — hash set:
+```python
+def has_cycle_brute(head):
+    seen = set()
+    curr = head
+    while curr:
+        if id(curr) in seen:
+            return True
+        seen.add(id(curr))
+        curr = curr.next
+    return False
+# O(n) time, O(n) space
+```
+
+Optimal — Floyd's slow/fast:
+```python
+def has_cycle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow == fast:
+            return True
+    return False
+# O(n) time, O(1) space
+```
+
+Why slow/fast? If there's a cycle, fast will eventually lap slow (like two
+runners on a circular track). If no cycle, fast reaches None.
+
+---
+
+## Day 8 — Binary Search
+
+The binary search pattern: "sorted data" or "search space that can be halved."
+
+---
+
+### Problem 8.1 — Binary Search (Easy) #704
+
+```
+Given a sorted array and a target, return the index of the target.
+Return -1 if not found.
+
+Input:  nums=[-1,0,3,5,9,12], target=9
+Output: 4
+
+Input:  nums=[-1,0,3,5,9,12], target=2
+Output: -1
+```
+
+Brute force — linear scan:
+```python
+def search_brute(nums, target):
+    for i, num in enumerate(nums):
+        if num == target:
+            return i
+    return -1
+# O(n) time
+```
+
+Optimal — binary search:
+```python
+def search(nums, target):
+    left, right = 0, len(nums) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+# O(log n) time, O(1) space
+```
+
+Why binary search? The array is sorted. Each comparison eliminates half
+the remaining elements. 1 million elements → only 20 comparisons.
+
+---
+
+### Problem 8.2 — First Bad Version (Easy) #278
+
+```
+You have n versions [1, 2, ..., n]. One version is bad, and all
+versions after it are bad too. Given an API isBadVersion(version),
+find the first bad version. Minimize API calls.
+
+Input:  n=5, bad=4
+  isBadVersion(3) → false
+  isBadVersion(5) → true
+  isBadVersion(4) → true
+Output: 4
+```
+
+Brute force — check each version:
+```python
+def first_bad_version_brute(n):
+    for i in range(1, n + 1):
+        if isBadVersion(i):
+            return i
+# O(n) API calls
+```
+
+Optimal — binary search:
+```python
+def first_bad_version(n):
+    left, right = 1, n
+    while left < right:
+        mid = (left + right) // 2
+        if isBadVersion(mid):
+            right = mid      # mid might be the first bad
+        else:
+            left = mid + 1   # first bad is after mid
+    return left
+# O(log n) API calls
+```
+
+Why `left < right` (not `<=`)? We're looking for a boundary, not a specific
+value. When `left == right`, we've found the first bad version.
+
+---
+
+### Problem 8.3 — Search Insert Position (Easy) #35
+
+```
+Given a sorted array and a target, return the index where the target
+is found. If not found, return the index where it would be inserted.
+
+Input:  nums=[1,3,5,6], target=5
+Output: 2  (found at index 2)
+
+Input:  nums=[1,3,5,6], target=2
+Output: 1  (would insert between 1 and 3)
+
+Input:  nums=[1,3,5,6], target=7
+Output: 4  (would insert at the end)
+```
+
+Brute force — linear scan:
+```python
+def search_insert_brute(nums, target):
+    for i, num in enumerate(nums):
+        if num >= target:
+            return i
+    return len(nums)
+# O(n) time
+```
+
+Optimal — binary search:
+```python
+def search_insert(nums, target):
+    left, right = 0, len(nums)
+    while left < right:
+        mid = (left + right) // 2
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid
+    return left
+# O(log n) time
+```
+
+This is `bisect_left` — finds the leftmost position where target could
+be inserted to keep the array sorted.
+
+---
+
+## Day 9 — Graph Traversal
+
+The graph pattern: "connections between things" + "visited set."
+
+---
+
+### Problem 9.1 — Find if Path Exists in Graph (Easy) #1971
+
+```
+Given n nodes (0 to n-1) and edges, determine if there's a path
+between source and destination.
+
+Input:  n=3, edges=[[0,1],[1,2],[2,0]], source=0, destination=2
+Output: true  (path: 0→1→2 or 0→2)
+
+Input:  n=6, edges=[[0,1],[0,2],[3,5],[5,4],[4,3]], source=0, destination=5
+Output: false  (0 is in {0,1,2}, 5 is in {3,4,5} — disconnected)
+```
+
+Brute force — BFS:
+```python
+from collections import deque, defaultdict
+
+def valid_path_bfs(n, edges, source, destination):
+    graph = defaultdict(list)
+    for u, v in edges:
+        graph[u].append(v)
+        graph[v].append(u)
+    visited = {source}
+    queue = deque([source])
+    while queue:
+        node = queue.popleft()
+        if node == destination:
+            return True
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return False
+# O(V + E) time, O(V + E) space
+```
+
+Optimal — DFS (same complexity, less overhead for this problem):
+```python
+from collections import defaultdict
+
+def valid_path(n, edges, source, destination):
+    graph = defaultdict(list)
+    for u, v in edges:
+        graph[u].append(v)
+        graph[v].append(u)
+    visited = set()
+
+    def dfs(node):
+        if node == destination:
+            return True
+        visited.add(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                if dfs(neighbor):
+                    return True
+        return False
+
+    return dfs(source)
+# O(V + E) time, O(V + E) space
+```
+
+Both are O(V+E). DFS uses recursion stack, BFS uses explicit queue.
+For "does a path exist?" either works. For "shortest path?" use BFS.
+
+---
+
+### Problem 9.2 — Number of Islands (Medium) #200
+
+```
+Given a 2D grid of '1' (land) and '0' (water), count the number
+of islands. An island is a group of connected '1's (horizontally
+or vertically).
+
+Input:
+  [["1","1","0","0","0"],
+   ["1","1","0","0","0"],
+   ["0","0","1","0","0"],
+   ["0","0","0","1","1"]]
+Output: 3
+```
+
+Brute force — visited set (extra space):
+```python
+def num_islands_brute(grid):
+    rows, cols = len(grid), len(grid[0])
+    visited = set()
+    count = 0
+
+    def dfs(r, c):
+        if (r,c) in visited or r<0 or r>=rows or c<0 or c>=cols:
+            return
+        if grid[r][c] != '1':
+            return
+        visited.add((r, c))
+        dfs(r+1,c); dfs(r-1,c); dfs(r,c+1); dfs(r,c-1)
+
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == '1' and (r,c) not in visited:
+                dfs(r, c)
+                count += 1
+    return count
+# O(m×n) time, O(m×n) space for visited set
+```
+
+Optimal — sink islands in-place (no extra set):
+```python
+def num_islands(grid):
+    rows, cols = len(grid), len(grid[0])
+    count = 0
+
+    def dfs(r, c):
+        if r<0 or r>=rows or c<0 or c>=cols or grid[r][c]!='1':
+            return
+        grid[r][c] = '0'   # sink — mark visited by modifying grid
+        dfs(r+1,c); dfs(r-1,c); dfs(r,c+1); dfs(r,c-1)
+
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == '1':
+                dfs(r, c)
+                count += 1
+    return count
+# O(m×n) time, O(m×n) recursion stack, but no extra visited set
+```
+
+Why modify the grid? Setting `grid[r][c] = '0'` serves as the visited
+marker. No need for a separate set. Saves space (if modifying input is ok).
+
+---
+
+## Day 10 — Sliding Window
+
+The sliding window pattern: "contiguous subarray/substring with a condition."
+
+---
+
+### Problem 10.1 — Maximum Average Subarray I (Easy) #643
+
+```
+Given an array and integer k, find the contiguous subarray of length k
+with the maximum average. Return the average.
+
+Input:  nums=[1,12,-5,-6,50,3], k=4
+Output: 12.75  (subarray [12,-5,-6,50] has sum 51, avg 51/4=12.75)
+```
+
+Brute force — compute sum for every window:
+```python
+def find_max_average_brute(nums, k):
+    best = float('-inf')
+    for i in range(len(nums) - k + 1):
+        window_sum = sum(nums[i:i+k])   # O(k) per window
+        best = max(best, window_sum)
+    return best / k
+# O(n × k) time
+```
+
+Optimal — sliding window (add right, subtract left):
+```python
+def find_max_average(nums, k):
+    window_sum = sum(nums[:k])
+    best = window_sum
+    for i in range(k, len(nums)):
+        window_sum += nums[i] - nums[i - k]   # slide: add right, remove left
+        best = max(best, window_sum)
+    return best / k
+# O(n) time, O(1) space
+```
+
+Why sliding window? Each window overlaps with the previous by k-1 elements.
+Instead of recomputing the sum from scratch, just add the new element and
+subtract the one that left the window.
+
+---
+
+### Problem 10.2 — Minimum Size Subarray Sum (Medium) #209
+
+```
+Given a positive integer array and a target, find the minimal length
+of a subarray whose sum is >= target. Return 0 if no such subarray.
+
+Input:  target=7, nums=[2,3,1,2,4,3]
+Output: 2  (subarray [4,3] has sum 7 >= 7, length 2)
+
+Input:  target=4, nums=[1,4,4]
+Output: 1  (subarray [4] has sum 4 >= 4)
+
+Input:  target=11, nums=[1,1,1,1,1,1,1,1]
+Output: 0  (total sum = 8 < 11)
+```
+
+Brute force — try all subarrays:
+```python
+def min_subarray_len_brute(target, nums):
+    n = len(nums)
+    best = float('inf')
+    for i in range(n):
+        total = 0
+        for j in range(i, n):
+            total += nums[j]
+            if total >= target:
+                best = min(best, j - i + 1)
+                break
+    return best if best != float('inf') else 0
+# O(n²) time
+```
+
+Optimal — variable-size sliding window:
+```python
+def min_subarray_len(target, nums):
+    left = 0
+    total = 0
+    best = float('inf')
+    for right in range(len(nums)):
+        total += nums[right]
+        while total >= target:
+            best = min(best, right - left + 1)
+            total -= nums[left]
+            left += 1
+    return best if best != float('inf') else 0
+# O(n) time — each element added and removed at most once
+```
+
+Why variable window? Expand right to grow the sum. Once sum >= target,
+shrink left to find the minimum length. Each element enters and leaves
+the window at most once → O(n) total.
+
+---
+
+### Problem 10.3 — Permutation in String (Medium) #567
+
+```
+Given two strings s1 and s2, return true if s2 contains a permutation
+of s1 (i.e., a substring of s2 that is an anagram of s1).
+
+Input:  s1="ab", s2="eidbaooo"
+Output: true  (s2 contains "ba" which is a permutation of "ab")
+
+Input:  s1="ab", s2="eidboaoo"
+Output: false
+```
+
+Brute force — check every substring of length len(s1):
+```python
+from collections import Counter
+
+def check_inclusion_brute(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    target = Counter(s1)
+    for i in range(n2 - n1 + 1):
+        if Counter(s2[i:i+n1]) == target:   # O(n1) per window
+            return True
+    return False
+# O(n2 × n1) time
+```
+
+Optimal — fixed-size sliding window with frequency map:
+```python
+from collections import Counter
+
+def check_inclusion(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    if n1 > n2:
+        return False
+    target = Counter(s1)
+    window = Counter(s2[:n1])
+    if window == target:
+        return True
+    for i in range(n1, n2):
+        window[s2[i]] += 1           # add right
+        left_char = s2[i - n1]
+        window[left_char] -= 1       # remove left
+        if window[left_char] == 0:
+            del window[left_char]
+        if window == target:
+            return True
+    return False
+# O(n2) time — each slide updates 2 counts and compares (O(26) = O(1))
+```
+
+Why fixed-size window? We're looking for a substring of exactly length
+len(s1). Slide a window of that size across s2, maintaining character
+counts. When counts match → permutation found.
+
+---
+
+## Day 11 — Union-Find
+
+The union-find pattern: "grouping things" and "are these two connected?"
+
+---
+
+### Problem 11.1 — Number of Provinces (Medium) #547
+
+```
+There are n cities. isConnected[i][j] = 1 means city i and j are
+directly connected. A province is a group of directly or indirectly
+connected cities. How many provinces?
+
+Input:  [[1,1,0],[1,1,0],[0,0,1]]
+Output: 2  (cities 0,1 connected; city 2 alone)
+
+Input:  [[1,0,0],[0,1,0],[0,0,1]]
+Output: 3  (all isolated)
+```
+
+Brute force — DFS from each unvisited city:
+```python
+def find_circle_num_dfs(isConnected):
+    n = len(isConnected)
+    visited = set()
+    count = 0
+
+    def dfs(city):
+        visited.add(city)
+        for neighbor in range(n):
+            if isConnected[city][neighbor] == 1 and neighbor not in visited:
+                dfs(neighbor)
+
+    for city in range(n):
+        if city not in visited:
+            dfs(city)
+            count += 1
+    return count
+# O(n²) time, O(n) space
+```
+
+Optimal — Union-Find:
+```python
+def find_circle_num(isConnected):
+    n = len(isConnected)
+    parent = list(range(n))
+    rank = [0] * n
+
+    def find(x):
+        if parent[x] != x:
+            parent[x] = find(parent[x])   # path compression
+        return parent[x]
+
+    def union(x, y):
+        px, py = find(x), find(y)
+        if px == py:
+            return
+        if rank[px] < rank[py]:
+            px, py = py, px
+        parent[py] = px
+        if rank[px] == rank[py]:
+            rank[px] += 1
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if isConnected[i][j] == 1:
+                union(i, j)
+
+    return len(set(find(i) for i in range(n)))
+# O(n² × α(n)) time ≈ O(n²), O(n) space
+```
+
+Both are O(n²) here because we scan the full matrix. Union-Find shines
+when edges arrive one at a time (streaming) or when you need to merge
+groups dynamically.
+
+---
+
+### Problem 11.2 — Redundant Connection (Medium) #684
+
+```
+A tree of n nodes has one extra edge, creating a cycle. Given the
+edges in order, return the edge that creates the cycle. If multiple
+answers, return the last one in the input.
+
+Input:  [[1,2],[1,3],[2,3]]
+Output: [2,3]  (adding [2,3] creates cycle 1-2-3-1)
+
+Input:  [[1,2],[2,3],[3,4],[1,4],[1,5]]
+Output: [1,4]
+```
+
+Brute force — for each edge, check if removing it makes a valid tree:
+```python
+def find_redundant_brute(edges):
+    from collections import defaultdict, deque
+    n = len(edges)
+    for skip in range(n - 1, -1, -1):   # try removing last edge first
+        graph = defaultdict(list)
+        for i, (u, v) in enumerate(edges):
+            if i == skip:
+                continue
+            graph[u].append(v)
+            graph[v].append(u)
+        # Check if all nodes connected (BFS from node 1)
+        visited = {1}
+        queue = deque([1])
+        while queue:
+            node = queue.popleft()
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        if len(visited) == n:
+            return edges[skip]
+# O(n²) time
+```
+
+Optimal — Union-Find (process edges in order):
+```python
+def find_redundant_connection(edges):
+    n = len(edges)
+    parent = list(range(n + 1))
+
+    def find(x):
+        if parent[x] != x:
+            parent[x] = find(parent[x])
+        return parent[x]
+
+    for u, v in edges:
+        pu, pv = find(u), find(v)
+        if pu == pv:
+            return [u, v]   # already connected → this edge is redundant
+        parent[pu] = pv     # union
+    return []
+# O(n × α(n)) ≈ O(n) time
+```
+
+Why Union-Find? Process edges one by one. If two nodes are already in the
+same group when we try to connect them, this edge creates a cycle.
+
+---
+
+## Day 12 — Mixed Patterns (Interview Simulation)
+
+These problems combine multiple patterns. Try to identify which ones.
+
+---
+
+### Problem 12.1 — Product of Array Except Self (Medium) #238
+
+```
+Given an array, return an array where output[i] = product of all
+elements except nums[i]. No division allowed. Must be O(n).
+
+Input:  [1, 2, 3, 4]
+Output: [24, 12, 8, 6]
+
+Input:  [-1, 1, 0, -3, 3]
+Output: [0, 0, 9, 0, 0]
+```
+
+Brute force — multiply everything except current:
+```python
+def product_except_self_brute(nums):
+    n = len(nums)
+    result = []
+    for i in range(n):
+        product = 1
+        for j in range(n):
+            if i != j:
+                product *= nums[j]
+        result.append(product)
+    return result
+# O(n²) time
+```
+
+Optimal — prefix × suffix in two passes:
+```python
+def product_except_self(nums):
+    n = len(nums)
+    result = [1] * n
+    prefix = 1
+    for i in range(n):
+        result[i] = prefix
+        prefix *= nums[i]
+    suffix = 1
+    for i in range(n - 1, -1, -1):
+        result[i] *= suffix
+        suffix *= nums[i]
+    return result
+# O(n) time, O(1) extra space
+```
+
+Pattern: prefix/suffix decomposition. `result[i] = product_of_left × product_of_right`.
+
+---
+
+### Problem 12.2 — Top K Frequent Elements (Medium) #347
+
+```
+Given an array and integer k, return the k most frequent elements.
+
+Input:  nums=[1,1,1,2,2,3], k=2
+Output: [1,2]  (1 appears 3 times, 2 appears 2 times)
+
+Input:  nums=[1], k=1
+Output: [1]
+```
+
+Brute force — count, sort by frequency:
+```python
+from collections import Counter
+
+def top_k_frequent_brute(nums, k):
+    counts = Counter(nums)
+    return [num for num, _ in counts.most_common(k)]
+# O(n log n) time (sorting)
+```
+
+Optimal — hash map + heap:
+```python
+import heapq
+from collections import Counter
+
+def top_k_frequent(nums, k):
+    counts = Counter(nums)
+    return heapq.nlargest(k, counts.keys(), key=counts.get)
+# O(n log k) time — heap of size k
+```
+
+Alternative optimal — bucket sort:
+```python
+from collections import Counter
+
+def top_k_frequent_bucket(nums, k):
+    counts = Counter(nums)
+    buckets = [[] for _ in range(len(nums) + 1)]
+    for num, freq in counts.items():
+        buckets[freq].append(num)
+    result = []
+    for freq in range(len(buckets) - 1, -1, -1):
+        for num in buckets[freq]:
+            result.append(num)
+            if len(result) == k:
+                return result
+    return result
+# O(n) time — no sorting needed
+```
+
+Pattern: hash map (count) + heap (top k) or bucket sort (O(n)).
+
+---
+
+### Problem 12.3 — Course Schedule (Medium) #207
+
+```
+There are n courses (0 to n-1). prerequisites[i] = [a, b] means
+"take b before a." Can you finish all courses?
+
+Input:  n=2, prerequisites=[[1,0]]
+Output: true  (take 0 then 1)
+
+Input:  n=2, prerequisites=[[1,0],[0,1]]
+Output: false  (circular: 0 needs 1, 1 needs 0)
+```
+
+Brute force — topological sort (Kahn's BFS):
+```python
+from collections import deque, defaultdict
+
+def can_finish_kahn(numCourses, prerequisites):
+    graph = defaultdict(list)
+    in_degree = [0] * numCourses
+    for a, b in prerequisites:
+        graph[b].append(a)
+        in_degree[a] += 1
+    queue = deque(i for i in range(numCourses) if in_degree[i] == 0)
+    count = 0
+    while queue:
+        node = queue.popleft()
+        count += 1
+        for neighbor in graph[node]:
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+    return count == numCourses
+# O(V + E) time
+```
+
+Optimal — DFS cycle detection (3-color):
+```python
+from collections import defaultdict
+
+def can_finish(numCourses, prerequisites):
+    graph = defaultdict(list)
+    for a, b in prerequisites:
+        graph[b].append(a)
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = [WHITE] * numCourses
+
+    def dfs(node):
+        color[node] = GRAY
+        for neighbor in graph[node]:
+            if color[neighbor] == GRAY:
+                return False   # cycle!
+            if color[neighbor] == WHITE and not dfs(neighbor):
+                return False
+        color[node] = BLACK
+        return True
+
+    return all(dfs(i) for i in range(numCourses) if color[i] == WHITE)
+# O(V + E) time
+```
+
+Pattern: graph + cycle detection. Both approaches are O(V+E). Kahn's is
+BFS-based (count processed nodes). DFS 3-color detects back edges.
+
+---
+
 ## What's Next
 
-After completing these 6 days, cycle back and try the problems from the
+After completing these 12 days, cycle back and try the problems from the
 drill section in `00-modeling-intuition.md` — but this time write the code,
 not just name the data structure.
 
