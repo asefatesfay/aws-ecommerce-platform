@@ -348,6 +348,845 @@ You need union-find when:
 
 ---
 
+## Core Implementations — Build It, Then Use It
+
+For each data structure: a visual model, the minimal Python implementation,
+and a worked problem showing how it's used.
+
+---
+
+### Stack — Implementation
+
+```mermaid
+flowchart LR
+    subgraph "Stack (LIFO)"
+        direction TB
+        TOP["top → 3"]
+        MID[2]
+        BOT[1]
+    end
+    PUSH["push(4)"] --> TOP
+    POP["pop() → 3"] --> TOP
+```
+
+```
+Operations:
+  push(x)  → add to top     O(1)
+  pop()    → remove from top O(1)
+  peek()   → look at top     O(1)
+  is_empty → check if empty  O(1)
+```
+
+```python
+# Python: just use a list
+stack = []
+stack.append(1)      # push
+stack.append(2)
+stack.append(3)
+top = stack[-1]      # peek → 3
+val = stack.pop()    # pop → 3
+is_empty = len(stack) == 0
+```
+
+**Worked problem — Valid Parentheses:**
+
+```
+Input: "({[]})"
+
+Process each character:
+  '(' → push '('     stack: ['(']
+  '{' → push '{'     stack: ['(', '{']
+  '[' → push '['     stack: ['(', '{', '[']
+  ']' → pop '[', matches ']' ✓   stack: ['(', '{']
+  '}' → pop '{', matches '}' ✓   stack: ['(']
+  ')' → pop '(', matches ')' ✓   stack: []
+
+Stack empty at end → Valid ✓
+```
+
+```python
+def is_valid(s: str) -> bool:
+    stack = []
+    pairs = {')': '(', '}': '{', ']': '['}
+    for ch in s:
+        if ch in '({[':
+            stack.append(ch)
+        else:
+            if not stack or stack[-1] != pairs[ch]:
+                return False
+            stack.pop()
+    return len(stack) == 0
+```
+
+---
+
+### Queue — Implementation
+
+```mermaid
+flowchart LR
+    IN["enqueue(4)"] --> BACK
+    subgraph "Queue (FIFO)"
+        direction LR
+        FRONT[1] --> MID[2] --> BACK[3]
+    end
+    FRONT --> OUT["dequeue() → 1"]
+```
+
+```
+Operations:
+  enqueue(x) → add to back     O(1)
+  dequeue()  → remove from front O(1)
+  peek()     → look at front    O(1)
+```
+
+```python
+from collections import deque
+
+q = deque()
+q.append(1)        # enqueue
+q.append(2)
+q.append(3)
+front = q[0]       # peek → 1
+val = q.popleft()  # dequeue → 1
+```
+
+**Worked problem — Rotten Oranges (multi-source BFS):**
+
+```
+Grid:
+  [[2,1,1],
+   [1,1,0],
+   [0,1,1]]
+
+Step 1: Find all rotten oranges → queue = [(0,0, t=0)]
+Step 2: BFS level by level (each level = 1 minute)
+
+Minute 0: process (0,0) → rot (0,1) and (1,0)
+  queue: [(0,1,1), (1,0,1)]
+
+Minute 1: process (0,1) → rot (0,2), (1,1)
+           process (1,0) → (1,1) already rotting
+  queue: [(0,2,2), (1,1,2)]
+
+Minute 2: process (0,2) → nothing new
+           process (1,1) → rot (2,1)
+  queue: [(2,1,3)]
+
+Minute 3: process (2,1) → rot (2,2)
+  queue: [(2,2,4)]
+
+Minute 4: process (2,2) → nothing new
+  queue: []
+
+Answer: 4 minutes ✓
+```
+
+```python
+from collections import deque
+
+def oranges_rotting(grid):
+    rows, cols = len(grid), len(grid[0])
+    queue = deque()
+    fresh = 0
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == 2:
+                queue.append((r, c, 0))
+            elif grid[r][c] == 1:
+                fresh += 1
+    if fresh == 0:
+        return 0
+    time = 0
+    while queue:
+        r, c, t = queue.popleft()
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            nr, nc = r+dr, c+dc
+            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:
+                grid[nr][nc] = 2
+                fresh -= 1
+                time = t + 1
+                queue.append((nr, nc, t + 1))
+    return time if fresh == 0 else -1
+```
+
+---
+
+### Hash Map — Implementation
+
+```mermaid
+flowchart LR
+    subgraph "Hash Map"
+        direction TB
+        K1["key: 'apple'"] --> V1["val: 3"]
+        K2["key: 'banana'"] --> V2["val: 1"]
+        K3["key: 'cherry'"] --> V3["val: 5"]
+    end
+    GET["get('banana') → 1"] --> K2
+    PUT["put('date', 2)"] --> NEW["key: 'date' → val: 2"]
+```
+
+```
+Operations:
+  put(key, val)   → insert/update  O(1) avg
+  get(key)        → lookup         O(1) avg
+  delete(key)     → remove         O(1) avg
+  key in map      → membership     O(1) avg
+```
+
+```python
+# Python: just use a dict
+d = {}
+d['apple'] = 3       # put
+d['banana'] = 1
+val = d['banana']     # get → 1
+exists = 'cherry' in d  # membership → False
+del d['apple']        # delete
+
+# For counting, use Counter or defaultdict
+from collections import Counter, defaultdict
+freq = Counter("aabbccc")   # {'c': 3, 'a': 2, 'b': 2}
+groups = defaultdict(list)
+groups['fruit'].append('apple')
+```
+
+**Worked problem — Two Sum:**
+
+```
+nums = [2, 7, 11, 15], target = 9
+
+seen = {}
+
+i=0, num=2: complement = 9-2 = 7. 7 in seen? No. seen = {2: 0}
+i=1, num=7: complement = 9-7 = 2. 2 in seen? YES at index 0.
+  Return [0, 1] ✓
+```
+
+```python
+def two_sum(nums, target):
+    seen = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+```
+
+---
+
+### Heap (Priority Queue) — Implementation
+
+```mermaid
+flowchart TB
+    subgraph "Min-Heap"
+        R[1] --> L[3]
+        R --> RR[2]
+        L --> LL[5]
+        L --> LR[4]
+    end
+    PUSH["push(0) → bubbles to top"] --> R
+    POP["pop() → removes 1 (min)"] --> R
+```
+
+```
+Operations:
+  push(x)  → add element       O(log n)
+  pop()    → remove min/max    O(log n)
+  peek()   → look at min/max   O(1)
+  heapify  → build from list   O(n)
+```
+
+```python
+import heapq
+
+# Min-heap (Python default)
+heap = []
+heapq.heappush(heap, 5)
+heapq.heappush(heap, 1)
+heapq.heappush(heap, 3)
+smallest = heap[0]          # peek → 1
+val = heapq.heappop(heap)   # pop → 1
+
+# Max-heap: negate values
+max_heap = []
+heapq.heappush(max_heap, -5)
+heapq.heappush(max_heap, -1)
+largest = -max_heap[0]      # peek → 5
+val = -heapq.heappop(max_heap)  # pop → 5
+
+# Build heap from list
+nums = [3, 1, 4, 1, 5]
+heapq.heapify(nums)        # O(n), nums is now a min-heap
+```
+
+**Worked problem — Kth Largest Element:**
+
+```
+nums = [3,2,1,5,6,4], k = 2
+Answer: 5 (sorted: [1,2,3,4,5,6], 2nd largest = 5)
+
+Use a min-heap of size k:
+
+Process 3: heap = [3]           (size 1 < k=2, just push)
+Process 2: heap = [2, 3]        (size 2 = k, ok)
+Process 1: heap = [1, 3, 2]     (size 3 > k, pop min)
+           pop 1 → heap = [2, 3]
+Process 5: heap = [2, 3, 5]     (size 3 > k, pop min)
+           pop 2 → heap = [3, 5]
+Process 6: heap = [3, 5, 6]     (size 3 > k, pop min)
+           pop 3 → heap = [5, 6]
+Process 4: heap = [4, 6, 5]     (size 3 > k, pop min)
+           pop 4 → heap = [5, 6]
+
+heap[0] = 5 = kth largest ✓
+
+Why it works: the heap always holds the k largest elements seen so far.
+The smallest of those k (heap[0]) is the kth largest overall.
+```
+
+```python
+import heapq
+
+def find_kth_largest(nums, k):
+    heap = []
+    for num in nums:
+        heapq.heappush(heap, num)
+        if len(heap) > k:
+            heapq.heappop(heap)   # remove smallest
+    return heap[0]                # kth largest
+```
+
+---
+
+### Trie (Prefix Tree) — Implementation
+
+```mermaid
+flowchart TD
+    ROOT["root"] --> C["c"]
+    ROOT --> B["b"]
+    C --> CA["a"]
+    CA --> CAT["t ✓"]
+    CA --> CAR["r"]
+    CAR --> CARD["d ✓"]
+    B --> BA["a"]
+    BA --> BAT["t ✓"]
+```
+
+```
+Words stored: "cat", "car", "card", "bat"
+✓ = is_end (marks a complete word)
+
+Operations:
+  insert(word)       → add word          O(L)  L = word length
+  search(word)       → exact match       O(L)
+  starts_with(prefix)→ prefix exists?    O(L)
+```
+
+```python
+class TrieNode:
+    def __init__(self):
+        self.children = {}    # char → TrieNode
+        self.is_end = False   # marks end of a complete word
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+
+    def search(self, word):
+        node = self._walk(word)
+        return node is not None and node.is_end
+
+    def starts_with(self, prefix):
+        return self._walk(prefix) is not None
+
+    def _walk(self, s):
+        node = self.root
+        for ch in s:
+            if ch not in node.children:
+                return None
+            node = node.children[ch]
+        return node
+```
+
+**Worked problem — Replace Words:**
+
+```
+dictionary = ["cat", "bat", "rat"]
+sentence = "the cattle was rattled by the battery"
+
+Build trie from dictionary: cat, bat, rat
+
+For each word in sentence:
+  "the"     → walk trie: t→? 't' not in root → no root found → keep "the"
+  "cattle"  → walk trie: c→a→t → is_end=True! → replace with "cat"
+  "was"     → walk trie: w→? not found → keep "was"
+  "rattled" → walk trie: r→a→t → is_end=True! → replace with "rat"
+  "by"      → not found → keep "by"
+  "the"     → not found → keep "the"
+  "battery" → walk trie: b→a→t → is_end=True! → replace with "bat"
+
+Output: "the cat was rat by the bat" ✓
+```
+
+---
+
+### Graph — Implementation
+
+```mermaid
+flowchart LR
+    0 --- 1
+    0 --- 2
+    1 --- 3
+    2 --- 3
+```
+
+```
+Adjacency list representation:
+  0: [1, 2]
+  1: [0, 3]
+  2: [0, 3]
+  3: [1, 2]
+```
+
+```python
+from collections import defaultdict, deque
+
+# Build graph from edge list
+graph = defaultdict(list)
+edges = [(0,1), (0,2), (1,3), (2,3)]
+for u, v in edges:
+    graph[u].append(v)
+    graph[v].append(u)   # undirected
+
+# DFS (recursive)
+def dfs(graph, start):
+    visited = set()
+    result = []
+    def explore(node):
+        visited.add(node)
+        result.append(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                explore(neighbor)
+    explore(start)
+    return result
+
+# BFS
+def bfs(graph, start):
+    visited = {start}
+    queue = deque([start])
+    result = []
+    while queue:
+        node = queue.popleft()
+        result.append(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return result
+```
+
+**Worked problem — Number of Islands:**
+
+```
+Grid:
+  [["1","1","0"],
+   ["1","0","0"],
+   ["0","0","1"]]
+
+Treat each cell as a graph node. Neighbors = 4 adjacent cells.
+
+Scan grid:
+  (0,0) = "1" → start DFS, sink entire island
+    DFS visits: (0,0)→(0,1)→(1,0) → all become "0"
+    count = 1
+
+  (0,1) = "0" → skip (already sunk)
+  (0,2) = "0" → skip
+  (1,0) = "0" → skip (already sunk)
+  (1,1) = "0" → skip
+  (1,2) = "0" → skip
+  (2,0) = "0" → skip
+  (2,1) = "0" → skip
+
+  (2,2) = "1" → start DFS, sink island
+    DFS visits: (2,2) → becomes "0"
+    count = 2
+
+Answer: 2 ✓
+```
+
+```python
+def num_islands(grid):
+    rows, cols = len(grid), len(grid[0])
+    count = 0
+
+    def dfs(r, c):
+        if r < 0 or r >= rows or c < 0 or c >= cols or grid[r][c] != '1':
+            return
+        grid[r][c] = '0'   # sink (mark visited)
+        dfs(r+1, c); dfs(r-1, c); dfs(r, c+1); dfs(r, c-1)
+
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == '1':
+                dfs(r, c)
+                count += 1
+    return count
+```
+
+---
+
+### Union-Find — Implementation
+
+```mermaid
+flowchart TB
+    subgraph "Before union(1,3)"
+        A0["0"] --> A1["1"]
+        A2["2"] --> A3["3"]
+    end
+    subgraph "After union(1,3)"
+        B0["0"] --> B1["1"]
+        B1 --> B3["3"]
+        B2["2"] --> B3
+    end
+```
+
+```
+Operations:
+  find(x)       → find root of x's group   O(α(n)) ≈ O(1)
+  union(x, y)   → merge groups of x and y  O(α(n)) ≈ O(1)
+  connected(x,y)→ same group?              O(α(n)) ≈ O(1)
+```
+
+```python
+class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0] * n
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])  # path compression
+        return self.parent[x]
+
+    def union(self, x, y):
+        px, py = self.find(x), self.find(y)
+        if px == py:
+            return False   # already connected
+        if self.rank[px] < self.rank[py]:
+            px, py = py, px
+        self.parent[py] = px
+        if self.rank[px] == self.rank[py]:
+            self.rank[px] += 1
+        return True
+
+    def connected(self, x, y):
+        return self.find(x) == self.find(y)
+```
+
+**Worked problem — Number of Provinces:**
+
+```
+isConnected = [[1,1,0],[1,1,0],[0,0,1]]
+
+City 0 connected to city 1 (isConnected[0][1] = 1)
+City 2 is isolated.
+
+uf = UnionFind(3)   # parent = [0, 1, 2]
+
+Process connections:
+  (0,1): union(0,1) → parent = [0, 0, 2]  (1's root is now 0)
+  (0,2): isConnected[0][2] = 0 → skip
+  (1,2): isConnected[1][2] = 0 → skip
+
+Count distinct roots:
+  find(0) = 0
+  find(1) = 0  (same as 0)
+  find(2) = 2
+
+Distinct roots: {0, 2} → 2 provinces ✓
+```
+
+```python
+def find_provinces(isConnected):
+    n = len(isConnected)
+    uf = UnionFind(n)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if isConnected[i][j] == 1:
+                uf.union(i, j)
+    # Count distinct roots
+    return len(set(uf.find(i) for i in range(n)))
+```
+
+---
+
+### Binary Tree — Implementation
+
+```mermaid
+flowchart TB
+    R["1 (root)"] --> L["2"]
+    R --> RR["3"]
+    L --> LL["4"]
+    L --> LR["5"]
+    RR --> RL["6"]
+    RR --> RRR["7"]
+```
+
+```
+Operations:
+  DFS traversals → O(n)
+    Inorder  (L→Root→R): 4,2,5,1,6,3,7
+    Preorder (Root→L→R): 1,2,4,5,3,6,7
+    Postorder(L→R→Root): 4,5,2,6,7,3,1
+  BFS (level order) → O(n): [1],[2,3],[4,5,6,7]
+  Height → O(n)
+```
+
+```python
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+# Inorder traversal (gives sorted order for BST)
+def inorder(node):
+    if not node:
+        return []
+    return inorder(node.left) + [node.val] + inorder(node.right)
+
+# Height
+def height(node):
+    if not node:
+        return 0
+    return 1 + max(height(node.left), height(node.right))
+
+# Level order (BFS)
+from collections import deque
+def level_order(root):
+    if not root:
+        return []
+    result, queue = [], deque([root])
+    while queue:
+        level = []
+        for _ in range(len(queue)):
+            node = queue.popleft()
+            level.append(node.val)
+            if node.left:  queue.append(node.left)
+            if node.right: queue.append(node.right)
+        result.append(level)
+    return result
+```
+
+**Worked problem — Maximum Depth:**
+
+```
+Tree:
+    3
+   / \
+  9  20
+     / \
+    15   7
+
+depth(3):
+  left  = depth(9)  = 1 + max(depth(None), depth(None)) = 1 + max(0,0) = 1
+  right = depth(20) = 1 + max(depth(15), depth(7))
+                     = 1 + max(1, 1) = 2
+  return 1 + max(1, 2) = 3 ✓
+```
+
+```python
+def max_depth(root):
+    if not root:
+        return 0
+    return 1 + max(max_depth(root.left), max_depth(root.right))
+```
+
+---
+
+### Linked List — Implementation
+
+```mermaid
+flowchart LR
+    H["head"] --> N1["1"] --> N2["2"] --> N3["3"] --> NULL["None"]
+```
+
+```
+Operations:
+  prepend(val)  → add to front    O(1)
+  append(val)   → add to end      O(n)  (O(1) with tail pointer)
+  delete(val)   → remove first    O(n)
+  search(val)   → find node       O(n)
+  reverse()     → reverse list    O(n)
+```
+
+```python
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+# Build a list from array
+def build_list(arr):
+    dummy = ListNode(0)
+    curr = dummy
+    for val in arr:
+        curr.next = ListNode(val)
+        curr = curr.next
+    return dummy.next
+
+# Traverse and print
+def print_list(head):
+    vals = []
+    while head:
+        vals.append(str(head.val))
+        head = head.next
+    print(" → ".join(vals) + " → None")
+
+# Reverse
+def reverse(head):
+    prev, curr = None, head
+    while curr:
+        nxt = curr.next
+        curr.next = prev
+        prev = curr
+        curr = nxt
+    return prev
+```
+
+**Worked problem — Merge Two Sorted Lists:**
+
+```
+l1: [1] → [2] → [4]
+l2: [1] → [3] → [4]
+
+Use a dummy node to build the result:
+
+dummy → ?
+curr = dummy
+
+Compare l1=1 vs l2=1 → take l1. curr.next = l1. l1 advances to [2].
+  dummy → [1]
+
+Compare l1=2 vs l2=1 → take l2. curr.next = l2. l2 advances to [3].
+  dummy → [1] → [1]
+
+Compare l1=2 vs l2=3 → take l1. curr.next = l1. l1 advances to [4].
+  dummy → [1] → [1] → [2]
+
+Compare l1=4 vs l2=3 → take l2. curr.next = l2. l2 advances to [4].
+  dummy → [1] → [1] → [2] → [3]
+
+Compare l1=4 vs l2=4 → take l1. l1 = None.
+  dummy → [1] → [1] → [2] → [3] → [4]
+
+l1 exhausted → attach remaining l2.
+  dummy → [1] → [1] → [2] → [3] → [4] → [4] ✓
+```
+
+```python
+def merge_two_lists(l1, l2):
+    dummy = curr = ListNode(0)
+    while l1 and l2:
+        if l1.val <= l2.val:
+            curr.next = l1
+            l1 = l1.next
+        else:
+            curr.next = l2
+            l2 = l2.next
+        curr = curr.next
+    curr.next = l1 or l2
+    return dummy.next
+```
+
+---
+
+### Monotonic Stack — Implementation
+
+```
+A stack that maintains elements in increasing or decreasing order.
+When a new element violates the order, pop until order is restored.
+
+Decreasing stack for "next greater element":
+
+nums = [2, 1, 5, 3, 6]
+
+Process 2: stack empty → push 2.          stack: [2]
+Process 1: 1 < 2 → push 1.               stack: [2, 1]
+Process 5: 5 > 1 → pop 1, NGE[1]=5
+           5 > 2 → pop 2, NGE[0]=5
+           push 5.                        stack: [5]
+Process 3: 3 < 5 → push 3.               stack: [5, 3]
+Process 6: 6 > 3 → pop 3, NGE[3]=6
+           6 > 5 → pop 5, NGE[2]=6
+           push 6.                        stack: [6]
+
+Remaining: NGE[4] = -1 (no greater element)
+Result: [5, 5, 6, 6, -1]
+```
+
+```python
+def next_greater_element(nums):
+    n = len(nums)
+    result = [-1] * n
+    stack = []   # stores indices, values are decreasing
+    for i in range(n):
+        while stack and nums[stack[-1]] < nums[i]:
+            idx = stack.pop()
+            result[idx] = nums[i]
+        stack.append(i)
+    return result
+```
+
+**Worked problem — Daily Temperatures:**
+
+```
+temps = [73, 74, 75, 71, 69, 72, 76, 73]
+
+Same as next greater element, but return DISTANCE instead of value.
+
+i=0 (73): stack=[] → push 0.                stack: [0]
+i=1 (74): 74>73 → pop 0, ans[0]=1-0=1.     stack: [1]
+i=2 (75): 75>74 → pop 1, ans[1]=2-1=1.     stack: [2]
+i=3 (71): 71<75 → push 3.                  stack: [2,3]
+i=4 (69): 69<71 → push 4.                  stack: [2,3,4]
+i=5 (72): 72>69 → pop 4, ans[4]=5-4=1.
+          72>71 → pop 3, ans[3]=5-3=2.
+          72<75 → push 5.                   stack: [2,5]
+i=6 (76): 76>72 → pop 5, ans[5]=6-5=1.
+          76>75 → pop 2, ans[2]=6-2=4.
+          push 6.                           stack: [6]
+i=7 (73): 73<76 → push 7.                  stack: [6,7]
+
+Remaining: ans[6]=0, ans[7]=0
+
+Result: [1, 1, 4, 2, 1, 1, 0, 0] ✓
+```
+
+```python
+def daily_temperatures(temps):
+    n = len(temps)
+    result = [0] * n
+    stack = []
+    for i in range(n):
+        while stack and temps[stack[-1]] < temps[i]:
+            idx = stack.pop()
+            result[idx] = i - idx
+        stack.append(i)
+    return result
+```
+
+---
+
 ## Practice: Read the Problem, Name the Structure
 
 Try to name the data structure BEFORE reading the solution.
