@@ -350,26 +350,35 @@ You need union-find when:
 
 ## Core Implementations — Build It, Then Use It
 
-For each data structure: a visual model, the minimal Python implementation,
-and a worked problem showing how it's used.
+For each data structure: a real-world analogy, ASCII visual, the minimal
+Python implementation, and a worked problem showing how it's used.
 
 ---
 
 ### Stack — Implementation
 
-```mermaid
-flowchart LR
-    subgraph "Stack (LIFO)"
-        direction TB
-        TOP["top → 3"]
-        MID[2]
-        BOT[1]
-    end
-    PUSH["push(4)"] --> TOP
-    POP["pop() → 3"] --> TOP
 ```
+Real-world analogy: a stack of plates in a cafeteria.
+You can only add or remove from the TOP.
+The last plate you put on is the first one you take off.
+That's LIFO — Last In, First Out.
 
-```
+Visual:
+  push(1), push(2), push(3):
+
+     [3]  ← top (most recently added)
+     [2]
+     [1]
+    -----
+
+  pop() → returns 3, stack becomes:
+
+     [2]  ← new top
+     [1]
+    -----
+
+  peek() → returns 2 (looks at top without removing)
+
 Operations:
   push(x)  → add to top     O(1)
   pop()    → remove from top O(1)
@@ -422,17 +431,29 @@ def is_valid(s: str) -> bool:
 
 ### Queue — Implementation
 
-```mermaid
-flowchart LR
-    IN["enqueue(4)"] --> BACK
-    subgraph "Queue (FIFO)"
-        direction LR
-        FRONT[1] --> MID[2] --> BACK[3]
-    end
-    FRONT --> OUT["dequeue() → 1"]
 ```
+Real-world analogy: a line at a coffee shop.
+First person in line gets served first.
+New people join at the BACK, people leave from the FRONT.
+That's FIFO — First In, First Out.
 
-```
+Visual:
+  enqueue(1), enqueue(2), enqueue(3):
+
+  FRONT → [1] [2] [3] ← BACK
+
+  dequeue() → returns 1 (front leaves):
+
+  FRONT → [2] [3] ← BACK
+
+  enqueue(4):
+
+  FRONT → [2] [3] [4] ← BACK
+
+When to use a queue vs a stack:
+  Stack: "I need the most RECENT thing" (undo, brackets, DFS)
+  Queue: "I need the OLDEST thing" (BFS, scheduling, fairness)
+
 Operations:
   enqueue(x) → add to back     O(1)
   dequeue()  → remove from front O(1)
@@ -513,24 +534,36 @@ def oranges_rotting(grid):
 
 ### Hash Map — Implementation
 
-```mermaid
-flowchart LR
-    subgraph "Hash Map"
-        direction TB
-        K1["key: 'apple'"] --> V1["val: 3"]
-        K2["key: 'banana'"] --> V2["val: 1"]
-        K3["key: 'cherry'"] --> V3["val: 5"]
-    end
-    GET["get('banana') → 1"] --> K2
-    PUT["put('date', 2)"] --> NEW["key: 'date' → val: 2"]
 ```
+Real-world analogy: a phone book.
+You look up a person's NAME (the key) and instantly get their
+PHONE NUMBER (the value). You don't scan every entry — you jump
+directly to the right page.
 
-```
+Visual:
+  put("alice", 555-1234)
+  put("bob",   555-5678)
+  put("carol", 555-9012)
+
+  Internally (simplified):
+    bucket[2] → ("alice", 555-1234)
+    bucket[5] → ("bob",   555-5678)
+    bucket[1] → ("carol", 555-9012)
+
+  get("bob") → hash("bob") = 5 → bucket[5] → 555-5678. Done. O(1).
+
+  The hash function converts the key into a bucket index.
+  If two keys hash to the same bucket (collision), they're stored
+  in a list at that bucket and you scan the short list.
+
+Why O(1)? Because the hash function jumps directly to the right bucket.
+No scanning the entire collection.
+
 Operations:
-  put(key, val)   → insert/update  O(1) avg
-  get(key)        → lookup         O(1) avg
-  delete(key)     → remove         O(1) avg
-  key in map      → membership     O(1) avg
+  put(key, val)   → insert/update  O(1) average
+  get(key)        → lookup         O(1) average
+  delete(key)     → remove         O(1) average
+  key in map      → membership     O(1) average
 ```
 
 ```python
@@ -575,19 +608,46 @@ def two_sum(nums, target):
 
 ### Heap (Priority Queue) — Implementation
 
-```mermaid
-flowchart TB
-    subgraph "Min-Heap"
-        R[1] --> L[3]
-        R --> RR[2]
-        L --> LL[5]
-        L --> LR[4]
-    end
-    PUSH["push(0) → bubbles to top"] --> R
-    POP["pop() → removes 1 (min)"] --> R
 ```
+Real-world analogy: an emergency room.
+Patients don't get treated in arrival order — the most URGENT
+patient gets treated first. When a new patient arrives, they're
+placed in the right position based on urgency. When the doctor
+is free, they always take the most urgent patient next.
 
-```
+That's a heap: it always gives you the min (or max) element in O(1),
+and adding/removing elements takes O(log n).
+
+Visual (min-heap — smallest on top):
+
+  After pushing 5, 3, 7, 1, 4:
+
+         1          ← root is always the minimum
+        / \
+       3   7
+      / \
+     5   4
+
+  pop() → returns 1 (the minimum), then restructures:
+
+         3
+        / \
+       4   7
+      /
+     5
+
+  peek() → 3 (new minimum, without removing)
+
+How it works internally:
+  Stored as an array: [1, 3, 7, 5, 4]
+  Parent of index i: (i-1) // 2
+  Left child of i:   2*i + 1
+  Right child of i:  2*i + 2
+
+  push: add to end, "bubble up" (swap with parent while smaller)
+  pop:  remove root, move last element to root, "bubble down"
+        (swap with smaller child while larger)
+
 Operations:
   push(x)  → add element       O(log n)
   pop()    → remove min/max    O(log n)
@@ -659,26 +719,43 @@ def find_kth_largest(nums, k):
 
 ### Trie (Prefix Tree) — Implementation
 
-```mermaid
-flowchart TD
-    ROOT["root"] --> C["c"]
-    ROOT --> B["b"]
-    C --> CA["a"]
-    CA --> CAT["t ✓"]
-    CA --> CAR["r"]
-    CAR --> CARD["d ✓"]
-    B --> BA["a"]
-    BA --> BAT["t ✓"]
 ```
+Real-world analogy: a phone's autocomplete.
+When you type "c-a", your phone shows "cat", "car", "card", "care".
+It doesn't search every word in the dictionary — it walks down a
+tree of characters. After "c" → "a", it only looks at words starting
+with "ca". That's a trie.
 
-```
-Words stored: "cat", "car", "card", "bat"
-✓ = is_end (marks a complete word)
+Visual — storing "cat", "car", "card", "bat":
+
+  root
+  ├── 'c'
+  │   └── 'a'
+  │       ├── 't' ✓ (end of "cat")
+  │       └── 'r' ✓ (end of "car")
+  │           └── 'd' ✓ (end of "card")
+  └── 'b'
+      └── 'a'
+          └── 't' ✓ (end of "bat")
+
+  search("car"):  root → c → a → r → is_end=True → FOUND ✓
+  search("ca"):   root → c → a → is_end=False → NOT a complete word
+  startsWith("ca"): root → c → a → node exists → True ✓
+  search("dog"):  root → d → not found → False
+
+Each node has:
+  - children: a dict mapping character → child node
+  - is_end: boolean marking if a complete word ends here
+
+Why not just use a list of words?
+  Searching a list for "does any word start with 'ca'?" requires
+  scanning every word: O(n × L). A trie does it in O(L) where L
+  is the prefix length — regardless of how many words are stored.
 
 Operations:
-  insert(word)       → add word          O(L)  L = word length
-  search(word)       → exact match       O(L)
-  starts_with(prefix)→ prefix exists?    O(L)
+  insert(word)        → add word          O(L)  L = word length
+  search(word)        → exact match       O(L)
+  starts_with(prefix) → prefix exists?    O(L)
 ```
 
 ```python
@@ -739,20 +816,60 @@ Output: "the cat was rat by the bat" ✓
 
 ### Graph — Implementation
 
-```mermaid
-flowchart LR
-    0 --- 1
-    0 --- 2
-    1 --- 3
-    2 --- 3
 ```
+Real-world analogy: a social network.
+People are NODES. Friendships are EDGES.
+"Alice is friends with Bob" = an edge between Alice and Bob.
 
-```
-Adjacency list representation:
-  0: [1, 2]
-  1: [0, 3]
-  2: [0, 3]
-  3: [1, 2]
+If friendships are mutual (Alice↔Bob), it's an UNDIRECTED graph.
+If Alice follows Bob but Bob doesn't follow Alice, it's DIRECTED.
+
+Visual — 5 people, some friendships:
+
+  Alice --- Bob --- Dave
+    |       |
+  Carol --- Eve
+
+  Adjacency list (how we store it):
+    Alice: [Bob, Carol]
+    Bob:   [Alice, Dave, Eve]
+    Carol: [Alice, Eve]
+    Dave:  [Bob]
+    Eve:   [Bob, Carol]
+
+  "Is there a path from Alice to Dave?"
+    Alice → Bob → Dave. Yes.
+
+  "How many friend groups are there?"
+    Everyone is connected → 1 group.
+
+  If we remove the Bob-Dave edge:
+    Group 1: Alice, Bob, Carol, Eve
+    Group 2: Dave (alone)
+    → 2 groups.
+
+Two ways to explore a graph:
+  DFS (Depth First): go as deep as possible, then backtrack.
+    Like exploring a maze by always turning left until you hit a dead end.
+    Uses a stack (or recursion).
+
+  BFS (Breadth First): visit all neighbors first, then their neighbors.
+    Like ripples spreading from a stone dropped in water.
+    Uses a queue.
+    Gives SHORTEST PATH in unweighted graphs.
+
+CRITICAL: graphs can have CYCLES (Alice→Bob→Eve→Carol→Alice).
+You MUST track visited nodes or you'll loop forever.
+
+A GRID is just a graph in disguise:
+  Each cell = a node.
+  Each cell's 4 neighbors (up/down/left/right) = edges.
+  "Number of islands" = "number of connected components in a grid graph."
+
+Operations:
+  add_edge(u, v)  → connect two nodes  O(1)
+  DFS/BFS         → visit all nodes    O(V + E)
+  V = vertices (nodes), E = edges
 ```
 
 ```python
@@ -844,22 +961,71 @@ def num_islands(grid):
 
 ---
 
-### Union-Find — Implementation
-
-```mermaid
-flowchart TB
-    subgraph "Before union(1,3)"
-        A0["0"] --> A1["1"]
-        A2["2"] --> A3["3"]
-    end
-    subgraph "After union(1,3)"
-        B0["0"] --> B1["1"]
-        B1 --> B3["3"]
-        B2["2"] --> B3
-    end
-```
+### Union-Find (Disjoint Set) — Implementation
 
 ```
+Real-world analogy: friend groups at a party.
+
+Imagine 6 people arrive at a party, each alone:
+  {Alice} {Bob} {Carol} {Dave} {Eve} {Frank}
+  6 separate groups.
+
+Alice meets Bob → they're now in the same group:
+  {Alice, Bob} {Carol} {Dave} {Eve} {Frank}
+  5 groups.
+
+Carol meets Dave:
+  {Alice, Bob} {Carol, Dave} {Eve} {Frank}
+  4 groups.
+
+Now Bob meets Carol. But Bob is in {Alice, Bob} and Carol is in
+{Carol, Dave}. Their ENTIRE groups merge:
+  {Alice, Bob, Carol, Dave} {Eve} {Frank}
+  3 groups.
+
+That's Union-Find. It answers two questions:
+  1. "Are these two people in the same group?" → find()
+  2. "Merge these two people's groups." → union()
+
+How it works internally:
+  Each person points to a "parent." The root of the chain is the
+  group leader. Two people are in the same group if they have the
+  same root.
+
+  Initially everyone is their own parent:
+    parent = [0, 1, 2, 3, 4, 5]
+    (person 0's parent is 0, person 1's parent is 1, etc.)
+
+  union(0, 1):  (Alice meets Bob)
+    parent[1] = 0   →  parent = [0, 0, 2, 3, 4, 5]
+    Now find(1) → parent[1]=0 → parent[0]=0 → root is 0.
+    find(0) → root is 0. Same root → same group.
+
+  union(2, 3):  (Carol meets Dave)
+    parent[3] = 2   →  parent = [0, 0, 2, 2, 4, 5]
+
+  union(1, 2):  (Bob meets Carol → merge their groups)
+    find(1) = 0 (Alice's group leader)
+    find(2) = 2 (Carol's group leader)
+    parent[2] = 0   →  parent = [0, 0, 0, 2, 4, 5]
+    Now find(3) → parent[3]=2 → parent[2]=0 → root is 0.
+    Alice, Bob, Carol, Dave all have root 0. Same group. ✓
+
+  Two optimizations make it nearly O(1) per operation:
+    Path compression: when you call find(3), update parent[3]
+      directly to the root (skip intermediate nodes).
+    Union by rank: always attach the shorter tree under the taller one.
+
+Why not just use a set?
+  Sets can check membership, but merging two sets is O(n).
+  Union-Find merges in nearly O(1).
+
+When to use Union-Find:
+  "How many connected groups?"
+  "Are these two in the same group?"
+  "Merge these groups."
+  "Find the redundant edge that creates a cycle."
+
 Operations:
   find(x)       → find root of x's group   O(α(n)) ≈ O(1)
   union(x, y)   → merge groups of x and y  O(α(n)) ≈ O(1)
@@ -931,24 +1097,55 @@ def find_provinces(isConnected):
 
 ### Binary Tree — Implementation
 
-```mermaid
-flowchart TB
-    R["1 (root)"] --> L["2"]
-    R --> RR["3"]
-    L --> LL["4"]
-    L --> LR["5"]
-    RR --> RL["6"]
-    RR --> RRR["7"]
 ```
+Real-world analogy: a family tree (but upside down).
+One person at the top (the root). Each person has at most two
+children (left and right). People at the bottom with no children
+are called leaves.
 
-```
+Visual:
+        1          ← root
+       / \
+      2   3        ← 2 is left child of 1, 3 is right child
+     / \   \
+    4   5   6      ← 4 and 5 are children of 2, 6 is child of 3
+   /
+  7                ← 7 is left child of 4
+
+  Height = 4 (longest path: 1→2→4→7)
+  Leaves = 7, 5, 6 (no children)
+
+A Binary Search Tree (BST) adds one rule:
+  For every node: left child < node < right child.
+
+  BST example:
+        5
+       / \
+      3   8
+     / \   \
+    1   4   9
+
+  Inorder traversal (left→root→right) gives sorted order: 1,3,4,5,8,9
+
+Three ways to visit every node (DFS):
+  Preorder  (Root→Left→Right): 1,2,4,7,5,3,6  — used to copy/serialize
+  Inorder   (Left→Root→Right): 7,4,2,5,1,3,6  — gives sorted order in BST
+  Postorder (Left→Right→Root): 7,4,5,2,6,3,1  — used to delete/compute subtrees
+
+One way to visit level by level (BFS):
+  Level order: [1], [2,3], [4,5,6], [7]
+
+The key mental model for tree problems:
+  Most tree problems are solved by recursion.
+  At each node, you either:
+    - Return something UP to the parent (height, count, boolean)
+    - Pass something DOWN to children (remaining sum, depth, range)
+
 Operations:
   DFS traversals → O(n)
-    Inorder  (L→Root→R): 4,2,5,1,6,3,7
-    Preorder (Root→L→R): 1,2,4,5,3,6,7
-    Postorder(L→R→Root): 4,5,2,6,7,3,1
-  BFS (level order) → O(n): [1],[2,3],[4,5,6,7]
+  BFS level order → O(n)
   Height → O(n)
+  Search in BST → O(log n) average, O(n) worst
 ```
 
 ```python
@@ -1015,16 +1212,46 @@ def max_depth(root):
 
 ### Linked List — Implementation
 
-```mermaid
-flowchart LR
-    H["head"] --> N1["1"] --> N2["2"] --> N3["3"] --> NULL["None"]
 ```
+Real-world analogy: a scavenger hunt.
+Each clue tells you where the NEXT clue is. You can only go forward
+by following the clue. You can't jump to clue #5 directly — you
+have to go through clues 1, 2, 3, 4 first.
 
-```
+Visual:
+  head → [1 | next:→] → [2 | next:→] → [3 | next:→] → None
+
+  Each box (node) contains:
+    - A value (1, 2, 3)
+    - A pointer to the next box (or None if it's the last)
+
+  To reach node 3, you MUST start at head and follow the chain:
+    head → node1 → node2 → node3
+
+  You can't do list[2] like an array. There's no random access.
+
+Why use a linked list instead of an array?
+  Array:  insert at front = O(n) (shift everything right)
+  List:   insert at front = O(1) (just update one pointer)
+
+  Array:  delete from middle = O(n) (shift everything left)
+  List:   delete from middle = O(1) IF you have the node reference
+
+  Array:  access by index = O(1)
+  List:   access by index = O(n) (must traverse)
+
+  Use a linked list when you need fast insert/delete and don't need
+  random access. Classic use: LRU cache, undo history, merge operations.
+
+Doubly linked list: each node also has a PREV pointer.
+  None ← [1] ⇄ [2] ⇄ [3] → None
+  You can go both forward AND backward.
+  Deletion is O(1) because you can reach the previous node directly.
+
 Operations:
   prepend(val)  → add to front    O(1)
   append(val)   → add to end      O(n)  (O(1) with tail pointer)
-  delete(val)   → remove first    O(n)
+  delete(node)  → remove node     O(1) if you have the node reference
   search(val)   → find node       O(n)
   reverse()     → reverse list    O(n)
 ```
