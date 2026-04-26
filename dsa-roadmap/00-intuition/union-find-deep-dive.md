@@ -215,37 +215,179 @@ def find(x):
 
 ## Optimization 2: Union by Rank
 
-When merging two groups, always attach the shorter tree under the
-taller tree. This keeps the tree shallow.
+When you merge two groups, you're plugging one tree's root under the
+other tree's root. The question is: which root goes under which?
+
+If you don't think about it and always plug the same way, you can end
+up with a tall skinny chain. Tall chain = slow find() because you have
+to walk the whole chain to reach the root.
+
+Union by rank says: always plug the shorter tree under the taller tree.
+That way the result stays as flat as possible.
 
 ```
-Without union by rank:
-  Always attaching to the same side can create a long chain.
+THE CORE IDEA IN ONE SENTENCE:
+  "Put the short thing under the tall thing
+   so the tall thing doesn't get taller."
+```
 
-  union(0,1): 0→1
-  union(2,1): 2→1→... wait, we attach 2's root to 1's root.
-              But if we always pick the same direction, we get:
-              0→1, 2→1, 3→1, 4→1  (star shape — good!)
-              or: 0→1→2→3→4  (line — bad!)
+### Concrete Example — Why It Matters
 
-With union by rank:
-  rank[x] = approximate height of x's tree.
-  Always attach the shorter tree under the taller one.
+```
+You have two groups:
 
-  rank = [0, 0, 0, 0, 0]
-
-  union(0,1): rank[0]=0, rank[1]=0 → equal, pick either. parent[0]=1, rank[1]=1
-  union(2,3): rank[2]=0, rank[3]=0 → equal. parent[2]=3, rank[3]=1
-  union(1,3): rank[1]=1, rank[3]=1 → equal. parent[1]=3, rank[3]=2
-
-  Tree:
-       3  (rank 2)
+Group A (tall, rank 2):        Group B (short, rank 0):
+       0                              3
       / \
      1   2
-     |
-     0
 
-  Height = 2. find(0) takes 2 steps (not 4).
+Now you want to merge them. Two choices:
+
+CHOICE 1 — Plug short under tall (CORRECT):
+
+       0          ← root stays the same
+      /|\
+     1  2  3      ← 3 just becomes another child of 0
+
+  Height is still 2. find(3) takes 1 step. find(1) still takes 1 step.
+  Nobody got slower.
+
+CHOICE 2 — Plug tall under short (WRONG):
+
+       3          ← 3 is now root
+       |
+       0
+      / \
+     1   2
+
+  Height is now 3. find(1) takes 2 steps instead of 1.
+  find(2) also takes 2 steps instead of 1.
+  EVERYONE in the bigger group got slower.
+```
+
+### What Is "Rank" Exactly?
+
+Rank is just a number that approximates the height of each tree.
+Every node starts with rank 0 (a single node has height 0).
+
+```
+RULE 1: When two trees have DIFFERENT ranks, the shorter one goes
+        under the taller one. The taller one's rank does NOT change
+        (because adding a shorter tree underneath doesn't make it taller).
+
+  Example:
+    rank = [1, 0, 0]
+
+    Group A:     Group B:
+       0 (rank 1)    2 (rank 0)
+       |
+       1
+
+    union(0, 2):
+      rank[0]=1 > rank[2]=0  ← A is taller
+      parent[2] = 0          ← plug B under A
+      rank[0] stays 1        ← height didn't increase!
+
+         0  (rank 1, unchanged)
+        / \
+       1   2
+
+
+RULE 2: When two trees have the SAME rank, it doesn't matter which
+        goes under which — but the result IS one level taller, so
+        you increment the rank of the new root by 1.
+
+  Example:
+    rank = [0, 0]  ← two single nodes, both height 0
+
+    union(0, 1):
+      rank[0] == rank[1] == 0  ← same height, pick either
+      parent[1] = 0
+      rank[0] = 1              ← tree got one level taller
+
+         0  (rank 1)
+         |
+         1
+
+  Another example — merging two rank-1 trees:
+    rank = [1, 1]
+
+    Group A:     Group B:
+       0 (rank 1)    2 (rank 1)
+       |             |
+       1             3
+
+    union(0, 2):
+      rank[0] == rank[2] == 1  ← same height
+      parent[2] = 0
+      rank[0] = 2              ← tree got one level taller
+
+         0  (rank 2)
+        / \
+       1   2
+           |
+           3
+```
+
+### Full Trace — 6 Unions with Rank
+
+```
+Start: 6 nodes, parent = [0,1,2,3,4,5], rank = [0,0,0,0,0,0]
+
+union(0, 1):
+  rank[0]=0 == rank[1]=0 → same rank. parent[1]=0, rank[0]=1
+  parent = [0,0,2,3,4,5], rank = [1,0,0,0,0,0]
+
+       0 (rank 1)
+       |
+       1
+
+union(2, 3):
+  rank[2]=0 == rank[3]=0 → same rank. parent[3]=2, rank[2]=1
+  parent = [0,0,2,2,4,5], rank = [1,0,1,0,0,0]
+
+       0 (rank 1)     2 (rank 1)
+       |               |
+       1               3
+
+union(4, 5):
+  rank[4]=0 == rank[5]=0 → same rank. parent[5]=4, rank[4]=1
+  parent = [0,0,2,2,4,4], rank = [1,0,1,0,1,0]
+
+       0 (rank 1)     2 (rank 1)     4 (rank 1)
+       |               |               |
+       1               3               5
+
+union(0, 2):
+  rank[0]=1 == rank[2]=1 → same rank. parent[2]=0, rank[0]=2
+  parent = [0,0,0,2,4,4], rank = [2,0,1,0,1,0]
+
+         0 (rank 2)           4 (rank 1)
+        / \                     |
+       1   2 (rank 1)          5
+           |
+           3
+
+union(0, 4):
+  rank[0]=2 > rank[4]=1 → 0 is taller. parent[4]=0, rank[0] stays 2
+  parent = [0,0,0,2,0,4], rank = [2,0,1,0,1,0]
+
+           0 (rank 2, unchanged!)
+         / | \
+        1  2  4 (rank 1)
+           |    |
+           3    5
+
+  Maximum depth from root to any leaf: 2 steps.
+  Without union by rank, this could have been 5 steps (a straight line).
+```
+
+### The Three Rules Summarized
+
+```
+1. Different ranks → shorter goes under taller. Rank unchanged.
+2. Same rank → pick either. Increment the winner's rank by 1.
+3. Rank only increases when two equal-rank trees merge.
 ```
 
 ```python
