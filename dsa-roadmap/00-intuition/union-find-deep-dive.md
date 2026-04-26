@@ -411,6 +411,29 @@ def union(x, y):
 
 ## The Complete Implementation
 
+The complete version uses BOTH optimizations together. They don't conflict —
+they solve different problems:
+
+```
+Path compression → makes find() fast (flattens the tree AFTER you walk it)
+Union by rank    → makes union() smart (prevents the tree from getting tall)
+
+Think of it as:
+  Union by rank = PREVENTION (don't let the tree get tall)
+  Path compression = TREATMENT (if it did get tall, flatten it when you visit)
+```
+
+You can use either one alone:
+```
+Path compression only  → O(log n) amortized  ← good enough for interviews
+Union by rank only     → O(log n) worst case
+Both together          → O(α(n)) ≈ O(1)      ← the textbook version
+```
+
+In interviews, many people skip union by rank and just use path compression.
+It's simpler and still passes all LeetCode problems. But if you want the
+full version, here it is:
+
 ```python
 class UnionFind:
     def __init__(self, n):
@@ -427,17 +450,83 @@ class UnionFind:
         """Merge x's group and y's group. Returns True if they were different."""
         root_x = self.find(x)
         root_y = self.find(y)
+
         if root_x == root_y:
-            return False   # already same group
-        if self.rank[root_x] < self.rank[root_y]:
-            root_x, root_y = root_y, root_x   # ensure root_x is taller
-        self.parent[root_y] = root_x
-        if self.rank[root_x] == self.rank[root_y]:
+            return False   # already same group, nothing to do
+
+        # Decide who goes under whom based on rank
+        if self.rank[root_x] > self.rank[root_y]:
+            # root_x is taller → root_y goes under root_x
+            self.parent[root_y] = root_x
+
+        elif self.rank[root_x] < self.rank[root_y]:
+            # root_y is taller → root_x goes under root_y
+            self.parent[root_x] = root_y
+
+        else:
+            # Same rank → pick either. root_y goes under root_x.
+            # The result is 1 level taller, so increment root_x's rank.
+            self.parent[root_y] = root_x
             self.rank[root_x] += 1
+
         return True
 
     def connected(self, x, y):
         """Are x and y in the same group?"""
+        return self.find(x) == self.find(y)
+```
+
+Let's trace through `union(3, 0)` with this code to prove it works:
+
+```
+Before: parent = [0, 0, 0, 3, 4, 4], rank = [2, 0, 0, 0, 1, 0]
+
+Group A (root 0, rank 2):     Group B (root 3, rank 0):
+       0                             3
+      / \
+     1   2
+
+union(3, 0):
+  root_x = find(3) = 3
+  root_y = find(0) = 0
+
+  root_x == root_y?  3 != 0 → no, continue
+
+  rank[root_x]=rank[3]=0,  rank[root_y]=rank[0]=2
+
+  rank[3] < rank[0]  →  root_x goes under root_y
+  self.parent[3] = 0   ← HERE: node 3's parent is now 0
+
+After: parent = [0, 0, 0, 0, 4, 4]
+
+       0 (rank 2, unchanged — adding a shorter tree didn't make it taller)
+      /|\
+     1  2  3
+```
+
+And here's the simpler version with path compression only (no rank):
+
+```python
+class UnionFindSimple:
+    """Simpler version — path compression only, no rank.
+    Still O(log n) amortized. Fine for interviews."""
+    def __init__(self, n):
+        self.parent = list(range(n))
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def union(self, x, y):
+        root_x = self.find(x)
+        root_y = self.find(y)
+        if root_x == root_y:
+            return False
+        self.parent[root_x] = root_y   # just pick one, no rank logic
+        return True
+
+    def connected(self, x, y):
         return self.find(x) == self.find(y)
 ```
 
